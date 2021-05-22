@@ -60,6 +60,11 @@ std::string _read_from_file() {
     f1.close();
     return _read_string;
 }
+void _delete_file() {
+    std::ofstream f1;
+    f1.open(storageFile,std::ofstream::out | std::ofstream::trunc);
+    f1.close();
+}
 // ------------------------------------------------------------------------
 // --------------------CORE CLOUD SERVICE FUNCTIONS------------------------
 // ------------------------------------------------------------------------
@@ -288,6 +293,26 @@ void resize_event()
   clear();
   BORDER(stdscr);
 }
+bool addTodo(WINDOW* win) {
+    wclear(win);
+    wrefresh(win);
+    todo t;
+    char name[32];
+    char desc[128];
+    mvwprintw(win,getmaxy(win) / 2 - 1,(getmaxx(win) - 14) / 2,"Enter title: ");
+    mvwgetnstr(win,getmaxy(win) / 2 - 1,((getmaxx(win) - 14) / 2) + 1,name,32);
+    mvwprintw(win,getmaxy(win) / 2,(getmaxx(win) - 20) / 2,"Enter description: ");
+    mvwgetnstr(win,getmaxy(win) / 2,((getmaxx(win) - 20) / 2) + 1,desc,128);
+    t.name = name;
+    t.desc = desc;
+    if(!t.name.size() || !t.desc.size())
+        return false;
+    t.time = computeTime();
+    t.isComplete = false;
+    localSave["data"].push_back(t);
+    _write_to_file(localSave);
+    push++;
+}
 // ------------------------------------------------------------------------
 // ---------------------------MAIN FUNCTION--------------------------------
 // ------------------------------------------------------------------------
@@ -411,12 +436,12 @@ int menu(std::vector<std::string> a) {
 void main_menu() {
     curs_set(0);
     WINDOW *todoUserName = newwin(10,getmaxx(stdscr)-2,1,1);
-    std::vector<todo> temp = localSave["data"];
     WINDOW *todoWindow = newwin(getmaxy(stdscr) - 12,getmaxx(stdscr)-2,11,1);
     WINDOW *todoBody = newwin(getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1,getmaxy(todoUserName) + 4,1);
     int c,pointerIndex = 0,moveFactor = 0,bottomT = 0,topT = getmaxy(todoBody);
     keypad(todoWindow,true);
     while(1) {
+        std::vector<todo> temp = localSave["data"];
         curs_set(0);
         resize_event();
         resize_window(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
@@ -521,7 +546,12 @@ void main_menu() {
                 }
                 break;
             case KEY_F(5):
-                menu({"1. Add a todo","2. Push all changes","3. Pull from the cloud"});
+                if(menu({"1. Add a todo","2. Push all changes","3. Pull from the cloud"}) == 0) {
+                    bool c = addTodo(todoWindow);
+                    while(!c) {
+                        c = addTodo(todoWindow);
+                    }
+                }
                 break;
             case KEY_F(6):
                 return;
@@ -782,9 +812,18 @@ int main()
     add_colors();
     int loggedIn = login(&curUser);
     cloudSave = getBucketDetails(curUser);
-    localSave = json::parse(_read_from_file());
-    if(!localSave.is_null())
+    try {
+        localSave = json::parse(_read_from_file());
+    }
+    catch(json::parse_error &e) {
         localSave = cloudSave;
+        _delete_file();
+    }
+    int allChange = localSave["data"].size() - cloudSave["data"].size();
+    if(allChange >= 0)
+        push = allChange;
+    else
+        pull = -allChange;
     welcome(loggedIn);
     main_menu();
     endwin();
