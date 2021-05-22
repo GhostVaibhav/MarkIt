@@ -1,0 +1,791 @@
+// ------------------------------------------------------------------------
+// ---------------------------HEADER FILES---------------------------------
+// ------------------------------------------------------------------------
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <vector>
+#include <curl/curl.h>
+#include <json.hpp>
+#include <color.hpp>
+#include <sha256.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <unistd.h>
+#include <curses.h>
+#else
+#include <termios.h>
+#endif
+// ------------------------------------------------------------------------
+// ------------------MACROS, NAMESPACES AND DEFINITIONS--------------------
+// ------------------------------------------------------------------------
+#ifndef JSON
+nlohmann::json cloudSave;
+nlohmann::json localSave;
+#endif
+using json = nlohmann::json;
+#define minWidth 78
+#define BORDER(win) wborder(win,ACS_VLINE,ACS_VLINE,ACS_HLINE,ACS_HLINE,ACS_ULCORNER,ACS_URCORNER,ACS_LLCORNER,ACS_LRCORNER)
+std::string curUser = "";
+std::string PantryID = "f71b63cf-f419-4545-a4a7-22068e0bcfc8";
+std::string storageFile = "data.dat";
+std::string stateFile = "state.dat";
+int push = 0;
+int pull = 0;
+std::vector<std::string> menu_items_todo = {"Create a todo","Push all changes","Pull from server"};
+// ------------------------------------------------------------------------
+// ---------------------CORE STRUCTURE OF TODO USED------------------------
+// ------------------------------------------------------------------------
+struct todo
+{
+    std::string name;
+    std::string desc;
+    std::string time;
+    bool isComplete;
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(todo, name, desc, time, isComplete);
+};
+// ------------------------------------------------------------------------
+// ---------------------CORE FILE SERVICE FUNCTIONS------------------------
+// ------------------------------------------------------------------------
+void _write_to_file(json temp) {
+    std::ofstream f1(storageFile);
+    f1 << temp.dump();
+    f1.close();
+}
+std::string _read_from_file() {
+    std::ifstream f1(storageFile.c_str());
+    std::string _read_string;
+    std::getline(f1,_read_string);
+    f1.close();
+    return _read_string;
+}
+// ------------------------------------------------------------------------
+// --------------------CORE CLOUD SERVICE FUNCTIONS------------------------
+// ------------------------------------------------------------------------
+size_t write_to_string(void *ptr, size_t size, size_t count, void *stream)
+{
+    ((std::string *)stream)->append((char *)ptr, 0, size * count);
+    return size * count;
+}
+bool getBucket(std::string bucketName)
+{
+    CURL *curl;
+    CURLcode res;
+    std::string resp;
+    curl = curl_easy_init();
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        std::string url = "https://getpantry.cloud/apiv1/pantry/"+ PantryID + "/basket/" + bucketName;
+        curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        const char *data = "";
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+    }
+    curl_easy_cleanup(curl);
+    if (resp.find("Could not get basket") != resp.npos)
+        return false;
+    else
+        return true;
+}
+int createBucket(std::string bucketName)
+{
+    std::string resp;
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        std::string url = "https://getpantry.cloud/apiv1/pantry/"+ PantryID + "/basket/" + bucketName;
+        curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        const char *data = "";
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+    }
+    curl_easy_cleanup(curl);
+    return (int)res;
+}
+bool replaceBucket(std::string bucketName, json bucket)
+{
+    if(!getBucket(bucketName))
+        return false;
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    std::string resp;
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        std::string url = "https://getpantry.cloud/apiv1/pantry/"+ PantryID + "/basket/" + bucketName;
+        curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        std::string update = bucket.dump();
+        const char *data = update.c_str();
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+    }
+    curl_easy_cleanup(curl);
+    return true;
+}
+bool deleteBucket(std::string bucketName)
+{
+    CURL *curl;
+    CURLcode res;
+    std::string resp;
+    curl = curl_easy_init();
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+        std::string url = "https://getpantry.cloud/apiv1/pantry/"+ PantryID + "/basket/" + bucketName;
+        curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        const char *data = "";
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+    }
+    curl_easy_cleanup(curl);
+    if (resp.find("Could not delete") != std::string::npos)
+        return false;
+    else
+        return true;
+}
+json getBucketDetails(std::string bucketName)
+{
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    json temp;
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        std::string url = "https://getpantry.cloud/apiv1/pantry/"+ PantryID + "/basket/" + bucketName;
+        curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        const char *data = "";
+        std::string result;
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+        temp = json::parse(result);
+    }
+    curl_easy_cleanup(curl);
+    return temp;
+}
+bool appendBucket(std::string bucketName, json patch)
+{
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    std::string resp;
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+        std::string url = "https://getpantry.cloud/apiv1/pantry/"+ PantryID + "/basket/" + bucketName;
+        curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        std::string update = patch.dump();
+        const char *data = update.c_str();
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+    }
+    curl_easy_cleanup(curl);
+    if(resp.find("does not exist") != resp.npos)
+        return false;
+    else
+        return true;
+}
+std::string computeTime()
+{
+    time_t lt;
+    lt = time(NULL);
+    struct tm *tempTime = localtime(&lt);
+    return asctime(tempTime);
+}
+// ------------------------------------------------------------------------
+// ------------------------DISPLAY FUNCTIONS-------------------------------
+// ------------------------------------------------------------------------
+struct curses
+{
+  curses()
+  {
+    // Win32a PDCurses -- make window resizable
+    ttytype[0] = 25;                  // min  25 lines
+    ttytype[1] = (unsigned char)255;  // max 255 lines
+    ttytype[2] = 80;                  // min  80 columns
+    ttytype[3] = (unsigned char)255;  // max 255 columns
+
+    initscr();
+    cbreak();
+    keypad( stdscr, TRUE );  // (required for resizing to work on Win32a ???)
+    curs_set( 0 );
+
+    #ifndef _WIN32
+    // Make the ESC key take only a little time,
+    // unless the user has set a specific ESCDELAY in their environment.
+    const char* escdelay = std::getenv( "ESCDELAY" );
+    if (escdelay) ESCDELAY = std::atoi( escdelay );
+    else          ESCDELAY = 250;
+    #endif
+  }
+
+ ~curses()
+  {
+    endwin();
+  }
+};
+
+curses _;
+void resize_event()
+{
+  int w, h;
+  resize_term( 0, 0 );
+  getmaxyx( stdscr, h, w );
+  clear();
+  BORDER(stdscr);
+}
+// ------------------------------------------------------------------------
+// ---------------------------MAIN FUNCTION--------------------------------
+// ------------------------------------------------------------------------
+void printCenter(int *selected, std::vector<std::string> a, WINDOW *win) {
+    int maxSize = (*max_element(a.begin(),a.end())).size();
+    for(int i = 0 ; i < a.size() ; i++) {
+        if(i != *selected)
+            mvwprintw(win,(getmaxy(win) / 2) + (i - (a.size() / 2)),(getmaxx(win) / 2) - maxSize,a[i].c_str());
+        else {
+            wattron(win,COLOR_PAIR(1));
+            mvwprintw(win,(getmaxy(win) / 2) + (i - (a.size() / 2)),(getmaxx(win) / 2) - maxSize,a[i].c_str());
+            wattroff(win,COLOR_PAIR(1));
+        }
+    }
+}
+void print_stats(WINDOW *win) {
+    std::string stringPush = std::to_string(push);
+    std::string stringPull = std::to_string(pull);
+    attron(COLOR_PAIR(1));
+    mvwprintw(win,1,COLS-10-stringPull.size()-stringPush.size(),(" + " + stringPush).c_str());
+    attroff(COLOR_PAIR(1));
+    attron(COLOR_PAIR(2));
+    wprintw(win,("  - " + stringPull + " ").c_str());
+    attroff(COLOR_PAIR(2));
+}
+int menu(std::vector<std::string> a) {
+    WINDOW *title = newwin(10,getmaxx(stdscr)-2,1,1);
+    WINDOW *menu = newwin(getmaxy(stdscr) - 12,getmaxx(stdscr)-2,11,1);
+    int pointerIndex = 0;
+    int c;
+    keypad(stdscr,true);
+    refresh();
+    while(1) {
+        curs_set(0);
+        resize_event();
+        resize_window(title,10,getmaxx(stdscr) - 2);
+        resize_window(menu,getmaxy(stdscr) - 12,getmaxx(stdscr) - 2);
+        if(getmaxx(stdscr) >= minWidth) {
+            int part = (getmaxx(title) - 81) / 4;
+            if(part <= 0)
+                part = 1;
+            wclear(title);
+            wclear(menu);
+            wrefresh(title);
+            wrefresh(menu);
+            box(title,0,0);
+            box(menu,0,0);
+            wattron(title,COLOR_PAIR(3));
+            mvwprintw(title,2,part,R"(  ______)");
+            mvwprintw(title,3,part,R"( /_  __/)");
+            mvwprintw(title,4,part,R"(  / /)");
+            mvwprintw(title,5,part,R"( / /)");
+            mvwprintw(title,6,part,R"(/_/)");
+            wattroff(title,COLOR_PAIR(3));
+            wattron(title,COLOR_PAIR(4));
+            mvwprintw(title,2,part+7,R"()");
+            mvwprintw(title,3,part+8,R"(___)");
+            mvwprintw(title,4,part+5,R"( / __ \)");
+            mvwprintw(title,5,part+5,R"(/ /_/ /)");
+            mvwprintw(title,6,part+5,R"(\____/)");
+            wattroff(title,COLOR_PAIR(4));
+            wattron(title,COLOR_PAIR(2));
+            mvwprintw(title,2,part+11,R"(       __)");
+            mvwprintw(title,3,part+11,R"(  ____/ /)");
+            mvwprintw(title,4,part+12,R"(/ __  /)");
+            mvwprintw(title,5,part+11,R"(/ /_/ /)");
+            mvwprintw(title,6,part+11,R"(\__,_/)");
+            wattroff(title,COLOR_PAIR(2));
+            wattron(title,COLOR_PAIR(5));
+            mvwprintw(title,2,part+17,R"()");
+            mvwprintw(title,3,part+20,R"(___)");
+            mvwprintw(title,4,part+17,R"( / __ \)");
+            mvwprintw(title,5,part+17,R"(/ /_/ /)");
+            mvwprintw(title,6,part+17,R"(\____/)");
+            wattroff(title,COLOR_PAIR(5));
+            mvwprintw(title,3,3 * part + 25,("Username: " + curUser).c_str());
+            mvwprintw(title,5,3 * part + 25,("Pantry ID: " + PantryID).c_str());
+            // int halfX = (getmaxx(menu) - (*max_element(a.begin(),a.end())).size()) / 2;
+            // int halfY = (getmaxy(menu) - a.size()) / 2;
+            // for(int i = 0 ; i < a.size() ; i++) {
+            //     if(i == pointerIndex) {
+            //         wattron(menu,COLOR_PAIR(1));
+            //     }
+            //     mvwprintw(menu,halfY + i,halfX,a[i].c_str());
+            //     if(i == pointerIndex) {
+            //         wattroff(menu,COLOR_PAIR(1));
+            //     }
+            // }
+            printCenter(&pointerIndex,a,menu);
+            refresh();
+            print_stats(stdscr);
+            wrefresh(title);
+            wrefresh(menu);
+        }
+        else {
+            mvprintw(LINES / 2,(COLS - 35) / 2,"Please increase your window's width");
+        }
+        c = getch();
+        switch (c)
+        {
+            case KEY_UP:
+                pointerIndex--;
+                if(pointerIndex == -1)
+                    pointerIndex = 0;
+                break;
+            case KEY_DOWN:
+                pointerIndex++;
+                if(pointerIndex == a.size())
+                    pointerIndex = a.size() - 1;
+                break;
+            case '\n':
+                endwin();
+                return pointerIndex;
+            default:
+                refresh();
+                break;
+        }
+        refresh();
+    }
+}
+void main_menu() {
+    curs_set(0);
+    WINDOW *todoUserName = newwin(10,getmaxx(stdscr)-2,1,1);
+    std::vector<todo> temp = localSave["data"];
+    WINDOW *todoWindow = newwin(getmaxy(stdscr) - 12,getmaxx(stdscr)-2,11,1);
+    WINDOW *todoBody = newwin(getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1,getmaxy(todoUserName) + 4,1);
+    int c,pointerIndex = 0,moveFactor = 0,bottomT = 0,topT = getmaxy(todoBody);
+    keypad(todoWindow,true);
+    while(1) {
+        curs_set(0);
+        resize_event();
+        resize_window(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
+        resize_window(todoUserName,10,getmaxx(stdscr)-2);
+        resize_window(todoBody,getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1);
+        if(getmaxx(stdscr) >= minWidth) {
+            int part = (getmaxx(todoUserName) - 81) / 4;
+            if(part <= 0)
+                part = 1;
+            wclear(todoWindow);
+            wclear(todoUserName);
+            wclear(todoBody);
+            wrefresh(todoWindow);
+            wrefresh(todoBody);
+            box(todoWindow,0,0);
+            box(todoUserName,0,0);
+            wattron(todoUserName,COLOR_PAIR(3));
+            mvwprintw(todoUserName,2,part,R"(  ______)");
+            mvwprintw(todoUserName,3,part,R"( /_  __/)");
+            mvwprintw(todoUserName,4,part,R"(  / /)");
+            mvwprintw(todoUserName,5,part,R"( / /)");
+            mvwprintw(todoUserName,6,part,R"(/_/)");
+            wattroff(todoUserName,COLOR_PAIR(3));
+            wattron(todoUserName,COLOR_PAIR(4));
+            mvwprintw(todoUserName,2,part+7,R"()");
+            mvwprintw(todoUserName,3,part+8,R"(___)");
+            mvwprintw(todoUserName,4,part+5,R"( / __ \)");
+            mvwprintw(todoUserName,5,part+5,R"(/ /_/ /)");
+            mvwprintw(todoUserName,6,part+5,R"(\____/)");
+            wattroff(todoUserName,COLOR_PAIR(4));
+            wattron(todoUserName,COLOR_PAIR(2));
+            mvwprintw(todoUserName,2,part+11,R"(       __)");
+            mvwprintw(todoUserName,3,part+11,R"(  ____/ /)");
+            mvwprintw(todoUserName,4,part+12,R"(/ __  /)");
+            mvwprintw(todoUserName,5,part+11,R"(/ /_/ /)");
+            mvwprintw(todoUserName,6,part+11,R"(\__,_/)");
+            wattroff(todoUserName,COLOR_PAIR(2));
+            wattron(todoUserName,COLOR_PAIR(5));
+            mvwprintw(todoUserName,2,part+17,R"()");
+            mvwprintw(todoUserName,3,part+20,R"(___)");
+            mvwprintw(todoUserName,4,part+17,R"( / __ \)");
+            mvwprintw(todoUserName,5,part+17,R"(/ /_/ /)");
+            mvwprintw(todoUserName,6,part+17,R"(\____/)");
+            wattroff(todoUserName,COLOR_PAIR(5));
+            mvwprintw(todoUserName,3,3 * part + 25,("Username: " + curUser).c_str());
+            mvwprintw(todoUserName,5,3 * part + 25,("Pantry ID: " + PantryID).c_str());
+            int tabDiv = (getmaxx(todoWindow) - 2) / 3;
+            mvwvline(todoWindow,1,tabDiv,ACS_VLINE,1);
+            mvwvline(todoWindow,1,2 * tabDiv,ACS_VLINE,1);
+            mvwhline(todoWindow,2,1,ACS_HLINE,getmaxx(todoWindow) - 2);
+            mvwprintw(todoWindow,1,(tabDiv - 4) / 2,"Name");
+            mvwprintw(todoWindow,1,((3 * tabDiv - 12) / 2) + 1,"Description");
+            mvwprintw(todoWindow,1,((5 * tabDiv - 13) / 2) + 2,"Created Time");
+            BORDER(todoWindow);
+            for(int i = 0 ; i < temp.size() ; i++) {
+                if(pointerIndex == i) {
+                    if(temp.at(i).isComplete)
+                        wattron(todoBody,COLOR_PAIR(2));
+                    else
+                        wattron(todoBody,COLOR_PAIR(1));
+                }
+                mvwprintw(todoBody,i + moveFactor,(tabDiv - 4) / 2,(temp.at(i).name).c_str());
+                mvwprintw(todoBody,i + moveFactor,((3 * tabDiv - temp.at(i).desc.size()) / 2) + 1,(temp.at(i).desc).c_str());
+                mvwprintw(todoBody,i + moveFactor,((5 * tabDiv - temp.at(i).time.size()) / 2) + 2,(temp.at(i).time).c_str());
+                if(pointerIndex == i) {
+                    if(temp.at(i).isComplete)
+                        wattroff(todoBody,COLOR_PAIR(2));
+                    else
+                        wattroff(todoBody,COLOR_PAIR(1));
+                }
+                BORDER(todoWindow);
+            }
+            refresh();
+            print_stats(stdscr);
+            wrefresh(todoWindow);
+            wrefresh(todoUserName);
+            wrefresh(todoBody);
+        }
+        else {
+            mvwprintw(stdscr,LINES / 2,(COLS - 35) / 2,"Please increase your window's width");
+        }
+        c = getch();
+        switch(c) {
+            case KEY_UP:
+                pointerIndex--;
+                if(pointerIndex < 0)
+                    pointerIndex = 0;
+                if(pointerIndex < bottomT) {
+                    bottomT--;
+                    topT--;
+                    moveFactor++;
+                }
+                break;
+            case KEY_DOWN:
+                pointerIndex++;
+                if(pointerIndex >= temp.size())
+                    pointerIndex = temp.size() - 1;
+                if(pointerIndex >= topT) {
+                    bottomT++;
+                    topT++;
+                    moveFactor--;
+                }
+                break;
+            case KEY_F(5):
+                menu({"1. Add a todo","2. Push all changes","3. Pull from the cloud"});
+                break;
+            case KEY_F(6):
+                return;
+            default:
+                refresh();
+                break;
+        }
+        refresh();
+    }
+}
+void loading(std::string loadText) {
+    clear();
+    int part = (getmaxx(stdscr) - 25) / 2;
+    int half = ((getmaxy(stdscr) - 5) / 2) - 1;
+    refresh();
+    wrefresh(stdscr);
+    wattron(stdscr,COLOR_PAIR(3));
+    mvwprintw(stdscr,half + 1,part,R"(  ______)");
+    mvwprintw(stdscr,half + 2,part,R"( /_  __/)");
+    mvwprintw(stdscr,half + 3,part,R"(  / /)");
+    mvwprintw(stdscr,half + 4,part,R"( / /)");
+    mvwprintw(stdscr,half + 5,part,R"(/_/)");
+    wattroff(stdscr,COLOR_PAIR(3));
+    wattron(stdscr,COLOR_PAIR(4));
+    mvwprintw(stdscr,half + 1,part + 7,R"()");
+    mvwprintw(stdscr,half + 2,part + 8,R"(___)");
+    mvwprintw(stdscr,half + 3,part + 5,R"( / __ \)");
+    mvwprintw(stdscr,half + 4,part + 5,R"(/ /_/ /)");
+    mvwprintw(stdscr,half + 5,part + 5,R"(\____/)");
+    wattroff(stdscr,COLOR_PAIR(4));
+    wattron(stdscr,COLOR_PAIR(2));
+    mvwprintw(stdscr,half + 1,part + 11,R"(       __)");
+    mvwprintw(stdscr,half + 2,part + 11,R"(  ____/ /)");
+    mvwprintw(stdscr,half + 3,part + 12,R"(/ __  /)");
+    mvwprintw(stdscr,half + 4,part + 11,R"(/ /_/ /)");
+    mvwprintw(stdscr,half + 5,part + 11,R"(\__,_/)");
+    wattroff(stdscr,COLOR_PAIR(2));
+    wattron(stdscr,COLOR_PAIR(5));
+    mvwprintw(stdscr,half + 1,part + 17,R"()");
+    mvwprintw(stdscr,half + 2,part + 20,R"(___)");
+    mvwprintw(stdscr,half + 3,part + 17,R"( / __ \)");
+    mvwprintw(stdscr,half + 4,part + 17,R"(/ /_/ /)");
+    mvwprintw(stdscr,half + 5,part + 17,R"(\____/)");
+    wattroff(stdscr,COLOR_PAIR(5));
+    mvwprintw(stdscr,getmaxy(stdscr) - 2,(getmaxx(stdscr) - loadText.size()) / 2, loadText.c_str());
+    wrefresh(stdscr);
+    refresh();
+}
+int login(std::string *bucket)
+{
+    curs_set(0);
+    int part = (getmaxy(stdscr) - 18) / 4;
+    char userName[32];
+    char password[64];
+    WINDOW *title = newwin(8,getmaxx(stdscr),part,0);
+    WINDOW *userNameWindow = newwin(5,getmaxx(stdscr)-20,2 * part + 8,10);
+    WINDOW *passwordWindow = newwin(5,getmaxx(stdscr)-20,3 * part + 13,10);
+    WINDOW *information = newwin(3,getmaxx(stdscr),getmaxy(stdscr)-3,0);
+    WINDOW *wrongPassword = newwin(3,getmaxx(stdscr),10,0);
+    while(1) {
+        curs_set(0);
+        clear();
+        resize_event();
+        resize_window(userNameWindow,5,getmaxx(stdscr)-20);
+        resize_window(passwordWindow,5,getmaxx(stdscr)-20);
+        resize_window(title,8,getmaxx(stdscr));
+        resize_window(information,3,getmaxx(stdscr));
+        resize_window(wrongPassword,3,getmaxx(stdscr));
+        part = (getmaxy(stdscr) - 18) / 4;
+        if(getmaxx(stdscr) >= minWidth) {
+            wclear(userNameWindow);
+            wclear(passwordWindow);
+            wclear(title);
+            wclear(information);
+            wrefresh(userNameWindow);
+            wrefresh(passwordWindow);
+            wborder(stdscr,' ',' ',' ',' ',' ',' ',' ',' ');
+            BORDER(userNameWindow);
+            BORDER(passwordWindow);
+            int part = (getmaxx(title) - 24) / 2;
+            wattron(title,COLOR_PAIR(3));
+            mvwprintw(title,1,part,R"(  ______)");
+            mvwprintw(title,2,part,R"( /_  __/)");
+            mvwprintw(title,3,part,R"(  / /)");
+            mvwprintw(title,4,part,R"( / /)");
+            mvwprintw(title,5,part,R"(/_/)");
+            wattroff(title,COLOR_PAIR(3));
+            wattron(title,COLOR_PAIR(4));
+            mvwprintw(title,1,part+7,R"()");
+            mvwprintw(title,2,part+8,R"(___)");
+            mvwprintw(title,3,part+5,R"( / __ \)");
+            mvwprintw(title,4,part+5,R"(/ /_/ /)");
+            mvwprintw(title,5,part+5,R"(\____/)");
+            wattroff(title,COLOR_PAIR(4));
+            wattron(title,COLOR_PAIR(2));
+            mvwprintw(title,1,part+11,R"(       __)");
+            mvwprintw(title,2,part+11,R"(  ____/ /)");
+            mvwprintw(title,3,part+12,R"(/ __  /)");
+            mvwprintw(title,4,part+11,R"(/ /_/ /)");
+            mvwprintw(title,5,part+11,R"(\__,_/)");
+            wattroff(title,COLOR_PAIR(2));
+            wattron(title,COLOR_PAIR(5));
+            mvwprintw(title,1,part+17,R"()");
+            mvwprintw(title,2,part+20,R"(___)");
+            mvwprintw(title,3,part+17,R"( / __ \)");
+            mvwprintw(title,4,part+17,R"(/ /_/ /)");
+            mvwprintw(title,5,part+17,R"(\____/)");
+            wattroff(title,COLOR_PAIR(5));
+            mvwprintw(information,1,(getmaxx(information) - 26) / 2,"Don't resize this window!");
+            mvwprintw(userNameWindow,getmaxy(userNameWindow) / 2,5,"Username: ");
+            mvwprintw(passwordWindow,getmaxy(passwordWindow) / 2,(getmaxx(passwordWindow) - 20) / 2,"Enter your password");
+            refresh();
+            wrefresh(title);
+            wrefresh(information);
+            wrefresh(wrongPassword);
+            wbkgd(userNameWindow,COLOR_PAIR(1));
+            wgetstr(userNameWindow,userName);
+            wbkgd(userNameWindow,COLOR_PAIR(6));
+            BORDER(userNameWindow);
+            wrefresh(userNameWindow);
+            noecho();
+            wbkgd(passwordWindow,COLOR_PAIR(1));
+            wgetstr(passwordWindow,password);
+            wbkgd(passwordWindow,COLOR_PAIR(6));
+            echo();
+            wrefresh(userNameWindow);
+            wrefresh(passwordWindow);
+        }
+        else {
+            mvwprintw(stdscr,LINES / 2,(COLS - 35) / 2,"Please increase your window's width");
+        }
+        std::string userNameString = userName;
+        std::string passwordString = password;
+        passwordString = sha256(passwordString);
+        loading("Loading bucket details...");
+        if (getBucket(userNameString))
+        {
+            cloudSave = getBucketDetails(userNameString);
+            if (cloudSave["hash"] == passwordString) {
+                clear();
+                *bucket = userName;
+                return 2;
+            }
+            else {
+                wattron(wrongPassword, COLOR_PAIR(2));
+                mvwprintw(wrongPassword,2,(getmaxx(wrongPassword) - 15) / 2,"Wrong Password");
+                wattroff(wrongPassword, COLOR_PAIR(2));
+            }
+        }
+        else
+        {
+            std::vector<todo> t;
+            cloudSave["hash"] = passwordString;
+            cloudSave["number"] = 0;
+            cloudSave["data"] = t;
+            createBucket(userNameString);
+            replaceBucket(userNameString, cloudSave);
+            clear();
+            *bucket = userName;
+            return 1;
+        }
+    }
+}
+void welcome(int code) {
+    WINDOW * loading = newwin(0,0,0,0);
+    clear();
+    int part = (getmaxx(stdscr) - 25) / 2;
+    int half = ((getmaxy(stdscr) - 5) / 2) - 1;
+    refresh();
+    wrefresh(loading);
+    wattron(loading,COLOR_PAIR(3));
+    mvwprintw(loading,half + 1,part,R"(  ______)");
+    mvwprintw(loading,half + 2,part,R"( /_  __/)");
+    mvwprintw(loading,half + 3,part,R"(  / /)");
+    mvwprintw(loading,half + 4,part,R"( / /)");
+    mvwprintw(loading,half + 5,part,R"(/_/)");
+    wattroff(loading,COLOR_PAIR(3));
+    wattron(loading,COLOR_PAIR(4));
+    mvwprintw(loading,half + 1,part + 7,R"()");
+    mvwprintw(loading,half + 2,part + 8,R"(___)");
+    mvwprintw(loading,half + 3,part + 5,R"( / __ \)");
+    mvwprintw(loading,half + 4,part + 5,R"(/ /_/ /)");
+    mvwprintw(loading,half + 5,part + 5,R"(\____/)");
+    wattroff(loading,COLOR_PAIR(4));
+    wattron(loading,COLOR_PAIR(2));
+    mvwprintw(loading,half + 1,part + 11,R"(       __)");
+    mvwprintw(loading,half + 2,part + 11,R"(  ____/ /)");
+    mvwprintw(loading,half + 3,part + 12,R"(/ __  /)");
+    mvwprintw(loading,half + 4,part + 11,R"(/ /_/ /)");
+    mvwprintw(loading,half + 5,part + 11,R"(\__,_/)");
+    wattroff(loading,COLOR_PAIR(2));
+    wattron(loading,COLOR_PAIR(5));
+    mvwprintw(loading,half + 1,part + 17,R"()");
+    mvwprintw(loading,half + 2,part + 20,R"(___)");
+    mvwprintw(loading,half + 3,part + 17,R"( / __ \)");
+    mvwprintw(loading,half + 4,part + 17,R"(/ /_/ /)");
+    mvwprintw(loading,half + 5,part + 17,R"(\____/)");
+    wattroff(loading,COLOR_PAIR(5));
+    if(code == 1)
+        mvwprintw(loading,getmaxy(stdscr) - 2,(getmaxx(stdscr) - 10 - curUser.size()) / 2,("Welcome, " + curUser).c_str());
+    else if(code == 2)
+        mvwprintw(loading,getmaxy(stdscr) - 2,(getmaxx(stdscr) - 15 - curUser.size()) / 2,("Welcome back, " + curUser).c_str());
+    wrefresh(loading);
+    refresh();
+    wgetch(loading);
+}
+void add_colors() {
+    init_pair(1,COLOR_GREEN,COLOR_BLACK);
+    init_color(COLOR_RED,1000,0,0);
+    init_pair(2,COLOR_RED,COLOR_BLACK);
+    init_color(COLOR_BLUE,0,0,1000);
+    init_pair(3,COLOR_BLUE,COLOR_BLACK);
+    init_color(COLOR_MAGENTA,750,0,650);
+    init_pair(4,COLOR_MAGENTA,COLOR_BLACK);
+    init_color(COLOR_YELLOW,1000,750,0);
+    init_pair(5,COLOR_YELLOW,COLOR_BLACK);
+    init_pair(6,COLOR_WHITE,COLOR_BLACK);
+}
+int main()
+{
+    // json q;
+    // todo t[30];
+    // q["name"] = "special";
+    // q["desc"] = "special";
+    // for (int i = 1; i <= 30; i++)
+    // {
+    //     t[i - 1].name = std::to_string(i);
+    //     t[i - 1].desc = std::to_string(i);
+    //     t[i - 1].time = computeTime();
+    //     t[i - 1].isComplete = false;
+    // }
+    // t[8].isComplete = true;
+    // q["data"] = t;
+    // cloudSave = q;
+    // Appending a todo
+    // todo p;
+    // p.name = "special";
+    // p.desc = "special";
+    // p.time = computeTime();
+    // p.isComplete = false;
+    // q["data"].push_back(p);
+    // appendBucket("ghost",q);
+    // json::parse("{\"Age\": 19}");
+    // std::cout << replaceBucket("ghost",q) << std::endl;
+    // std::cout << appendBucket("ghost",q);
+    initscr();
+    start_color();
+    curs_set(0);
+    keypad(stdscr,true);
+    // _write_to_file(q);
+    // try {
+    //     q = json::parse(_read_from_file());
+    //     std::cout << q["name"] << std::endl;
+    // }
+    // catch(json::parse_error &e) {
+    //     std::cout << "ERROR" << std::endl;
+    // }
+    add_colors();
+    int loggedIn = login(&curUser);
+    cloudSave = getBucketDetails(curUser);
+    localSave = json::parse(_read_from_file());
+    if(!localSave.is_null())
+        localSave = cloudSave;
+    welcome(loggedIn);
+    main_menu();
+    endwin();
+    return 0;
+}
