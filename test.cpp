@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <curses.h>
 #else
+#include <ncurses.h>
 #include <termios.h>
 #endif
 // ------------------------------------------------------------------------
