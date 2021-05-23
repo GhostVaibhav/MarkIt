@@ -7,14 +7,12 @@
 #include <vector>
 #include <curl/curl.h>
 #include <json.hpp>
-#include <color.hpp>
 #include <sha256.h>
 #ifdef _WIN32
-#include <windows.h>
 #include <unistd.h>
 #include <curses.h>
 #else
-#include <ncurses.h>
+#include <curses.h>
 #include <termios.h>
 #endif
 // ------------------------------------------------------------------------
@@ -281,12 +279,12 @@ struct curses
     keypad( stdscr, TRUE );  // (required for resizing to work on Win32a ???)
     curs_set( 0 );
 
-    #ifndef _WIN32
+    #ifdef _WIN32
     // Make the ESC key take only a little time,
     // unless the user has set a specific ESCDELAY in their environment.
-    const char* escdelay = std::getenv( "ESCDELAY" );
-    if (escdelay) ESCDELAY = std::atoi( escdelay );
-    else          ESCDELAY = 250;
+    // const char* escdelay = std::getenv( "ESCDELAY" );
+    // if (escdelay) ESCDELAY = std::atoi( escdelay );
+    // else          ESCDELAY = 250;
     #endif
   }
 
@@ -395,8 +393,13 @@ int menu(std::vector<std::string> a) {
     while(1) {
         curs_set(0);
         resize_event();
+        #ifdef _WIN32
         resize_window(title,10,getmaxx(stdscr) - 2);
         resize_window(menu,getmaxy(stdscr) - 12,getmaxx(stdscr) - 2);
+        #else
+        wresize(title,10,getmaxx(stdscr) - 2);
+        wresize(menu,getmaxy(stdscr) - 12,getmaxx(stdscr) - 2);
+        #endif
         if(getmaxx(stdscr) >= minWidth) {
             int part = (getmaxx(title) - 81) / 4;
             if(part <= 0)
@@ -492,9 +495,15 @@ void main_menu() {
         updatePP();
         curs_set(0);
         resize_event();
+        #ifdef _WIN32
         resize_window(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
         resize_window(todoUserName,10,getmaxx(stdscr)-2);
         resize_window(todoBody,getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1);
+        #else
+        wresize(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
+        wresize(todoUserName,10,getmaxx(stdscr)-2);
+        wresize(todoBody,getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1);
+        #endif
         if(getmaxx(stdscr) >= minWidth) {
             int part = (getmaxx(todoUserName) - 81) / 4;
             if(part <= 0)
@@ -669,11 +678,19 @@ int login(std::string *bucket)
         curs_set(0);
         clear();
         resize_event();
+        #ifdef _WIN32
         resize_window(userNameWindow,5,getmaxx(stdscr)-20);
         resize_window(passwordWindow,5,getmaxx(stdscr)-20);
         resize_window(title,8,getmaxx(stdscr));
         resize_window(information,3,getmaxx(stdscr));
         resize_window(wrongPassword,3,getmaxx(stdscr));
+        #else
+        wresize(userNameWindow,5,getmaxx(stdscr)-20);
+        wresize(passwordWindow,5,getmaxx(stdscr)-20);
+        wresize(title,8,getmaxx(stdscr));
+        wresize(information,3,getmaxx(stdscr));
+        wresize(wrongPassword,3,getmaxx(stdscr));
+        #endif
         part = (getmaxy(stdscr) - 18) / 4;
         if(getmaxx(stdscr) >= minWidth) {
             wclear(userNameWindow);
