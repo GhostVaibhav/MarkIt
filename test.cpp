@@ -28,6 +28,7 @@ using json = nlohmann::json;
 #define minWidth 78
 #define BORDER(win) wborder(win,ACS_VLINE,ACS_VLINE,ACS_HLINE,ACS_HLINE,ACS_ULCORNER,ACS_URCORNER,ACS_LLCORNER,ACS_LRCORNER)
 std::string curUser = "";
+std::string curUserHash = "";
 std::string PantryID = "f71b63cf-f419-4545-a4a7-22068e0bcfc8";
 std::string storageFile = "data.dat";
 std::string stateFile = "state.dat";
@@ -68,6 +69,17 @@ void _delete_file() {
 // ------------------------------------------------------------------------
 // --------------------CORE CLOUD SERVICE FUNCTIONS------------------------
 // ------------------------------------------------------------------------
+void updatePP() {
+    int allChange = localSave["data"].size() - cloudSave["data"].size();
+    if(allChange >= 0) {
+        push = allChange;
+        pull = 0;
+    }
+    else {
+        push = 0;
+        pull = -allChange;
+    }
+}
 size_t write_to_string(void *ptr, size_t size, size_t count, void *stream)
 {
     ((std::string *)stream)->append((char *)ptr, 0, size * count);
@@ -296,13 +308,16 @@ void resize_event()
 bool addTodo(WINDOW* win) {
     wclear(win);
     wrefresh(win);
+    box(win,0,0);
     todo t;
     char name[32];
     char desc[128];
-    mvwprintw(win,getmaxy(win) / 2 - 1,(getmaxx(win) - 14) / 2,"Enter title: ");
-    mvwgetnstr(win,getmaxy(win) / 2 - 1,((getmaxx(win) - 14) / 2) + 1,name,32);
-    mvwprintw(win,getmaxy(win) / 2,(getmaxx(win) - 20) / 2,"Enter description: ");
-    mvwgetnstr(win,getmaxy(win) / 2,((getmaxx(win) - 20) / 2) + 1,desc,128);
+    mvwprintw(win,getmaxy(win) / 2 - 1,10,"Enter title: ");
+    mvwgetnstr(win,getmaxy(win) / 2 - 1,24,name,32);
+    box(win,0,0);
+    wrefresh(win);
+    mvwprintw(win,getmaxy(win) / 2,10,"Enter description: ");
+    mvwgetnstr(win,getmaxy(win) / 2,30,desc,128);
     t.name = name;
     t.desc = desc;
     if(!t.name.size() || !t.desc.size())
@@ -310,12 +325,54 @@ bool addTodo(WINDOW* win) {
     t.time = computeTime();
     t.isComplete = false;
     localSave["data"].push_back(t);
+    int number = localSave["number"];
+    number++;
+    localSave["number"] = number;
     _write_to_file(localSave);
-    push++;
+    updatePP();
 }
 // ------------------------------------------------------------------------
 // ---------------------------MAIN FUNCTION--------------------------------
 // ------------------------------------------------------------------------
+bool refreshCloudSave() {
+    cloudSave = getBucketDetails(curUser);
+    localSave = json::parse(_read_from_file());
+    updatePP();
+}
+void print_stats(WINDOW *win) {
+    std::string stringPush = std::to_string(push);
+    std::string stringPull = std::to_string(pull);
+    attron(COLOR_PAIR(1));
+    mvwprintw(win,1,COLS-10-stringPull.size()-stringPush.size(),(" + " + stringPush).c_str());
+    attroff(COLOR_PAIR(1));
+    attron(COLOR_PAIR(2));
+    wprintw(win,("  - " + stringPull + " ").c_str());
+    attroff(COLOR_PAIR(2));
+}
+bool pushToCloud(WINDOW *win) {
+    cloudSave = getBucketDetails(curUser);
+    if(localSave == cloudSave)
+        return true;
+    if(replaceBucket(curUser,localSave))
+        return true;
+    refreshCloudSave();
+    print_stats(win);
+}
+bool corrupted() {
+    if(localSave["number"] != localSave["data"].size() || !localSave["data"].is_array() || localSave["hash"] != curUserHash) {
+        return true;
+    }
+    try {
+        std::vector<todo> t = localSave["data"];
+        for(todo a: t)
+            if(!a.name.size() || !a.desc.size() || !a.time.size())
+                return true;
+    }
+    catch(json::out_of_range &e) {
+        return true;
+    }
+    return false;
+}
 void printCenter(int *selected, std::vector<std::string> a, WINDOW *win) {
     int maxSize = (*max_element(a.begin(),a.end())).size();
     for(int i = 0 ; i < a.size() ; i++) {
@@ -327,16 +384,6 @@ void printCenter(int *selected, std::vector<std::string> a, WINDOW *win) {
             wattroff(win,COLOR_PAIR(1));
         }
     }
-}
-void print_stats(WINDOW *win) {
-    std::string stringPush = std::to_string(push);
-    std::string stringPull = std::to_string(pull);
-    attron(COLOR_PAIR(1));
-    mvwprintw(win,1,COLS-10-stringPull.size()-stringPush.size(),(" + " + stringPush).c_str());
-    attroff(COLOR_PAIR(1));
-    attron(COLOR_PAIR(2));
-    wprintw(win,("  - " + stringPull + " ").c_str());
-    attroff(COLOR_PAIR(2));
 }
 int menu(std::vector<std::string> a) {
     WINDOW *title = newwin(10,getmaxx(stdscr)-2,1,1);
@@ -442,6 +489,7 @@ void main_menu() {
     keypad(todoWindow,true);
     while(1) {
         std::vector<todo> temp = localSave["data"];
+        updatePP();
         curs_set(0);
         resize_event();
         resize_window(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
@@ -451,6 +499,7 @@ void main_menu() {
             int part = (getmaxx(todoUserName) - 81) / 4;
             if(part <= 0)
                 part = 1;
+            refresh();
             wclear(todoWindow);
             wclear(todoUserName);
             wclear(todoBody);
@@ -545,13 +594,18 @@ void main_menu() {
                     moveFactor--;
                 }
                 break;
-            case KEY_F(5):
-                if(menu({"1. Add a todo","2. Push all changes","3. Pull from the cloud"}) == 0) {
+            case KEY_F(5): {
+                int choice = menu({"1. Add a todo","2. Push all changes","3. Pull from the cloud","4. Refresh"});
+                if(choice == 0) {
                     bool c = addTodo(todoWindow);
-                    while(!c) {
+                    while(!c)
                         c = addTodo(todoWindow);
-                    }
                 }
+                else if(choice == 1)
+                    pushToCloud(stdscr);
+                else if(choice == 3)
+                    refreshCloudSave();
+            }
                 break;
             case KEY_F(6):
                 return;
@@ -693,6 +747,7 @@ int login(std::string *bucket)
             if (cloudSave["hash"] == passwordString) {
                 clear();
                 *bucket = userName;
+                curUserHash = passwordString;
                 return 2;
             }
             else {
@@ -811,19 +866,21 @@ int main()
     // }
     add_colors();
     int loggedIn = login(&curUser);
-    cloudSave = getBucketDetails(curUser);
+    cloudSave = getBucketDetails("vaibhavsharma");
     try {
         localSave = json::parse(_read_from_file());
     }
     catch(json::parse_error &e) {
-        localSave = cloudSave;
         _delete_file();
+        localSave = cloudSave;
+        _write_to_file(localSave);
     }
-    int allChange = localSave["data"].size() - cloudSave["data"].size();
-    if(allChange >= 0)
-        push = allChange;
-    else
-        pull = -allChange;
+    if(corrupted()) {
+        _delete_file();
+        localSave = cloudSave;
+        _write_to_file(localSave);
+    }
+    updatePP();
     welcome(loggedIn);
     main_menu();
     endwin();
