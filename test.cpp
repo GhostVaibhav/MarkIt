@@ -24,7 +24,7 @@ nlohmann::json localSave;
 #endif
 using json = nlohmann::json;
 #define minWidth 78
-#define BORDER(win) wborder(win,ACS_VLINE,ACS_VLINE,ACS_HLINE,ACS_HLINE,ACS_ULCORNER,ACS_URCORNER,ACS_LLCORNER,ACS_LRCORNER)
+#define BORDER(win) wborder(win,0,0,0,0,0,0,0,0)
 std::string curUser = "";
 std::string curUserHash = "";
 std::string PantryID = "f71b63cf-f419-4545-a4a7-22068e0bcfc8";
@@ -340,12 +340,12 @@ bool refreshCloudSave() {
 void print_stats(WINDOW *win) {
     std::string stringPush = std::to_string(push);
     std::string stringPull = std::to_string(pull);
-    attron(COLOR_PAIR(1));
+    wattron(win,COLOR_PAIR(1));
     mvwprintw(win,1,COLS-10-stringPull.size()-stringPush.size(),(" + " + stringPush).c_str());
-    attroff(COLOR_PAIR(1));
-    attron(COLOR_PAIR(2));
+    wattroff(win,COLOR_PAIR(1));
+    wattron(win,COLOR_PAIR(2));
     wprintw(win,("  - " + stringPull + " ").c_str());
-    attroff(COLOR_PAIR(2));
+    wattroff(win,COLOR_PAIR(2));
 }
 bool pushToCloud(WINDOW *win) {
     cloudSave = getBucketDetails(curUser);
@@ -547,9 +547,9 @@ void main_menu() {
             mvwprintw(todoUserName,3,3 * part + 25,("Username: " + curUser).c_str());
             mvwprintw(todoUserName,5,3 * part + 25,("Pantry ID: " + PantryID).c_str());
             int tabDiv = (getmaxx(todoWindow) - 2) / 3;
-            mvwvline(todoWindow,1,tabDiv,ACS_VLINE,1);
-            mvwvline(todoWindow,1,2 * tabDiv,ACS_VLINE,1);
-            mvwhline(todoWindow,2,1,ACS_HLINE,getmaxx(todoWindow) - 2);
+            mvwvline(todoWindow,1,tabDiv,0,1);
+            mvwvline(todoWindow,1,2 * tabDiv,0,1);
+            mvwhline(todoWindow,2,1,0,getmaxx(todoWindow) - 2);
             mvwprintw(todoWindow,1,(tabDiv - 4) / 2,"Name");
             mvwprintw(todoWindow,1,((3 * tabDiv - 12) / 2) + 1,"Description");
             mvwprintw(todoWindow,1,((5 * tabDiv - 13) / 2) + 2,"Created Time");
@@ -561,6 +561,8 @@ void main_menu() {
                     else
                         wattron(todoBody,COLOR_PAIR(1));
                 }
+                if(!has_colors())
+                    wattron(todoBody,A_REVERSE);
                 mvwprintw(todoBody,i + moveFactor,(tabDiv - 4) / 2,(temp.at(i).name).c_str());
                 mvwprintw(todoBody,i + moveFactor,((3 * tabDiv - temp.at(i).desc.size()) / 2) + 1,(temp.at(i).desc).c_str());
                 mvwprintw(todoBody,i + moveFactor,((5 * tabDiv - temp.at(i).time.size()) / 2) + 2,(temp.at(i).time).c_str());
@@ -570,6 +572,8 @@ void main_menu() {
                     else
                         wattroff(todoBody,COLOR_PAIR(1));
                 }
+                if(!has_colors())
+                    wattroff(todoBody,A_REVERSE);
                 BORDER(todoWindow);
             }
             refresh();
