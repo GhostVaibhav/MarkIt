@@ -332,7 +332,9 @@ bool addTodo(WINDOW* win) {
 // ------------------------------------------------------------------------
 // ---------------------------MAIN FUNCTION--------------------------------
 // ------------------------------------------------------------------------
+void loading(std::string);
 bool refreshCloudSave() {
+    loading("Refreshing");
     cloudSave = getBucketDetails(curUser);
     localSave = json::parse(_read_from_file());
     updatePP();
@@ -348,6 +350,7 @@ void print_stats(WINDOW *win) {
     wattroff(win,COLOR_PAIR(2));
 }
 bool pushToCloud(WINDOW *win) {
+    loading("Pushing to cloud");
     cloudSave = getBucketDetails(curUser);
     if(localSave == cloudSave)
         return true;
@@ -488,34 +491,39 @@ void main_menu() {
     WINDOW *todoUserName = newwin(10,getmaxx(stdscr)-2,1,1);
     WINDOW *todoWindow = newwin(getmaxy(stdscr) - 12,getmaxx(stdscr)-2,11,1);
     WINDOW *todoBody = newwin(getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1,getmaxy(todoUserName) + 4,1);
-    int c,pointerIndex = 0,moveFactor = 0,bottomT = 0,topT = getmaxy(todoBody);
+    int c = KEY_RESIZE,pointerIndex = 0,moveFactor = 0,bottomT = 0,topT = getmaxy(todoBody);
     keypad(todoWindow,true);
     while(1) {
         std::vector<todo> temp = localSave["data"];
+        noecho();
         updatePP();
         curs_set(0);
-        resize_event();
-        #ifdef _WIN32
-        resize_window(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
-        resize_window(todoUserName,10,getmaxx(stdscr)-2);
-        resize_window(todoBody,getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1);
-        #else
-        wresize(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
-        wresize(todoUserName,10,getmaxx(stdscr)-2);
-        wresize(todoBody,getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1);
-        #endif
+        if(c == KEY_RESIZE) {
+            resize_event();
+            #ifdef _WIN32
+            resize_window(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
+            resize_window(todoUserName,10,getmaxx(stdscr)-2);
+            resize_window(todoBody,getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1);
+            #else
+            wresize(todoWindow,getmaxy(stdscr)-12,getmaxx(stdscr)-2);
+            wresize(todoUserName,10,getmaxx(stdscr)-2);
+            wresize(todoBody,getmaxy(todoWindow) - 4,getmaxx(todoWindow) - 1);
+            #endif
+        }
         if(getmaxx(stdscr) >= minWidth) {
             int part = (getmaxx(todoUserName) - 81) / 4;
             if(part <= 0)
                 part = 1;
-            refresh();
-            wclear(todoWindow);
-            wclear(todoUserName);
+            if(c == KEY_RESIZE) {
+                wclear(todoWindow);
+                wclear(todoUserName);
+                wrefresh(todoWindow);
+                box(todoWindow,0,0);
+                box(todoUserName,0,0);
+            }
             wclear(todoBody);
-            wrefresh(todoWindow);
             wrefresh(todoBody);
-            box(todoWindow,0,0);
-            box(todoUserName,0,0);
+            refresh();
             wattron(todoUserName,COLOR_PAIR(3));
             mvwprintw(todoUserName,2,part,R"(  ______)");
             mvwprintw(todoUserName,3,part,R"( /_  __/)");
@@ -563,7 +571,7 @@ void main_menu() {
                 }
                 if(!has_colors())
                     wattron(todoBody,A_REVERSE);
-                mvwprintw(todoBody,i + moveFactor,(tabDiv - 4) / 2,(temp.at(i).name).c_str());
+                mvwprintw(todoBody,i + moveFactor,(tabDiv - temp.at(i).name.size()) / 2,(temp.at(i).name).c_str());
                 mvwprintw(todoBody,i + moveFactor,((3 * tabDiv - temp.at(i).desc.size()) / 2) + 1,(temp.at(i).desc).c_str());
                 mvwprintw(todoBody,i + moveFactor,((5 * tabDiv - temp.at(i).time.size()) / 2) + 2,(temp.at(i).time).c_str());
                 if(pointerIndex == i) {
@@ -610,12 +618,17 @@ void main_menu() {
             case KEY_F(5): {
                 int choice = menu({"1. Add a todo","2. Push all changes","3. Pull from the cloud","4. Refresh"});
                 if(choice == 0) {
+                    echo();
                     bool c = addTodo(todoWindow);
                     while(!c)
                         c = addTodo(todoWindow);
+                    noecho();
                 }
                 else if(choice == 1)
                     pushToCloud(stdscr);
+                else if(choice == 2) {
+
+                }
                 else if(choice == 3)
                     refreshCloudSave();
             }
@@ -623,10 +636,8 @@ void main_menu() {
             case KEY_F(6):
                 return;
             default:
-                refresh();
                 break;
         }
-        refresh();
     }
 }
 void loading(std::string loadText) {
