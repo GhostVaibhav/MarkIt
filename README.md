@@ -24,37 +24,37 @@ You can simply use the libraries and the header files which come preinstalled in
 You can simply get the libraries using the **sudo apt install** command in **Debian Linux**, **Ubuntu**.
 
 Just do:
-```
+```bash
 sudo apt install g++
 sudo apt install libcurl4-openssl-dev
 sudo apt-get install libncurses5-dev libncursesw5-dev
 ```
 Or in **MacOS**, first install [**Homebrew**](https://brew.sh/) and then do:
-```
+```bash
 brew install g++
 brew install make
 brew install curl
 brew install ncurses
 ```
 Or if you are using **Red Hat linux**, **CentOS** or **Fedora Linux 21 or older** do:
-```
+```bash
 sudo yum group install "Development Tools"
 sudo yum install libcurl
 sudo yum install ncurses-devel
 ```
 Or if you are using **Fedora Linux 22.x+** do:
-```
+```bash
 sudo dnf install gcc-c++
 sudo yum install libcurl
 sudo dnf install ncurses-devel
 ```
 Or if you are using **Arch linux** or **Manjaro** do:
-```
+```bash
 sudo pacman -Sy gcc
 sudo pacman -S curl
 sudo pacman -S ncurses
 ```
-The header files are platform-independent and hence the above commands will install/update your libraries.
+The header files are **platform-independent** and hence the above commands will **install/update** your libraries.
 
 This will setup the environment required for building the project.
 
