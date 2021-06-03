@@ -13,10 +13,10 @@
 * [PDCurses](https://github.com/wmcbrine/PDCurses) for Windows
 * ncurses for UNIX-based system
 ## **Building the project**
-### **On Windows** <img src="https://simpleicons.org/icons/windows.svg"  width="12"/>
+### **On Windows** <img src="https://simpleicons.org/icons/windows.svg" style="filter:invert(); fill=#ffffff;" width="12"/>
 You can simply use the libraries and the header files which come preinstalled in the ```include``` and the ```lib``` folder. However, if you wish to build them yourself, you can have a look at the repository's page mentioned above and build them on your own.
 > Note: All the libraries which come preinstalled are compiled as **x86** for maximal compatibility.
-### **On UNIX-based systems** <img src="https://simpleicons.org/icons/macos.svg"  width="12"/> <img src="https://simpleicons.org/icons/ubuntu.svg"  width="12"/> <img src="https://simpleicons.org/icons/archlinux.svg"  width="12"/> <img src="https://simpleicons.org/icons/manjaro.svg"  width="12"/> <img src="https://simpleicons.org/icons/debian.svg"  width="12"/> <img src="https://simpleicons.org/icons/centos.svg"  width="12"/> <img src="https://simpleicons.org/icons/redhat.svg"  width="12"/> <img src="https://simpleicons.org/icons/fedora.svg"  width="12"/>
+### **On UNIX-based systems** <img src="https://simpleicons.org/icons/macos.svg" style="filter:invert(); fill=#ffffff;" width="12"/> <img src="https://simpleicons.org/icons/ubuntu.svg" style="filter:invert(); fill=#ffffff;" width="12"/> <img src="https://simpleicons.org/icons/archlinux.svg" style="filter:invert(); fill=#ffffff;" width="12"/> <img src="https://simpleicons.org/icons/manjaro.svg" style="filter:invert(); fill=#ffffff;" width="12"/> <img src="https://simpleicons.org/icons/debian.svg" style="filter:invert(); fill=#ffffff;" width="12"/> <img src="https://simpleicons.org/icons/centos.svg" style="filter:invert(); fill=#ffffff;" width="12"/> <img src="https://simpleicons.org/icons/redhat.svg" style="filter:invert(); fill=#ffffff;" width="12"/> <img src="https://simpleicons.org/icons/fedora.svg" style="filter:invert(); fill=#ffffff;" width="12"/>
 You can simply get the libraries using the **sudo apt install** command in Debian Linux, Ubuntu.
 
 Just do:
