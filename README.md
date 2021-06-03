@@ -6,18 +6,20 @@
 </h4>
 &nbsp;
 
-## **Dependencies**
+<h2 align="center"> <b> Dependencies </b> </h2>
+
 ### This project uses:
 * [libcurl](https://github.com/curl/curl)
 * [JSON for Modern C++](https://github.com/nlohmann/json)
 * [PDCurses](https://github.com/wmcbrine/PDCurses) for Windows
 * ncurses for UNIX-based system
-## **Building the project**
+<h2 align="center"> <b> Building the project </b> </h2>
+
+## **1. Setting the environment**
 ### **On Windows**
 You can simply use the libraries and the header files which come preinstalled in the ```include``` and the ```lib``` folder. However, if you wish to build them yourself, you can have a look at the repository's page mentioned above and build them on your own.
 > Note: All the libraries which come preinstalled are compiled as **x86** for maximal compatibility.
 ### **On UNIX-based systems**
-- ### **Setting the environment**
 
 You can simply get the libraries using the **sudo apt install** command in **Debian Linux**, **Ubuntu**.
 
@@ -56,7 +58,7 @@ The header files are platform-independent and hence the above commands will inst
 
 This will setup the environment required for building the project.
 
-- ### **Compiling the required files for building project**
+## **2. Compiling the required files for building project**
 
 After this, compile ```build.cpp``` by launching **terminal in the same folder**:
 ```powershell
@@ -78,7 +80,7 @@ You can know the functionality of all files in the [**FILE_STRUCTURE**]() file.
 
 &nbsp;
 
-<h1 align="center"><b> Licenses </b> </h1>
+<h2 align="center"><b> Licenses </b> </h2>
 
 ## **Todo license**
 Check the [**LICENSE**](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
