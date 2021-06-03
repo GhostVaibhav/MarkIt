@@ -1,6 +1,6 @@
 <h1 align="center">
 <b> Todo </b>
 </h1>
-<h3 align="center">
-<b> A cross-platform TODO app in teminal with simple interface and lightning fast speed </b>
-</h3>
+<h4 align="center">
+<b> A cross-platform TODO app in teminal with simple interface and lightning fast speed for everyone </b>
+</h4>
