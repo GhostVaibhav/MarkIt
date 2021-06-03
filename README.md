@@ -75,11 +75,10 @@ will compile the **test.cpp** while linking it with the required libraries and i
 
 You can know the functionality of all files in the [**FILE_STRUCTURE**]() file.
 &nbsp;
-<hr>
 
-<h1 align="center"><b> Licenses </b></h1>
+&nbsp;
 
-<hr>
+<h1 align="center"><b> Licenses </b> </h1>
 
 ## **Todo license**
 Check the [**LICENSE**](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
