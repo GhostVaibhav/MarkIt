@@ -17,7 +17,9 @@
 You can simply use the libraries and the header files which come preinstalled in the ```include``` and the ```lib``` folder. However, if you wish to build them yourself, you can have a look at the repository's page mentioned above and build them on your own.
 > Note: All the libraries which come preinstalled are compiled as **x86** for maximal compatibility.
 ### **On UNIX-based systems**
-You can simply get the libraries using the **sudo apt install** command in Debian Linux, Ubuntu.
+- ### **Setting the environment**
+
+You can simply get the libraries using the **sudo apt install** command in **Debian Linux**, **Ubuntu**.
 
 Just do:
 ```
@@ -25,7 +27,7 @@ sudo apt install g++
 sudo apt install libcurl4-openssl-dev
 sudo apt-get install libncurses5-dev libncursesw5-dev
 ```
-Or in M**acOS**, first install [Homebrew](https://brew.sh/) and then do:
+Or in **MacOS**, first install [**Homebrew**](https://brew.sh/) and then do:
 ```
 brew install g++
 brew install make
@@ -51,8 +53,36 @@ sudo pacman -S curl
 sudo pacman -S ncurses
 ```
 The header files are platform-independent and hence the above commands will install/update your libraries.
+
+This will setup the environment required for building the project.
+
+- ### **Compiling the required files for building project**
+
+After this, compile ```build.cpp``` by launching **terminal in the same folder**:
+```powershell
+g++ build.cpp -o build
+```
+You can run the ```build``` file with the file to be built i.e.:
+### In Windows use:
+```bash
+build test
+```
+### In UNIX-based systems use:
+```bash
+./build test
+```
+will compile the **test.cpp** while linking it with the required libraries and including the required header files.
+
+You can know the functionality of all files in the [**FILE_STRUCTURE**]() file.
+&nbsp;
+<hr>
+
+<h1 align="center"><b> Licenses </b></h1>
+
+<hr>
+
 ## **Todo license**
-Check the [LICENSE](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
+Check the [**LICENSE**](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
 ## **The curl license**
 Copyright &copy; 1996 - 2021, Daniel Stenberg, [daniel@haxx.se](mailto:daniel@haxx.se), and many contributors, see the THANKS file.
 
