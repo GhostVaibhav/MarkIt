@@ -6,6 +6,26 @@
 </h4>
 &nbsp;
 
+## **Index**
+1. [Dependencies](https://github.com/GhostVaibhav/Todo#--dependencies--)
+2. [Building the project](https://github.com/GhostVaibhav/Todo#--building-the-project--)
+
+    1. [Setting the environment](https://github.com/GhostVaibhav/Todo#1-setting-the-environment)
+
+        1. [On Windows](https://github.com/GhostVaibhav/Todo#on-windows)
+        2. [On UNIX-based systems](https://github.com/GhostVaibhav/Todo#on-unix-based-systems)
+    2. [Compiling the required files for building project](https://github.com/GhostVaibhav/Todo#2-compiling-the-required-files-for-building-project)
+
+        1. [In Windows](https://github.com/GhostVaibhav/Todo#in-windows-use)
+        2. [In UNIX-based systems](https://github.com/GhostVaibhav/Todo#in-unix-based-systems-use)
+3. [Licenses](https://github.com/GhostVaibhav/Todo#-licenses--)
+
+    1. [Todo license](https://github.com/GhostVaibhav/Todo#todo-license)
+    2. [The curl license](https://github.com/GhostVaibhav/Todo#the-curl-license)
+    3. [JSON for Modern C++ license](https://github.com/GhostVaibhav/Todo#json-for-modern-c-license)
+    4. [PDCurses](https://github.com/GhostVaibhav/Todo#pdcurses)
+    5. [Ncurses license](https://github.com/GhostVaibhav/Todo#ncurses-license)
+
 <h2 align="center"> <b> Dependencies </b> </h2>
 
 ### This project uses:
