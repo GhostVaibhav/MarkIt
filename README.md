@@ -54,7 +54,7 @@ The header files are platform-independent and hence the above commands will inst
 ## **Todo license**
 Check the [LICENSE](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
 ## **The curl license**
-Copyright (c) 1996 - 2021, Daniel Stenberg, [daniel@haxx.se](mailto:daniel@haxx.se), and many contributors, see the THANKS file.
+Copyright &copy; 1996 - 2021, Daniel Stenberg, [daniel@haxx.se](mailto:daniel@haxx.se), and many contributors, see the THANKS file.
 
 All rights reserved.
 
@@ -65,7 +65,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization of the copyright holder.
 
 ## **JSON for Modern C++ license**
-Copyright (c) 2013-2021 Niels Lohmann
+Copyright &copy; 2013-2021 Niels Lohmann
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -89,9 +89,9 @@ SOFTWARE.
 Special thanks to the maintainer of the repository William McBrine [wmcbrine@gmail.com](mailto:wmcbrine@gmail.com) and Chris Szurgot [szurgot@itribe.net](mailto:szurgot@itribe.net) for porting it to the Windows console.
 
 ## **Ncurses license**
-Copyright (c) 2018-2019,2020 Thomas E. Dickey
+Copyright &copy; 2018-2019,2020 Thomas E. Dickey
 
-Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.
+Copyright &copy; 1998-2016,2017 Free Software Foundation, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, distribute with modifications sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:                
                                          
