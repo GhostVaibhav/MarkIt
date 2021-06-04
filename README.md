@@ -86,7 +86,7 @@ This will setup the environment required for building the project.
 
 ## **2. Compiling the required files for building project**
 
-After this, compile ```build.cpp``` by launching **terminal in the same folder**:
+After this, compile [**```build.cpp```**](https://github.com/GhostVaibhav/Todo/blob/master/build.cpp) by launching **terminal in the same folder**:
 ```powershell
 g++ build.cpp -o build
 ```
