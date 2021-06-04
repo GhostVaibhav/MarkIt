@@ -90,7 +90,7 @@ After this, compile [**```build.cpp```**](https://github.com/GhostVaibhav/Todo/b
 ```powershell
 g++ build.cpp -o build
 ```
-You can run the ```build``` file with the file to be built i.e.:
+You can run the **```build```** file with the file to be built i.e.:
 ### In Windows use:
 ```bash
 build test
@@ -99,7 +99,7 @@ build test
 ```bash
 ./build test
 ```
-will compile the **test.cpp** while linking it with the required libraries and including the required header files.
+will compile the [**```test.cpp```**](https://github.com/GhostVaibhav/Todo/blob/master/test.cpp) while linking it with the required libraries and including the required header files.
 
 You can know the functionality of all files in the [**FILE_STRUCTURE**]() file.
 &nbsp;
