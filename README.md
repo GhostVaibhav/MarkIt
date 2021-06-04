@@ -7,6 +7,9 @@
 &nbsp;
 
 ## **Index**
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b4a347d17e8f4831839b9ace8d3ef85c)](https://app.codacy.com/gh/GhostVaibhav/Todo?utm_source=github.com&utm_medium=referral&utm_content=GhostVaibhav/Todo&utm_campaign=Badge_Grade_Settings)
+
 - [Dependencies](https://github.com/GhostVaibhav/Todo#--dependencies--)
 - [Building the project](https://github.com/GhostVaibhav/Todo#--building-the-project--)
     - [Setting the environment](https://github.com/GhostVaibhav/Todo#1-setting-the-environment)
