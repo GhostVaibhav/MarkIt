@@ -6,6 +6,7 @@
 </h4>
 &nbsp;
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ff29f2d480744511ada59ea48fbcfc0b)](https://www.codacy.com/gh/GhostVaibhav/Todo/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=GhostVaibhav/Todo&amp;utm_campaign=Badge_Grade)
 ## **Index**
 - [Dependencies](https://github.com/GhostVaibhav/Todo#--dependencies--)
 - [Building the project](https://github.com/GhostVaibhav/Todo#--building-the-project--)
