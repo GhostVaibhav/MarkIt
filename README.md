@@ -11,6 +11,8 @@
 2. [Building the project](https://github.com/GhostVaibhav/Todo#--building-the-project--)
     1. [Setting the environment](https://github.com/GhostVaibhav/Todo#1-setting-the-environment)
         1. [On Windows](https://github.com/GhostVaibhav/Todo#on-windows)
+            1. [Building automatically]()
+            2. [Building manually]()
         2. [On UNIX-based systems](https://github.com/GhostVaibhav/Todo#on-unix-based-systems)
     2. [Compiling the required files for building project](https://github.com/GhostVaibhav/Todo#2-compiling-the-required-files-for-building-project)
         1. [In Windows](https://github.com/GhostVaibhav/Todo#in-windows-use)
@@ -25,7 +27,7 @@
 <h2 align="center"> <b> Dependencies </b> </h2>
 
 ### This project uses:
-* [libcurl](https://github.com/curl/curl)
+* [curl](https://github.com/curl/curl)
 * [JSON for Modern C++](https://github.com/nlohmann/json)
 * [PDCurses](https://github.com/wmcbrine/PDCurses) for Windows
 * ncurses for UNIX-based system
@@ -33,8 +35,16 @@
 
 ## **1. Setting the environment**
 ### **On Windows**
-You can simply use the libraries and the header files which come preinstalled in the ```include``` and the ```lib``` folder. However, if you wish to build them yourself, you can have a look at the repository's page mentioned above and build them on your own.
-> Note: All the libraries which come preinstalled are compiled as **x86** for maximal compatibility.
+You can simply use the libraries and the header files which come preinstalled in the **```include```** and the **```lib```** folder. However, if you wish to build them yourself, you can have a look at the repository's page mentioned above and build them on your own.
+> Note: All the libraries which come preinstalled are compiled as **x86** for maximum compatibility.
+- ### **Building automatically**:
+You can automatically build the libraries if you want by just executing [**```prereq.bat```**](https://github.com/GhostVaibhav/Todo/blob/master/prereq.bat). It will download the latest version of all libraries and build it using **Visual Studio**.
+> Note: The script runs on two tools: **Git** and **Visual Studio** (optionally **MinGW**).
+
+> Note: For PDCurses, you can build it through **MinGW** or **Visual Studio**, you will be prompted to enter the choice during the build process.
+- ### **Building manually**:
+You can manually build and install all the libraries by visiting their Github pages and following their build rules.
+> Note: For building most of the libraries you will be required to install **Visual Studio**.
 ### **On UNIX-based systems**
 
 You can simply get the libraries using the **sudo apt install** command in **Debian Linux**, **Ubuntu**.
