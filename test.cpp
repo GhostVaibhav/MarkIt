@@ -266,56 +266,53 @@ std::string computeTime()
 // ------------------------------------------------------------------------
 struct curses
 {
-  curses()
-  {
-    // Win32a PDCurses -- make window resizable
-    ttytype[0] = 25;                  // min  25 lines
-    ttytype[1] = (unsigned char)255;  // max 255 lines
-    ttytype[2] = 80;                  // min  80 columns
-    ttytype[3] = (unsigned char)255;  // max 255 columns
+    curses()
+    {
+        // Win32a PDCurses -- make window resizable
+        ttytype[0] = 25;                  // min  25 lines
+        ttytype[1] = (unsigned char)255;  // max 255 lines
+        ttytype[2] = 80;                  // min  80 columns
+        ttytype[3] = (unsigned char)255;  // max 255 columns
+        initscr();
+        cbreak();
+        keypad( stdscr, TRUE );  // (required for resizing to work on Win32a ???)
+        curs_set( 0 );
+        #ifdef _WIN32
+        // Make the ESC key take only a little time,
+        // unless the user has set a specific ESCDELAY in their environment.
+        // const char* escdelay = std::getenv( "ESCDELAY" );
+        // if (escdelay) ESCDELAY = std::atoi( escdelay );
+        // else          ESCDELAY = 250;
+        #endif
+    }
 
-    initscr();
-    cbreak();
-    keypad( stdscr, TRUE );  // (required for resizing to work on Win32a ???)
-    curs_set( 0 );
-
-    #ifdef _WIN32
-    // Make the ESC key take only a little time,
-    // unless the user has set a specific ESCDELAY in their environment.
-    // const char* escdelay = std::getenv( "ESCDELAY" );
-    // if (escdelay) ESCDELAY = std::atoi( escdelay );
-    // else          ESCDELAY = 250;
-    #endif
-  }
-
- ~curses()
-  {
-    endwin();
-  }
+    ~curses()
+    {
+        endwin();
+    }
 };
 
-curses _;
 void resize_event()
 {
-  int w, h;
-  resize_term( 0, 0 );
-  getmaxyx( stdscr, h, w );
-  clear();
-  BORDER(stdscr);
+    int w, h;
+    resize_term( 0, 0 );
+    getmaxyx( stdscr, h, w );
+    clear();
+    BORDER(stdscr);
 }
 bool addTodo(WINDOW* win) {
     wclear(win);
     wrefresh(win);
     box(win,0,0);
     todo t;
-    char name[32];
-    char desc[128];
+    char name[64];
+    char desc[256];
     mvwprintw(win,getmaxy(win) / 2 - 1,10,"Enter title: ");
-    mvwgetnstr(win,getmaxy(win) / 2 - 1,24,name,32);
+    mvwgetnstr(win,getmaxy(win) / 2 - 1,24,name,63);
     box(win,0,0);
     wrefresh(win);
     mvwprintw(win,getmaxy(win) / 2,10,"Enter description: ");
-    mvwgetnstr(win,getmaxy(win) / 2,30,desc,128);
+    mvwgetnstr(win,getmaxy(win) / 2,30,desc,255);
     t.name = name;
     t.desc = desc;
     if(!t.name.size() || !t.desc.size())
@@ -349,15 +346,31 @@ void print_stats(WINDOW *win) {
     wprintw(win,("  - " + stringPull + " ").c_str());
     wattroff(win,COLOR_PAIR(2));
 }
-bool pushToCloud(WINDOW *win) {
-    loading("Pushing to cloud");
+bool pullFromCloud(WINDOW *win) {
+    loading("Pulling from cloud");
     cloudSave = getBucketDetails(curUser);
     if(localSave == cloudSave)
         return true;
-    if(replaceBucket(curUser,localSave))
-        return true;
-    refreshCloudSave();
-    print_stats(win);
+    json j = localSave.diff(localSave,cloudSave);
+    if(!j.is_null())
+        return false;
+    localSave = cloudSave;
+    return true;
+}
+void pushToCloud(WINDOW *win) {
+    loading("Pushing to cloud");
+    cloudSave = getBucketDetails(curUser);
+    localSave = json::parse(_read_from_file());
+    if(localSave == cloudSave) {
+        updatePP();
+        print_stats(win);
+        return;
+    }
+    if(replaceBucket(curUser,localSave)) {
+        updatePP();
+        print_stats(win);
+        return;
+    }
 }
 bool corrupted() {
     if(localSave["number"] != localSave["data"].size() || !localSave["data"].is_array() || localSave["hash"] != curUserHash) {
@@ -571,11 +584,11 @@ void main_menu() {
                 }
                 if(!has_colors())
                     wattron(todoBody,A_REVERSE);
-                mvwprintw(todoBody,i + moveFactor,(tabDiv - temp.at(i).name.size()) / 2,(temp.at(i).name).c_str());
-                mvwprintw(todoBody,i + moveFactor,((3 * tabDiv - temp.at(i).desc.size()) / 2) + 1,(temp.at(i).desc).c_str());
-                mvwprintw(todoBody,i + moveFactor,((5 * tabDiv - temp.at(i).time.size()) / 2) + 2,(temp.at(i).time).c_str());
+                mvwprintw(todoBody,i + moveFactor,(tabDiv - temp[i].name.size()) / 2,(temp[i].name).c_str());
+                mvwprintw(todoBody,i + moveFactor,((3 * tabDiv - temp[i].desc.size()) / 2) + 1,(temp[i].desc).c_str());
+                mvwprintw(todoBody,i + moveFactor,((5 * tabDiv - temp[i].time.size()) / 2) + 2,(temp[i].time).c_str());
                 if(pointerIndex == i) {
-                    if(temp.at(i).isComplete)
+                    if(temp[i].isComplete)
                         wattroff(todoBody,COLOR_PAIR(2));
                     else
                         wattroff(todoBody,COLOR_PAIR(1));
@@ -616,22 +629,23 @@ void main_menu() {
                 }
                 break;
             case KEY_F(5): {
+                refresh();
+                echo();
                 int choice = menu({"1. Add a todo","2. Push all changes","3. Pull from the cloud","4. Refresh"});
                 if(choice == 0) {
-                    echo();
                     bool c = addTodo(todoWindow);
                     while(!c)
                         c = addTodo(todoWindow);
-                    noecho();
                 }
                 else if(choice == 1)
                     pushToCloud(stdscr);
-                else if(choice == 2) {
-
-                }
+                else if(choice == 2)
+                    pullFromCloud(stdscr);
                 else if(choice == 3)
                     refreshCloudSave();
             }
+                noecho();
+                c = KEY_RESIZE;
                 break;
             case KEY_F(6):
                 return;
@@ -859,6 +873,12 @@ void add_colors() {
 }
 int main()
 {
+    std::string title = "Todo";
+    #ifdef _WIN32
+    SetConsoleTitle(title.c_str());
+    #else
+    std::cout << "\033]0;" << title << "\007";
+    #endif
     // json q;
     // todo t[30];
     // q["name"] = "special";
@@ -898,7 +918,6 @@ int main()
     // }
     add_colors();
     int loggedIn = login(&curUser);
-    cloudSave = getBucketDetails("vaibhavsharma");
     try {
         localSave = json::parse(_read_from_file());
     }
