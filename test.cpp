@@ -9,7 +9,8 @@
 #include <curl/curl.h> // For using Curl
 #include <json.hpp>    // For using nlohmann::json
 #include <sha256.h>    // For using SHA-256 algorithm
-#include <memory>
+#include <memory>      // For using unique pointer
+#include <cstdio>
 #ifdef _WIN32
 #include <curses.h> // For using PDCurses on Windows platform
 #else
@@ -364,6 +365,23 @@ bool addTodo(WINDOW *win)
     localSave["number"] = number;
     _write_to_file(localSave);
     updatePP();
+}
+
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    #ifdef _WIN32
+    std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
+    #else
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    #endif
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
 }
 
 // ------------------------------------------------------------------------
@@ -896,8 +914,9 @@ int login(std::string *bucket)
         }
         catch (const char *err)
         {
+            std::string a = err;
             wattron(wrongPassword, COLOR_PAIR(2));
-            mvwprintw(wrongPassword, 2, (getmaxx(wrongPassword) - strlen(err)) / 2, err);
+            mvwprintw(wrongPassword, 2, (getmaxx(wrongPassword) - a.size()) / 2, a.c_str());
             wattroff(wrongPassword, COLOR_PAIR(2));
         }
     }
