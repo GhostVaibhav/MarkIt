@@ -116,7 +116,7 @@ size_t write_to_string(void *ptr, size_t size, size_t count, void *stream)
     return size * count;
 }
 
-bool getBucket(const std::string bucketName)
+bool getBucket(const std::string &bucketName)
 {
     CURL *curl;
     CURLcode res;
@@ -148,7 +148,7 @@ bool getBucket(const std::string bucketName)
         return true;
 }
 
-int createBucket(const std::string bucketName)
+int createBucket(const std::string &bucketName)
 {
     std::string resp;
     CURL *curl;
@@ -175,7 +175,7 @@ int createBucket(const std::string bucketName)
     return (int)res;
 }
 
-bool replaceBucket(const std::string bucketName, const json bucket)
+bool replaceBucket(const std::string &bucketName, const json &bucket)
 {
     if (!getBucket(bucketName))
         return false;
@@ -205,7 +205,7 @@ bool replaceBucket(const std::string bucketName, const json bucket)
     return true;
 }
 
-bool deleteBucket(const std::string bucketName)
+bool deleteBucket(const std::string &bucketName)
 {
     CURL *curl;
     CURLcode res;
@@ -235,7 +235,7 @@ bool deleteBucket(const std::string bucketName)
         return true;
 }
 
-json getBucketDetails(const std::string bucketName)
+json getBucketDetails(const std::string &bucketName)
 {
     CURL *curl;
     CURLcode res;
@@ -266,7 +266,7 @@ json getBucketDetails(const std::string bucketName)
     return temp;
 }
 
-bool appendBucket(const std::string bucketName, const json patch)
+bool appendBucket(const std::string &bucketName, const json &patch)
 {
     CURL *curl;
     CURLcode res;
