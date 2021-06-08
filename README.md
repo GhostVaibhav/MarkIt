@@ -10,16 +10,24 @@
 ## **Index**
 
 - [Dependencies](https://github.com/GhostVaibhav/Todo#--dependencies--)
+
 - [Building the project](https://github.com/GhostVaibhav/Todo#--building-the-project--)
+  
   - [Setting the environment](https://github.com/GhostVaibhav/Todo#1-setting-the-environment)
+
     - [On Windows](https://github.com/GhostVaibhav/Todo#on-windows)
       - [Building automatically](https://github.com/GhostVaibhav/Todo#building-automatically)
       - [Building manually](https://github.com/GhostVaibhav/Todo#building-manually)
+
     - [On UNIX-based systems](https://github.com/GhostVaibhav/Todo#on-unix-based-systems)
+  
   - [Compiling the required files for building project](https://github.com/GhostVaibhav/Todo#2-compiling-the-required-files-for-building-project)
+    
     - [In Windows](https://github.com/GhostVaibhav/Todo#in-windows-use)
     - [In UNIX-based systems](https://github.com/GhostVaibhav/Todo#in-unix-based-systems-use)
+
 - [Licenses](https://github.com/GhostVaibhav/Todo#-licenses--)
+  
   - [Todo license](https://github.com/GhostVaibhav/Todo#todo-license)
   - [The curl license](https://github.com/GhostVaibhav/Todo#the-curl-license)
   - [JSON for Modern C++ license](https://github.com/GhostVaibhav/Todo#json-for-modern-c-license)
