@@ -45,12 +45,12 @@
 ### **On Windows**
 You can simply use the libraries and the header files which come preinstalled in the **```include```** and the **```lib```** folder. However, if you wish to build them yourself, you can have a look at the repository's page mentioned above and build them on your own.
 > Note: All the libraries which come preinstalled are compiled as **x86** for maximum compatibility.
-- ### **Building automatically**
+-  ### **Building automatically**
 You can automatically build the libraries if you want by just executing [**```prereq.bat```**](https://github.com/GhostVaibhav/Todo/blob/master/prereq.bat). It will download the latest version of all libraries and build it using **Visual Studio**.
 > Note: The script runs on two tools: **Git** and **Visual Studio** (optionally **MinGW**).
 
 > Note: For PDCurses, you can build it through **MinGW** or **Visual Studio**, you will be prompted to enter the choice during the build process.
-- ### **Building manually**
+-  ### **Building manually**
 You can manually build and install all the libraries by visiting their Github pages and following their build rules.
 > Note: For building most of the libraries you will be required to install **Visual Studio**.
 ### **On UNIX-based systems**
