@@ -53,7 +53,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: artemnovichkov/action-homebrew@master
-    - name: Installing HomeBrew
     - name: Installing prerequisites
       run: |
         brew install g++
