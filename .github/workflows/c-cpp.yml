@@ -1,0 +1,67 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Getting prerequisites
+      run: |
+        sudo apt install g++
+        sudo apt install libcurl4-openssl-dev
+        sudo apt-get install libncurses5-dev libncursesw5-dev
+    - name: Building the build file
+      run: |
+        g++ build.cpp -o build
+    - name: Compiling and linking
+      run: |
+        ./build test
+        
+        
+  build-windows:
+  
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Getting prerequisites for building on MinGW
+      run: |
+        prereq.bat 1
+    - name: Getting prerequisites for building on Visual Studio
+      run: |
+        prereq.bat 2
+    - name: Building the build file
+      run: |
+        g++ build.cpp -o build
+    - name: Compiling and linking
+      run: |
+        build test
+  
+  build-macos:
+  
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Installing HomeBrew
+      run: actions/setup-homebrew
+    - name: Installing prerequisites
+      run: |
+        brew install g++
+        brew install make
+        brew install curl
+        brew install ncurses
+    - name: Building the build file
+      run: |
+        g++ build.cpp -o build
+    - name: Compiling and linking
+      run: |
+        ./build test
