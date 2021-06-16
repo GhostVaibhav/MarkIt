@@ -18,8 +18,13 @@ int main(int argc,char* argv[]) {
         cmd = "g++ -Iinclude -g -w -c " + fileName + ".cpp";
         system(cmd.c_str());
         if(!exist("test.o")) {
+            #ifdef __APPLE__
+            cout << "- Build Failed - Debug\n";
+            cout << "- Reason: Compilation Error\n";
+            #else
             cout << "\u001b[31m- Build Failed - Debug\u001b[0m\n";
             cout << "\u001b[31m- Reason: Compilation Error\u001b[0m\n";
+            #endif
             exit(0);
         }
         cout << "- Linking object debug file\n";
@@ -37,8 +42,13 @@ int main(int argc,char* argv[]) {
         }
         #else
         if(!exist("test_debug")) {
+            #ifdef __APPLE__
+            cout << "- Build Failed - Debug\n";
+            cout << "- Reason: Linker Error\n";
+            #else
             cout << "\u001b[31m- Build Failed - Debug\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
+            #endif
             exit(0);
         }
         #endif
@@ -54,13 +64,22 @@ int main(int argc,char* argv[]) {
         cmd = "move " + fileName + "_debug.exe bin > NUL";
         system(cmd.c_str());
         #endif
+        #ifdef __APPLE__
+        cout << "- Build Success - Debug\n";
+        #else
         cout << "\u001b[32m- Build Success - Debug\u001b[0m\n";
+        #endif
         cout << "- Compiling release object file\n";
         cmd = "g++ -Iinclude -w -c " + fileName + ".cpp";
         system(cmd.c_str());
         if(!exist("test.o")) {
+            #ifdef __APPLE__
+            cout << "- Build Failed - Release\n";
+            cout << "- Reason: Compilation Error\n";
+            #else
             cout << "\u001b[31m- Build Failed - Release\u001b[0m\n";
             cout << "\u001b[31m- Reason: Compilation Error\u001b[0m\n";
+            #endif
             exit(0);
         }
         cout << "- Linking object release file\n";
@@ -78,8 +97,13 @@ int main(int argc,char* argv[]) {
         }
         #else
         if(!exist("test")) {
+            #ifdef __APPLE__
+            cout << "- Build Failed - Release\n";
+            cout << "- Reason: Linker Error\n";
+            #else
             cout << "\u001b[31m- Build Failed - Release\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
+            #endif
             exit(0);
         }
         #endif
@@ -95,7 +119,11 @@ int main(int argc,char* argv[]) {
         cmd = "move " + fileName + ".exe bin > NUL";
         system(cmd.c_str());
         #endif
+        #ifdef __APPLE__
+        cout << "- Build Success - Release\n";
+        #else
         cout << "\u001b[32m- Build Success - Release\u001b[0m\n";
+        #endif
     }
     return 0;
 }
