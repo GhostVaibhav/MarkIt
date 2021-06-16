@@ -18,10 +18,10 @@ jobs:
         sudo apt install g++
         sudo apt install libcurl4-openssl-dev
         sudo apt-get install libncurses5-dev libncursesw5-dev
-    - name: Building the build file
+    - name: Compiling the build file
       run: |
         g++ build.cpp -o build
-    - name: Compiling and linking
+    - name: Compiling and linking the main file
       run: |
         ./build test
         
@@ -34,17 +34,16 @@ jobs:
     - uses: actions/checkout@v2
     - name: Getting prerequisites for building on MinGW
       run: |
-        dir
         start prereq.bat 1
         exit
     - name: Getting prerequisites for building on Visual Studio
       run: |
         start prereq.bat 2
         exit
-    - name: Building the build file
+    - name: Compiling the build file
       run: |
         g++ build.cpp -o build
-    - name: Compiling and linking
+    - name: Compiling and linking the main file
       run: |
         start build.exe test
         exit
@@ -63,10 +62,9 @@ jobs:
         brew install ncurses
         brew tap nlohmann/json
         brew install nlohmann-json
-    - name: Building the build file
+    - name: Compiling the build file
       run: |
         g++ build.cpp -o build
-    - name: Compiling and linking
+    - name: Compiling and linking the main file
       run: |
-        ls
         ./build test
