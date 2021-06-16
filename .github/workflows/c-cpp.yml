@@ -34,10 +34,10 @@ jobs:
     - uses: actions/checkout@v2
     - name: Getting prerequisites for building on MinGW
       run: |
-        prereq.bat 1
+        Todo/prereq.bat 1
     - name: Getting prerequisites for building on Visual Studio
       run: |
-        prereq.bat 2
+        Todo/prereq.bat 2
     - name: Building the build file
       run: |
         g++ build.cpp -o build
@@ -52,7 +52,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Installing HomeBrew
-      run: actions/setup-homebrew
+      run: artemnovichkov/action-homebrew@master
     - name: Installing prerequisites
       run: |
         brew install g++
