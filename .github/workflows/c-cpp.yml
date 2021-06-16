@@ -61,9 +61,12 @@ jobs:
         brew install make
         brew install curl
         brew install ncurses
+        brew tap nlohmann/json
+        brew install nlohmann-json
     - name: Building the build file
       run: |
         g++ build.cpp -o build
     - name: Compiling and linking
       run: |
+        del include/json.hpp
         ./build test
