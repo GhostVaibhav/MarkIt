@@ -68,5 +68,5 @@ jobs:
         g++ build.cpp -o build
     - name: Compiling and linking
       run: |
-        del include/json.hpp
+        rm include/json.hpp
         ./build test
