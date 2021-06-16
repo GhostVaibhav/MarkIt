@@ -46,7 +46,8 @@ jobs:
         g++ build.cpp -o build
     - name: Compiling and linking
       run: |
-        build test
+        start build.exe test
+        exit
   
   build-macos:
   
