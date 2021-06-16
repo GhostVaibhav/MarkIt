@@ -25,7 +25,7 @@ int main(int argc,char* argv[]) {
             cout << "\u001b[31m- Build Failed - Debug\u001b[0m\n";
             cout << "\u001b[31m- Reason: Compilation Error\u001b[0m\n";
             #endif
-            exit(0);
+            exit(1);
         }
         cout << "- Linking object debug file\n";
         #ifdef _WIN32
@@ -38,7 +38,7 @@ int main(int argc,char* argv[]) {
         if(!exist("test_debug.exe")) {
             cout << "\u001b[31m- Build Failed - Debug\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
-            exit(0);
+            exit(1);
         }
         #else
         if(!exist("test_debug")) {
@@ -49,7 +49,7 @@ int main(int argc,char* argv[]) {
             cout << "\u001b[31m- Build Failed - Debug\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
             #endif
-            exit(0);
+            exit(1);
         }
         #endif
         cout << "- Deleting object debug file\n";
@@ -80,7 +80,7 @@ int main(int argc,char* argv[]) {
             cout << "\u001b[31m- Build Failed - Release\u001b[0m\n";
             cout << "\u001b[31m- Reason: Compilation Error\u001b[0m\n";
             #endif
-            exit(0);
+            exit(1);
         }
         cout << "- Linking object release file\n";
         #ifdef _WIN32
@@ -93,7 +93,7 @@ int main(int argc,char* argv[]) {
         if(!exist("test.exe")) {
             cout << "\u001b[31m- Build Failed - Release\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
-            exit(0);
+            exit(1);
         }
         #else
         if(!exist("test")) {
@@ -104,7 +104,7 @@ int main(int argc,char* argv[]) {
             cout << "\u001b[31m- Build Failed - Release\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
             #endif
-            exit(0);
+            exit(1);
         }
         #endif
         cout << "- Deleting object release file\n";
