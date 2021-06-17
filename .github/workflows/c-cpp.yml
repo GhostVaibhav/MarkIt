@@ -1,0 +1,70 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  Linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Getting prerequisites
+      run: |
+        sudo apt install g++
+        sudo apt install libcurl4-openssl-dev
+        sudo apt-get install libncurses5-dev libncursesw5-dev
+    - name: Compiling the build file
+      run: |
+        g++ build.cpp -o build
+    - name: Compiling and linking the main file
+      run: |
+        ./build test
+        
+        
+  Windows:
+  
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Getting prerequisites for building on MinGW
+      run: |
+        start prereq.bat 1
+        exit
+    - name: Getting prerequisites for building on Visual Studio
+      run: |
+        start prereq.bat 2
+        exit
+    - name: Compiling the build file
+      run: |
+        g++ build.cpp -o build
+    - name: Compiling and linking the main file
+      run: |
+        start build.exe test
+        exit
+  
+  MacOS:
+  
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Installing prerequisites
+      run: |
+        brew install gcc
+        brew install make
+        brew install curl
+        brew install ncurses
+        brew tap nlohmann/json
+        brew install nlohmann-json
+    - name: Compiling the build file
+      run: |
+        g++ build.cpp -o build
+    - name: Compiling and linking the main file
+      run: |
+        ./build test

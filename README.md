@@ -7,6 +7,9 @@
 &nbsp;
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/ff29f2d480744511ada59ea48fbcfc0b)](https://www.codacy.com/gh/GhostVaibhav/Todo/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=GhostVaibhav/Todo&amp;utm_campaign=Badge_Grade)
+[![CodeQL](https://github.com/GhostVaibhav/Todo/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/codeql-analysis.yml)
+[![Code Inspector](https://github.com/GhostVaibhav/Todo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/ci.yml)
+[![C/C++ CI](https://github.com/GhostVaibhav/Todo/actions/workflows/c-cpp.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/c-cpp.yml)
 ## **Index**
 
 -  [Dependencies](https://github.com/GhostVaibhav/Todo#--dependencies--)
