@@ -97,18 +97,30 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" x86 > nul 2> nul
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x86 > nul 2> nul
 
+
 echo.
 echo.
 echo Build using which system?
 echo 1. MinGW
 echo 2. Visual Studio
-set /p choice= "Please select one of the above options (1/2):" 
-IF "%choice%"==2 (
-echo Building using Visual Studio
-nmake /f Makefile.vc WIDE=Y > nul
-) else (
-echo Building using Mingw
-make -f Makefile WIDE=Y INFOEX=N > nul
+SET cmd=%~1
+IF %cmd%==2 (
+    echo Building using Visual Studio
+    nmake /f Makefile.vc WIDE=Y > nul
+) 
+IF %cmd%==1 (
+    echo Building using Mingw
+    make -f Makefile WIDE=Y INFOEX=N > nul
+) 
+IF %cmd%=="" (
+    set /p choice= "Please select one of the above options (1/2):"
+    IF "%choice%"==2 (
+        echo Building using Visual Studio
+        nmake /f Makefile.vc WIDE=Y > nul
+    ) else (
+        echo Building using Mingw
+        make -f Makefile WIDE=Y INFOEX=N > nul
+    )
 )
 
 echo Renaming files
