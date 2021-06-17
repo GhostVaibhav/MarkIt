@@ -10,8 +10,9 @@
 #include <json.hpp>    // For using nlohmann::json
 #include <sha256.h>    // For using SHA-256 algorithm
 #include <memory>      // For using unique pointer
-#include <cstdio>
+#include <sys/stat.h>  // For checking if a file exists or not
 #ifdef _WIN32
+#include <cstdio>   // For using _popen() and _pclose()
 #include <curses.h> // For using PDCurses on Windows platform
 #else
 #include <curses.h> // For using Ncurses on Unix-based platforms
@@ -26,16 +27,16 @@
 nlohmann::json cloudSave; // Cloud save is loaded in the memory once the user signs in
 nlohmann::json localSave; // Local save is also loaded in the memory once the user signs in
 #endif
-using json = nlohmann::json;                                   // Using namespace for minimizing the write effort
-#define minWidth 78                                            // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
-#define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)       // Defining a macro for drawing a border around a border
-std::string curUser = "";                                      // For storing the current username
-std::string curUserHash = "";                                  // For storing the current user password's SHA-256 hash
-std::string PantryID = "f71b63cf-f419-4545-a4a7-22068e0bcfc8"; // ugly: Issue: Remove this exposed API Key
-std::string storageFile = "data.dat";                          // File name of the local storage file - DON'T CHANGE THIS!!
-std::string stateFile = "state.dat";                           // File name of the local state file - DON'T CHANGE THIS!!
-int push = 0;                                                  // Global variable for keeping track of "push" requests
-int pull = 0;                                                  // Global variable for keeping track of "pull" requests
+using json = nlohmann::json;                             // Using namespace for minimizing the write effort
+#define minWidth 78                                      // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
+#define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
+std::string curUser = "";                                // For storing the current username
+std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
+std::string PantryID = "test123";                        // ugly: Issue: Remove this exposed API Key
+std::string storageFile = "data.dat";                    // File name of the local storage file - DON'T CHANGE THIS!!
+std::string stateFile = "state.dat";                     // File name of the local state file - DON'T CHANGE THIS!!
+int push = 0;                                            // Global variable for keeping track of "push" requests
+int pull = 0;                                            // Global variable for keeping track of "pull" requests
 
 // ------------------------------------------------------------------------
 // ---------------------CORE STRUCTURE OF TODO USED------------------------
@@ -365,23 +366,6 @@ bool addTodo(WINDOW *win)
     localSave["number"] = number;
     _write_to_file(localSave);
     updatePP();
-}
-
-std::string exec(const char* cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    #ifdef _WIN32
-    std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
-    #else
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    #endif
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
 }
 
 // ------------------------------------------------------------------------
@@ -780,6 +764,12 @@ void loading(std::string loadText)
     mvwprintw(stdscr, getmaxy(stdscr) - 2, (getmaxx(stdscr) - loadText.size()) / 2, loadText.c_str());
     wrefresh(stdscr);
     refresh();
+}
+
+inline bool exist(const std::string &name)
+{
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
 }
 
 int login(std::string *bucket)
