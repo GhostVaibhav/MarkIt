@@ -17,7 +17,7 @@ int main(int argc,char* argv[]) {
         cout << "- Compiling debug object file\n";
         cmd = "g++ -Iinclude -g -w -c -std=c++17 " + fileName + ".cpp";
         system(cmd.c_str());
-        if(!exist("test.o")) {
+        if(!exist("main.o")) {
             #ifdef __APPLE__
             cout << "- Build Failed - Debug\n";
             cout << "- Reason: Compilation Error\n";
@@ -35,13 +35,13 @@ int main(int argc,char* argv[]) {
         #endif
         system(cmd.c_str());
         #ifdef _WIN32
-        if(!exist("test_debug.exe")) {
+        if(!exist("main_debug.exe")) {
             cout << "\u001b[31m- Build Failed - Debug\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
             exit(1);
         }
         #else
-        if(!exist("test_debug")) {
+        if(!exist("main_debug")) {
             #ifdef __APPLE__
             cout << "- Build Failed - Debug\n";
             cout << "- Reason: Linker Error\n";
@@ -72,7 +72,7 @@ int main(int argc,char* argv[]) {
         cout << "- Compiling release object file\n";
         cmd = "g++ -Iinclude -w -c -std=c++17 " + fileName + ".cpp";
         system(cmd.c_str());
-        if(!exist("test.o")) {
+        if(!exist("main.o")) {
             #ifdef __APPLE__
             cout << "- Build Failed - Release\n";
             cout << "- Reason: Compilation Error\n";
@@ -90,13 +90,13 @@ int main(int argc,char* argv[]) {
         #endif
         system(cmd.c_str());
         #ifdef _WIN32
-        if(!exist("test.exe")) {
+        if(!exist("main.exe")) {
             cout << "\u001b[31m- Build Failed - Release\u001b[0m\n";
             cout << "\u001b[31m- Reason: Linker Error\u001b[0m\n";
             exit(1);
         }
         #else
-        if(!exist("test")) {
+        if(!exist("main")) {
             #ifdef __APPLE__
             cout << "- Build Failed - Release\n";
             cout << "- Reason: Linker Error\n";

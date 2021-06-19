@@ -32,7 +32,7 @@ using json = nlohmann::json;                                   // Using namespac
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)       // Defining a macro for drawing a border around a border
 std::string curUser = "";                                      // For storing the current username
 std::string curUserHash = "";                                  // For storing the current user password's SHA-256 hash
-std::string PantryID = "test123"; // ugly: Issue: Remove this exposed API Key
+std::string PantryID = "test123";                               // ugly: Issue: Remove this exposed API Key
 std::string storageFile = "data.dat";                          // File name of the local storage file - DON'T CHANGE THIS!!
 std::string stateFile = "state.dat";                           // File name of the local state file - DON'T CHANGE THIS!!
 int push = 0;                                                  // Global variable for keeping track of "push" requests
@@ -380,6 +380,7 @@ bool refreshCloudSave()
     cloudSave = getBucketDetails(curUser);
     localSave = json::parse(_read_from_file());
     updatePP();
+    return true;
 }
 
 void print_stats(WINDOW *win)
@@ -983,7 +984,7 @@ void set_title()
 #endif
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     // json q;
     // todo t[30];
