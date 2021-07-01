@@ -52,7 +52,7 @@
 &nbsp;
 
 
--  ##  **CMakeLists.txt** - :warning: **NOT READY YET** :warning:
+-  ##  **CMakeLists.txt** - :warning:**NOT READY YET**:warning:
 
 
 ###  This is the file which will build this project including all the dependencies. Still experimenting since I don't know how to use CMake.
