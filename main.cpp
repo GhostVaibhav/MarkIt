@@ -716,9 +716,9 @@ void main_menu()
             else if (choice == 3)
                 refreshCloudSave();
         }
-            noecho();
-            c = KEY_RESIZE;
-            break;
+        noecho();
+        c = KEY_RESIZE;
+        break;
         case KEY_F(6):
             return;
         default:
