@@ -23,7 +23,7 @@ jobs:
         g++ build.cpp -o build
     - name: Compiling and linking the main file
       run: |
-        ./build test
+        ./build main
         
         
   Windows:
@@ -45,7 +45,7 @@ jobs:
         g++ build.cpp -o build
     - name: Compiling and linking the main file
       run: |
-        start build.exe test
+        start build.exe main
         exit
   
   MacOS:
@@ -67,4 +67,4 @@ jobs:
         g++ build.cpp -o build
     - name: Compiling and linking the main file
       run: |
-        ./build test
+        ./build main
