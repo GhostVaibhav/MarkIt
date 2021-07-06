@@ -66,11 +66,14 @@ void _write_to_file(json temp)
     f1.close();
 }
 
-std::string _read_from_file()
+std::string _read_from_file(std::string STORAGE_FILE = storageFile)
 {
-    std::ifstream f1(storageFile.c_str());
+    std::ifstream f1(STORAGE_FILE.c_str());
     std::string _read_string;
-    std::getline(f1, _read_string);
+    if(!f1.is_open())
+        _read_string = "File does not exist";
+    else
+        std::getline(f1, _read_string);
     f1.close();
     return _read_string;
 }
@@ -366,6 +369,7 @@ bool addTodo(WINDOW *win)
     localSave["number"] = number;
     _write_to_file(localSave);
     updatePP();
+    return true;
 }
 
 // ------------------------------------------------------------------------
@@ -986,6 +990,12 @@ void set_title()
 
 int main(int argc, char *argv[])
 {
+    if(argc > 1) {
+        std::string arg = argv[1];
+        if(arg == "--test") {
+            std::cout << "Starting testing mode (only for dev-builds)" << std::endl;
+        }
+    }
     // json q;
     // todo t[30];
     // q["name"] = "special";
