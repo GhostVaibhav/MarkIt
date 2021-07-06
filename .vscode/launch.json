@@ -8,7 +8,7 @@
             "name": "Debug TodoApp",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}\\bin\\test_debug.exe",
+            "program": "${fileDirname}\\bin\\main_debug.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
