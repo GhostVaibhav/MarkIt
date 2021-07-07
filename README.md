@@ -14,23 +14,16 @@
 ## **Index**
 
 - [Dependencies](#--dependencies--)
-
 - [Building the project](#--building-the-project--)
-
 - [Setting the environment](#1-setting-the-environment)
-
   - [On Windows](#on-windows)
     - [Building automatically](#building-automatically)
     - [Building manually](#building-manually)
   - [On UNIX-based systems](#on-unix-based-systems)
-
 - [Compiling the required files for building project](#2-compiling-the-required-files-for-building-project)
-
   - [In Windows](#in-windows-use)
   - [In UNIX-based systems](#in-unix-based-systems-use)
-
 - [Licenses](#-licenses--)
-
   - [Todo license](#todo-license)
   - [The curl license](#the-curl-license)
   - [JSON for Modern C++ license](#json-for-modern-c-license)
