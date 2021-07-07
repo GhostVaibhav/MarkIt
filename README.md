@@ -13,29 +13,29 @@
 
 ## **Index**
 
-- [Dependencies](https://github.com/GhostVaibhav/Todo#--dependencies--)
+- [Dependencies](#--dependencies--)
 
-- [Building the project](https://github.com/GhostVaibhav/Todo#--building-the-project--)
+- [Building the project](#--building-the-project--)
 
-- [Setting the environment](https://github.com/GhostVaibhav/Todo#1-setting-the-environment)
+- [Setting the environment](#1-setting-the-environment)
 
-  - [On Windows](https://github.com/GhostVaibhav/Todo#on-windows)
-    - [Building automatically](https://github.com/GhostVaibhav/Todo#building-automatically)
-    - [Building manually](https://github.com/GhostVaibhav/Todo#building-manually)
-  - [On UNIX-based systems](https://github.com/GhostVaibhav/Todo#on-unix-based-systems)
+  - [On Windows](#on-windows)
+    - [Building automatically](#building-automatically)
+    - [Building manually](#building-manually)
+  - [On UNIX-based systems](#on-unix-based-systems)
 
-- [Compiling the required files for building project](https://github.com/GhostVaibhav/Todo#2-compiling-the-required-files-for-building-project)
+- [Compiling the required files for building project](#2-compiling-the-required-files-for-building-project)
 
-  - [In Windows](https://github.com/GhostVaibhav/Todo#in-windows-use)
-  - [In UNIX-based systems](https://github.com/GhostVaibhav/Todo#in-unix-based-systems-use)
+  - [In Windows](#in-windows-use)
+  - [In UNIX-based systems](#in-unix-based-systems-use)
 
-- [Licenses](https://github.com/GhostVaibhav/Todo#-licenses--)
+- [Licenses](#-licenses--)
 
-  - [Todo license](https://github.com/GhostVaibhav/Todo#todo-license)
-  - [The curl license](https://github.com/GhostVaibhav/Todo#the-curl-license)
-  - [JSON for Modern C++ license](https://github.com/GhostVaibhav/Todo#json-for-modern-c-license)
-  - [PDCurses](https://github.com/GhostVaibhav/Todo#pdcurses)
-  - [Ncurses license](https://github.com/GhostVaibhav/Todo#ncurses-license)
+  - [Todo license](#todo-license)
+  - [The curl license](#the-curl-license)
+  - [JSON for Modern C++ license](#json-for-modern-c-license)
+  - [PDCurses](#pdcurses)
+  - [Ncurses license](#ncurses-license)
 
 <h2 align="center"> <b> Dependencies </b> </h2>
 
