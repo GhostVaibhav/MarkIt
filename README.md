@@ -131,7 +131,7 @@ build main
 
 will compile the [**`main.cpp`**](https://github.com/GhostVaibhav/Todo/blob/master/main.cpp) while linking it with the required libraries and including the required header files.
 
-You can know the functionality of all files in the [**FILE_STRUCTURE**]() file.
+You can know the functionality of all files in the [**FILE_STRUCTURE**](https://github.com/GhostVaibhav/Todo/blob/master/FILE_STRUCTURE.md) file.
 &nbsp;
 
 &nbsp;
