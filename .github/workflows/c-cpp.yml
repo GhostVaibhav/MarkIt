@@ -19,13 +19,11 @@ jobs:
         sudo apt install libcurl4-openssl-dev
         sudo apt-get install libncurses5-dev libncursesw5-dev
         sudo apt install cmake
-    - name: Compiling the build file using CMake
+    - name: Building and compiling the build file using CMake
       run: |
         mkdir build
         cd build
         cmake ..
-    - name: Building the main file using CMake
-      run: |
         cmake --build .
         
   Windows:
@@ -65,11 +63,9 @@ jobs:
         brew install cmake
         brew tap nlohmann/json
         brew install nlohmann-json
-    - name: Compiling the build file using CMake
+    - name: Building and compiling the build file using CMake
       run: |
         mkdir build
         cd build
         cmake ..
-    - name: Building the main file using CMake
-      run: |
         cmake --build .
