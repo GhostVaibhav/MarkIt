@@ -18,13 +18,15 @@ jobs:
         sudo apt install g++
         sudo apt install libcurl4-openssl-dev
         sudo apt-get install libncurses5-dev libncursesw5-dev
-    - name: Compiling the build file
+        sudo apt install cmake
+    - name: Compiling the build file using CMake
       run: |
-        g++ build.cpp -o build
-    - name: Compiling and linking the main file
+        mkdir build
+        cd build
+        cmake ..
+    - name: Building the main file using CMake
       run: |
-        ./build main
-        
+        cmake --build .
         
   Windows:
   
@@ -60,11 +62,14 @@ jobs:
         brew install make
         brew install curl
         brew install ncurses
+        brew install cmake
         brew tap nlohmann/json
         brew install nlohmann-json
-    - name: Compiling the build file
+    - name: Compiling the build file using CMake
       run: |
-        g++ build.cpp -o build
-    - name: Compiling and linking the main file
+        mkdir build
+        cd build
+        cmake ..
+    - name: Building the main file using CMake
       run: |
-        ./build main
+        cmake --build .
