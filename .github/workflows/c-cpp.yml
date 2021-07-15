@@ -15,10 +15,10 @@ jobs:
     - uses: actions/checkout@v2
     - name: Getting prerequisites
       run: |
-        sudo apt install g++
-        sudo apt install libcurl4-openssl-dev
-        sudo apt-get install libncurses5-dev libncursesw5-dev
-        sudo apt install cmake
+        sudo apt -y install g++
+        sudo apt -y install libcurl4-openssl-dev
+        sudo apt-get -y install libncurses5-dev libncursesw5-dev
+        sudo apt -y install cmake
     - name: Building on Ubuntu
       run: |
         mkdir build
@@ -114,6 +114,25 @@ jobs:
         cd build
         cmake ..
         cmake --build .
+    - name: Building on Kali Linux
+      run: |
+        docker pull kalilinux/kali-rolling
+        docker run -d -t --name test6 kalilinux/kali-rolling
+        docker exec -it test6 bash
+        apt -y update
+        apt -y upgrade
+        apt -y install g++
+        apt -y install libcurl4-openssl-dev
+        apt-get -y install libncurses5-dev libncursesw5-dev
+        apt -y install cmake
+        apt -y install git
+        git clone https://github.com/GhostVaibhav/Todo.git
+        cd Todo
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
+
         
   Windows:
   
