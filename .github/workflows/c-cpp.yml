@@ -150,6 +150,24 @@ jobs:
         cd build
         cmake ..
         cmake --build .
+    - name: Building on openSUSE Tumbleweed
+      run: |
+        docker pull opensuse/tumbleweed
+        docker run -d -t --name test8 opensuse/tumbleweed
+        docker exec -it test8 bash
+        zypper refresh
+        zypper update -y
+        zypper install -y gcc-c++
+        zypper install -y libcurl-devel
+        zypper install -y ncurses-devel
+        zypper install -y cmake
+        zypper install -y git
+        git clone https://github.com/GhostVaibhav/Todo.git
+        cd Todo
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
 
         
   Windows:
