@@ -97,6 +97,23 @@ jobs:
         cd build
         cmake ..
         cmake --build .
+    - name: Building on Fedora Linux
+      run: |
+        docker pull fedora
+        docker run -d -t --name test5 fedora
+        docker exec -it test5 bash
+        dnf -y upgrade
+        dnf -y install git
+        dnf -y install gcc-c++
+        dnf -y install libcurl-devel
+        dnf -y install ncurses-devel
+        dnf -y install cmake
+        git clone https://github.com/GhostVaibhav/Todo.git
+        cd Todo
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
         
   Windows:
   
