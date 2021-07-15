@@ -109,7 +109,6 @@ jobs:
     runs-on: ubuntu-latest
     container: opensuse/leap
     steps:
-      - uses: actions/checkout@v2
       - name: Getting prerequisites
         run: |
           zypper refresh
@@ -119,6 +118,7 @@ jobs:
           zypper install -y ncurses-devel
           zypper install -y cmake
           zypper install -y git
+      - uses: actions/checkout@v2
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -132,7 +132,6 @@ jobs:
     runs-on: ubuntu-latest
     container: opensuse/tumbleweed
     steps:
-      - uses: actions/checkout@v2
       - name: Getting prerequisites
         run: |
           zypper refresh
@@ -142,6 +141,7 @@ jobs:
           zypper install -y ncurses-devel
           zypper install -y cmake
           zypper install -y git
+      - uses: actions/checkout@v2
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
