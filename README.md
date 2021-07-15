@@ -1,15 +1,24 @@
 <h1 align="center">
 <b> Todo </b>
 </h1>
-<h4 align="center">
+<h3 align="center">
 <b> A cross-platform TODO app in teminal with simple interface and lightning fast speed for everyone </b>
-</h4>
+</h3>
 &nbsp;
+
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/ff29f2d480744511ada59ea48fbcfc0b)](https://www.codacy.com/gh/GhostVaibhav/Todo/dashboard?utm_source=github.com&utm_medium=referral&utm_content=GhostVaibhav/Todo&utm_campaign=Badge_Grade)
 [![CodeQL](https://github.com/GhostVaibhav/Todo/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/codeql-analysis.yml)
 [![Code Inspector](https://github.com/GhostVaibhav/Todo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/ci.yml)
 [![C/C++ CI](https://github.com/GhostVaibhav/Todo/actions/workflows/c-cpp.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/c-cpp.yml)
+
+&nbsp;
+
+<h3 align="center">
+<b> Successfully built and tested on Windows, MacOS, Ubuntu, Arch Linux, Kali Linux, Debian, CentOS, Alpine, Fedora Linux, openSUSE Leap and openSUSE Tumbleweed </b>
+</h3>
+
+&nbsp;
 
 ## **Index**
 
@@ -21,7 +30,7 @@
     - [Building manually](#building-manually)
   - [On UNIX-based systems](#on-unix-based-systems)
 - [Compiling the required files for building project](#2-compiling-the-required-files-for-building-project)
-  - [In Windows](#in-windows-use)
+  - [In Windows](#in-windows)
   - [In UNIX-based systems](#in-unix-based-systems-use)
 - [Licenses](#-licenses--)
   - [Todo license](#todo-license)
@@ -109,7 +118,9 @@ This will setup the environment required for building the project.
 
 ## **2. Compiling the required files for building project**
 
-After this, compile [**`build.cpp`**](https://github.com/GhostVaibhav/Todo/blob/master/build.cpp) by launching **terminal in the same folder**:
+
+### **In Windows**
+Compile [**`build.cpp`**](https://github.com/GhostVaibhav/Todo/blob/master/build.cpp) by launching **terminal in the same folder**:
 
 ```powershell
 g++ build.cpp -o build
@@ -117,19 +128,16 @@ g++ build.cpp -o build
 
 You can run the **`build`** file with the file to be built i.e.:
 
-### In Windows use
 
 ```bash
 build main
 ```
 
-### In UNIX-based systems use
+### **In UNIX-based systems use**
 
-```bash
-./build main
 ```
-
-will compile the [**`main.cpp`**](https://github.com/GhostVaibhav/Todo/blob/master/main.cpp) while linking it with the required libraries and including the required header files.
+CMake for building the project.
+```
 
 You can know the functionality of all files in the [**FILE_STRUCTURE**](https://github.com/GhostVaibhav/Todo/blob/master/FILE_STRUCTURE.md) file.
 &nbsp;
