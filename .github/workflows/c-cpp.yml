@@ -19,8 +19,44 @@ jobs:
         sudo apt install libcurl4-openssl-dev
         sudo apt-get install libncurses5-dev libncursesw5-dev
         sudo apt install cmake
-    - name: Building and compiling the build file using CMake
+    - name: Building on Ubuntu
       run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
+    - name: Building on Debian
+      run: |
+        docker pull debian
+        docker run -d -t --name test1 debian
+        docker exec -it test1 bash
+        apt update
+        apt -y install g++
+        apt -y install libcurl4-openssl-dev
+        apt-get -y install libncurses5-dev libncursesw5-dev
+        apt -y install git
+        apt -y install cmake
+        git clone https://github.com/GhostVaibhav/Todo.git
+        cd Todo
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
+    - name: Building on Alpine
+      run: |
+        docker pull alpine
+        docker run -d -t --name test2 alpine
+        docker exec -it test2 sh
+        apk update
+        apk upgrade
+        apk add g++
+        apk add curl-dev
+        apk add ncurses-dev
+        apk add git
+        apk add cmake
+        apk add make
+        git clone https://github.com/GhostVaibhav/Todo.git
+        cd Todo
         mkdir build
         cd build
         cmake ..
