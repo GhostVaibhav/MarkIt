@@ -29,7 +29,7 @@ jobs:
       run: |
         docker pull debian
         docker run -d -t --name test1 debian
-        docker exec -it test1 bash
+        docker exec test1 bash
         apt update
         apt -y install g++
         apt -y install libcurl4-openssl-dev
@@ -46,7 +46,7 @@ jobs:
       run: |
         docker pull alpine
         docker run -d -t --name test2 alpine
-        docker exec -it test2 sh
+        docker exec test2 sh
         apk update
         apk upgrade
         apk add g++
@@ -65,7 +65,7 @@ jobs:
       run: |
         docker pull archlinux
         docker run -d -t --name test3 archlinux
-        docker exec -it test3 bash
+        docker exec test3 bash
         pacman -Syy --noconfirm
         pacman -Syu --noconfirm
         pacman -Sy gcc --noconfirm
@@ -84,7 +84,7 @@ jobs:
       run: |
         docker pull centos
         docker run -d -t --name test4 centos
-        docker exec -it test4 bash
+        docker exec test4 bash
         yum -y update
         yum -y group install "Development Tools"
         yum -y install libcurl --allowerasing
@@ -101,7 +101,7 @@ jobs:
       run: |
         docker pull fedora
         docker run -d -t --name test5 fedora
-        docker exec -it test5 bash
+        docker exec test5 bash
         dnf -y upgrade
         dnf -y install git
         dnf -y install gcc-c++
@@ -118,7 +118,7 @@ jobs:
       run: |
         docker pull kalilinux/kali-rolling
         docker run -d -t --name test6 kalilinux/kali-rolling
-        docker exec -it test6 bash
+        docker exec test6 bash
         apt -y update
         apt -y upgrade
         apt -y install g++
@@ -136,7 +136,7 @@ jobs:
       run: |
         docker pull opensuse/leap
         docker run -d -t --name test7 opensuse/leap
-        docker exec -it test7 bash
+        docker exec test7 bash
         zypper refresh
         zypper update -y
         zypper install -y gcc-c++
@@ -154,7 +154,7 @@ jobs:
       run: |
         docker pull opensuse/tumbleweed
         docker run -d -t --name test8 opensuse/tumbleweed
-        docker exec -it test8 bash
+        docker exec test8 bash
         zypper refresh
         zypper update -y
         zypper install -y gcc-c++
