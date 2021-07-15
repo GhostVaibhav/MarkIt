@@ -37,7 +37,7 @@ jobs:
           git clone https://github.com/GhostVaibhav/Todo.git && cd Todo && mkdir build && cd build && cmake .. && cmake --build .
 
 
-  Arch Linux:
+  Arch-Linux:
     runs-on: ubuntu-latest
     container: archlinux
     steps:
@@ -83,7 +83,7 @@ jobs:
           cmake ..
           cmake --build .
 
-  Fedora Linux:
+  Fedora-Linux:
     runs-on: ubuntu-latest
     container: fedora
     steps:
@@ -105,7 +105,7 @@ jobs:
           cmake ..
           cmake --build .
 
-  OpenSUSE Leap:
+  OpenSUSE-Leap:
     runs-on: ubuntu-latest
     container: opensuse/leap
     steps:
@@ -128,7 +128,7 @@ jobs:
           cmake ..
           cmake --build .
 
-  OpenSUSE Tumbleweed:
+  OpenSUSE-Tumbleweed:
     runs-on: ubuntu-latest
     container: opensuse/tumbleweed
     steps:
@@ -151,7 +151,7 @@ jobs:
           cmake ..
           cmake --build .
   
-  Kali Linux:
+  Kali-Linux:
     runs-on: ubuntu-latest
     container: kalilinux/kali-rolling
     steps:
