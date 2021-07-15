@@ -31,12 +31,6 @@ jobs:
         docker build -t test-debian .
         docker run test-debian
         cd ..
-    - name: Building on Alpine
-      run: |
-        cd .github/workflows/Alpine
-        docker build -t test-alpine .
-        docker run test-alpine
-        cd ..
     - name: Building on Arch Linux
       run: |
         cd .github/workflows/Archlinux
@@ -73,6 +67,22 @@ jobs:
         docker build -t test-kali .
         docker run test-kali
         cd ..
+  Alpine:
+    runs-on: ubuntu-latest
+    container: alpine
+    steps:
+      - uses: actions/checkout@v2
+      - name: Building application
+        run: | 
+          apk update
+          apk upgrade
+          apk add g++ ncurses-dev curl-dev git cmake make
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
         
   Windows:
   
