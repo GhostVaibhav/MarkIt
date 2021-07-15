@@ -29,7 +29,7 @@ jobs:
       run: |
         docker pull debian
         docker run -d -t --name test1 debian
-        docker exec test1 bash
+        docker -t exec test1 bash
         sudo apt update
         sudo apt -y install g++
         sudo apt -y install libcurl4-openssl-dev
