@@ -7,10 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  Linux:
-
+  Ubuntu:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Getting prerequisites
@@ -19,64 +17,175 @@ jobs:
         sudo apt -y install libcurl4-openssl-dev
         sudo apt-get -y install libncurses5-dev libncursesw5-dev
         sudo apt -y install cmake
-    - name: Building on Ubuntu
+    - name: Building application
       run: |
         mkdir build
         cd build
         cmake ..
         cmake --build .
-    - name: Building on Debian
-      run: |
-        cd .github/workflows/Debian
-        docker build -t test-debian .
-        docker run test-debian
-        cd ..
-    - name: Building on Arch Linux
-      run: |
-        cd .github/workflows/Archlinux
-        docker build -t test-arch .
-        docker run test-arch
-        cd ..
-    - name: Building on CentOS
-      run: |
-        cd .github/workflows/CentOS
-        docker build -t test-centos .
-        docker run test-centos
-        cd ..
-    - name: Building on Fedora Linux
-      run: |
-        cd .github/workflows/Fedora
-        docker build -t test-fedora .
-        docker run test-fedora
-        cd ..
-    - name: Building on openSUSE Leap
-      run: |
-        cd .github/workflows/openSUSE-leap
-        docker build -t test-leap .
-        docker run test-leap
-        cd ..
-    - name: Building on openSUSE Tumbleweed
-      run: |
-        cd .github/workflows/openSUSE-tumbleweed
-        docker build -t test-tumbleweed .
-        docker run test-tumbleweed
-        cd ..
-    - name: Building on Kali Linux
-      run: |
-        cd .github/workflows/Kali
-        docker build -t test-kali .
-        docker run test-kali
-        cd ..
+  
+  Debian:
+    runs-on: ubuntu-latest
+    container: debian
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git && cd Todo && mkdir build && cd build && cmake .. && cmake --build .
+
+
+  Arch Linux:
+    runs-on: ubuntu-latest
+    container: archlinux
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          pacman -Syy --noconfirm
+          pacman -Syu --noconfirm
+          pacman -Sy gcc --noconfirm
+          pacman -S curl --noconfirm
+          pacman -S ncurses --noconfirm
+          pacman -S git --noconfirm
+          pacman -S cmake --noconfirm
+          pacman -S make --noconfirm
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  CentOS:
+    runs-on: ubuntu-latest
+    container: centos
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          yum -y update
+          yum -y group install "Development Tools"
+          yum -y install libcurl --allowerasing
+          yum -y install curl-devel
+          yum -y install ncurses-devel
+          yum -y install cmake
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  Fedora Linux:
+    runs-on: ubuntu-latest
+    container: fedora
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          dnf -y upgrade
+          dnf -y install git
+          dnf -y install gcc-c++
+          dnf -y install libcurl-devel
+          dnf -y install ncurses-devel
+          dnf -y install cmake
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  OpenSUSE Leap:
+    runs-on: ubuntu-latest
+    container: opensuse/leap
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          zypper refresh
+          zypper update -y
+          zypper install -y gcc-c++
+          zypper install -y libcurl-devel
+          zypper install -y ncurses-devel
+          zypper install -y cmake
+          zypper install -y git
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  OpenSUSE Tumbleweed:
+    runs-on: ubuntu-latest
+    container: opensuse/tumbleweed
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          zypper refresh
+          zypper update -y
+          zypper install -y gcc-c++
+          zypper install -y libcurl-devel
+          zypper install -y ncurses-devel
+          zypper install -y cmake
+          zypper install -y git
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+  
+  Kali Linux:
+    runs-on: ubuntu-latest
+    container: kalilinux/kali-rolling
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          apt -y update
+          apt -y upgrade
+          apt -y install g++
+          apt -y install libcurl4-openssl-dev
+          apt-get -y install libncurses5-dev libncursesw5-dev
+          apt -y install cmake
+          apt -y install git
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
   Alpine:
     runs-on: ubuntu-latest
     container: alpine
     steps:
       - uses: actions/checkout@v2
-      - name: Building application
-        run: | 
+      - name: Getting prerequisites
+        run: |
           apk update
           apk upgrade
           apk add g++ ncurses-dev curl-dev git cmake make
+      - name: Building application
+        run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
           cd Todo
           mkdir build
@@ -87,7 +196,6 @@ jobs:
   Windows:
   
     runs-on: windows-latest
-    
     steps:
     - uses: actions/checkout@v2
     - name: Getting prerequisites for building on MinGW
