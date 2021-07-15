@@ -30,12 +30,12 @@ jobs:
         docker pull debian
         docker run -d -t --name test1 debian
         docker exec test1 bash
-        apt update
-        apt -y install g++
-        apt -y install libcurl4-openssl-dev
-        apt-get -y install libncurses5-dev libncursesw5-dev
-        apt -y install git
-        apt -y install cmake
+        sudo apt update
+        sudo apt -y install g++
+        sudo apt -y install libcurl4-openssl-dev
+        sudo apt-get -y install libncurses5-dev libncursesw5-dev
+        sudo apt -y install git
+        sudo apt -y install cmake
         git clone https://github.com/GhostVaibhav/Todo.git
         cd Todo
         mkdir build
