@@ -2,10 +2,9 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-  paths:
+    branches: 
+    - master
+    paths:
     - '**.cpp'
     - '**.h'
     - '**.hpp'
@@ -16,6 +15,9 @@ on:
     - '!**.md'
     - '!LICENSE'
     - '!CNAME'
+  pull_request:
+    branches:
+    - master
 
 jobs:
   Ubuntu:
