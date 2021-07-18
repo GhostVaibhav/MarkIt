@@ -3,6 +3,17 @@ name: C/C++ CI
 on:
   push:
     branches: [ master ]
+      paths:
+        - '**.cpp'
+        - '**.h'
+        - '**.hpp'
+        - '**.bat'
+        - '**.txt'
+        - '.github/workflows/**'
+        - '!.vscode**'
+        - '!**.md'
+        - '!LICENSE'
+        - '!CNAME'
   pull_request:
     branches: [ master ]
 
