@@ -44,7 +44,7 @@ jobs:
           pacman -Syy --noconfirm
           pacman -Syu --noconfirm
           pacman -Sy gcc --noconfirm
-          pacman -S curl ncursese git cmake make --noconfirm
+          pacman -S curl ncurses git cmake make --noconfirm
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
