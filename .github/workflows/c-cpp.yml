@@ -7,29 +7,170 @@ on:
     branches: [ master ]
 
 jobs:
-  Linux:
-
+  Ubuntu:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Getting prerequisites
       run: |
-        sudo apt install g++
-        sudo apt install libcurl4-openssl-dev
-        sudo apt-get install libncurses5-dev libncursesw5-dev
-    - name: Compiling the build file
+        sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
+    - name: Building application
       run: |
-        g++ build.cpp -o build
-    - name: Compiling and linking the main file
-      run: |
-        ./build main
-        
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
+  
+  Debian:
+    runs-on: ubuntu-latest
+    container: debian
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git && cd Todo && mkdir build && cd build && cmake .. && cmake --build .
+
+
+  Arch-Linux:
+    runs-on: ubuntu-latest
+    container: archlinux
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          pacman -Syy --noconfirm
+          pacman -Syu --noconfirm
+          pacman -Sy gcc --noconfirm
+          pacman -S curl ncurses git cmake make --noconfirm
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  CentOS:
+    runs-on: ubuntu-latest
+    container: centos
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          yum -y update
+          yum -y group install "Development Tools"
+          yum -y install libcurl --allowerasing
+          yum -y install curl-devel ncurses-devel cmake
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  Fedora-Linux:
+    runs-on: ubuntu-latest
+    container: fedora
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          dnf -y upgrade
+          dnf -y install git gcc-c++ libcurl-devel ncurses-devel cmake
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  OpenSUSE-Leap:
+    runs-on: ubuntu-latest
+    container: opensuse/leap
+    steps:
+      - name: Getting prerequisites
+        run: |
+          zypper refresh
+          zypper update -y
+          zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
+      - uses: actions/checkout@v2
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  OpenSUSE-Tumbleweed:
+    runs-on: ubuntu-latest
+    container: opensuse/tumbleweed
+    steps:
+      - name: Getting prerequisites
+        run: |
+          zypper refresh
+          zypper update -y
+          zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
+      - uses: actions/checkout@v2
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+  
+  Kali-Linux:
+    runs-on: ubuntu-latest
+    container: kalilinux/kali-rolling
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          apt -y update
+          apt -y upgrade
+          apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev cmake git
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+
+  Alpine:
+    runs-on: ubuntu-latest
+    container: alpine
+    steps:
+      - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          apk update
+          apk upgrade
+          apk add g++ ncurses-dev curl-dev git cmake make
+      - name: Building application
+        run: | 
+          git clone https://github.com/GhostVaibhav/Todo.git
+          cd Todo
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
         
   Windows:
   
     runs-on: windows-latest
-    
     steps:
     - uses: actions/checkout@v2
     - name: Getting prerequisites for building on MinGW
@@ -60,11 +201,18 @@ jobs:
         brew install make
         brew install curl
         brew install ncurses
+        brew install cmake
         brew tap nlohmann/json
         brew install nlohmann-json
-    - name: Compiling the build file
+    - name: Building and compiling the build file using CMake in Apple Clang
       run: |
-        g++ build.cpp -o build
-    - name: Compiling and linking the main file
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
+    - name: Building and compiling using CMake as Xcode Project
       run: |
-        ./build main
+        mkdir builds
+        cd builds
+        cmake .. -G "Xcode"
+        cmake --build . --config MinSizeRel

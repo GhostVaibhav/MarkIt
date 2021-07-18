@@ -1,41 +1,43 @@
 <h1 align="center">
 <b> Todo </b>
 </h1>
-<h4 align="center">
+<h3 align="center">
 <b> A cross-platform TODO app in teminal with simple interface and lightning fast speed for everyone </b>
-</h4>
+</h3>
 &nbsp;
+
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/ff29f2d480744511ada59ea48fbcfc0b)](https://www.codacy.com/gh/GhostVaibhav/Todo/dashboard?utm_source=github.com&utm_medium=referral&utm_content=GhostVaibhav/Todo&utm_campaign=Badge_Grade)
 [![CodeQL](https://github.com/GhostVaibhav/Todo/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/codeql-analysis.yml)
 [![Code Inspector](https://github.com/GhostVaibhav/Todo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/ci.yml)
 [![C/C++ CI](https://github.com/GhostVaibhav/Todo/actions/workflows/c-cpp.yml/badge.svg?branch=master)](https://github.com/GhostVaibhav/Todo/actions/workflows/c-cpp.yml)
 
+&nbsp;
+
+<h3 align="center">
+<b> Successfully built and tested on Windows, MacOS, Ubuntu, Arch Linux, Kali Linux, Debian, CentOS, Alpine, Fedora Linux, openSUSE Leap and openSUSE Tumbleweed </b>
+</h3>
+
+&nbsp;
+
 ## **Index**
 
-- [Dependencies](https://github.com/GhostVaibhav/Todo#--dependencies--)
-
-- [Building the project](https://github.com/GhostVaibhav/Todo#--building-the-project--)
-
-- [Setting the environment](https://github.com/GhostVaibhav/Todo#1-setting-the-environment)
-
-  - [On Windows](https://github.com/GhostVaibhav/Todo#on-windows)
-    - [Building automatically](https://github.com/GhostVaibhav/Todo#building-automatically)
-    - [Building manually](https://github.com/GhostVaibhav/Todo#building-manually)
-  - [On UNIX-based systems](https://github.com/GhostVaibhav/Todo#on-unix-based-systems)
-
-- [Compiling the required files for building project](https://github.com/GhostVaibhav/Todo#2-compiling-the-required-files-for-building-project)
-
-  - [In Windows](https://github.com/GhostVaibhav/Todo#in-windows-use)
-  - [In UNIX-based systems](https://github.com/GhostVaibhav/Todo#in-unix-based-systems-use)
-
-- [Licenses](https://github.com/GhostVaibhav/Todo#-licenses--)
-
-  - [Todo license](https://github.com/GhostVaibhav/Todo#todo-license)
-  - [The curl license](https://github.com/GhostVaibhav/Todo#the-curl-license)
-  - [JSON for Modern C++ license](https://github.com/GhostVaibhav/Todo#json-for-modern-c-license)
-  - [PDCurses](https://github.com/GhostVaibhav/Todo#pdcurses)
-  - [Ncurses license](https://github.com/GhostVaibhav/Todo#ncurses-license)
+- [Dependencies](#--dependencies--)
+- [Building the project](#--building-the-project--)
+- [Setting the environment](#1-setting-the-environment)
+  - [On Windows](#on-windows)
+    - [Building automatically](#building-automatically)
+    - [Building manually](#building-manually)
+  - [On UNIX-based systems](#on-unix-based-systems)
+- [Compiling the required files for building project](#2-compiling-the-required-files-for-building-project)
+  - [In Windows](#in-windows)
+  - [In UNIX-based systems](#in-unix-based-systems-use)
+- [Licenses](#-licenses--)
+  - [Todo license](#todo-license)
+  - [The curl license](#the-curl-license)
+  - [JSON for Modern C++ license](#json-for-modern-c-license)
+  - [PDCurses](#pdcurses)
+  - [Ncurses license](#ncurses-license)
 
 <h2 align="center"> <b> Dependencies </b> </h2>
 
@@ -116,7 +118,9 @@ This will setup the environment required for building the project.
 
 ## **2. Compiling the required files for building project**
 
-After this, compile [**`build.cpp`**](https://github.com/GhostVaibhav/Todo/blob/master/build.cpp) by launching **terminal in the same folder**:
+
+### **In Windows**
+Compile [**`build.cpp`**](https://github.com/GhostVaibhav/Todo/blob/master/build.cpp) by launching **terminal in the same folder**:
 
 ```powershell
 g++ build.cpp -o build
@@ -124,21 +128,18 @@ g++ build.cpp -o build
 
 You can run the **`build`** file with the file to be built i.e.:
 
-### In Windows use
 
 ```bash
-build test
+build main
 ```
 
-### In UNIX-based systems use
+### **In UNIX-based systems use**
 
-```bash
-./build test
+```
+CMake for building the project.
 ```
 
-will compile the [**`test.cpp`**](https://github.com/GhostVaibhav/Todo/blob/master/test.cpp) while linking it with the required libraries and including the required header files.
-
-You can know the functionality of all files in the [**FILE_STRUCTURE**]() file.
+You can know the functionality of all files in the [**FILE_STRUCTURE**](https://github.com/GhostVaibhav/Todo/blob/master/FILE_STRUCTURE.md) file.
 &nbsp;
 
 &nbsp;
