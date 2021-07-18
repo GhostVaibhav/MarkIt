@@ -1,0 +1,7 @@
+enabled: true
+pull_requests: true
+comments: false
+restylers:
+  - clang-format:
+      IndentWidth: 4
+  - "*"

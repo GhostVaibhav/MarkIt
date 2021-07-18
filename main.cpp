@@ -1032,7 +1032,7 @@ int main(int argc, char *argv[])
     {
         localSave = json::parse(_read_from_file());
     }
-    catch (json::parse_error &e)
+    catch (...)
     {
         _delete_file();
         localSave = cloudSave;
