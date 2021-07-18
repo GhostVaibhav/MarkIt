@@ -56,8 +56,20 @@ struct todo
 // ------------------------------------------------------------------------
 // This section consists of three internal file modification functions:
 // 1. _write_to_file() - For writing to the local file
+// -----------------------------------------------------------------------
+// | Returns: NOTHING                                                    |
+// | Parameters: json object - The JSON object to be written to the file |
+// -----------------------------------------------------------------------
 // 2. _read_from_file() - For reading from the local file
+// -------------------------------------------------------------------------------------
+// | Returns: std::string - The JSON object read from the file in the form of a string |
+// | Parameters: std::string - The file name to be read from                           |
+// -------------------------------------------------------------------------------------
 // 3. _delete_file() - For deleting the file's contents
+// ----------------------------------------------------
+// | Returns: NOTHING                                 |
+// | Parameters: std::string - The file to be deleted |
+// ----------------------------------------------------
 
 void _write_to_file(json temp)
 {
@@ -78,10 +90,10 @@ std::string _read_from_file(std::string STORAGE_FILE = storageFile)
     return _read_string;
 }
 
-void _delete_file()
+void _delete_file(std::string STORAGE_FILE = storageFile)
 {
     std::ofstream f1;
-    f1.open(storageFile, std::ofstream::out | std::ofstream::trunc);
+    f1.open(STORAGE_FILE, std::ofstream::out | std::ofstream::trunc);
     f1.close();
 }
 
@@ -91,13 +103,49 @@ void _delete_file()
 // This section consists of functions related to API calling and saving the responses
 // The functions are as follows:
 // 1. updatePP() - Updates the push and pull counter on the top-right corner of the screen // todo: Fix this function
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
 // 2. write_to_string() - For using it with Curl and writing response to a string
+// --------------------------------------------------------
+// | Returns: size_t (Determining the size of the string) |
+// | Parameters:                                          |
+// | void* - Storing the pointer to the text to append    |
+// | size_t - Size of a character                         |
+// | size_t - Count of a character                        |
+// | void* - Main string to write                         |
+// --------------------------------------------------------
 // 3. getBucket() - Getting a bucket from an API call
+// -----------------------------------------
+// | Returns: bool - If the bucket exists  |
+// | Parameters: std::string - Bucket name |
+// -----------------------------------------
 // 4. createBucket() - Creating a bucket through an API call
+// --------------------------------------------
+// | Returns: int - Returning a creation code |
+// | Parameters: std::string - Bucket name    |
+// --------------------------------------------
 // 5. replaceBucket() - Replacing an existing bucket through an API call
+// -----------------------------------------------------------------------
+// | Returns: bool - If the replacement was successful                   |
+// | Parameters: std::string, json - Bucket name, JSON object to replace |
+// -----------------------------------------------------------------------
 // 6. deleteBucket() - Deleting a bucket through an API call
+// ------------------------------------------------
+// | Returns: bool - If the delete was successful |
+// | Parameters: std::string - Bucket name        |
+// ------------------------------------------------
 // 7. getBucketDetails() - Getting the bucket details (in the form of string) and serializing it to a JSON structure through an API call
+// -------------------------------------------------
+// | Returns: json - JSON object of bucket details |
+// | Parameters: std::string - Bucket name         |
+// -------------------------------------------------
 // 8. appendBucket() - Appending to the end of a bucket through an API call (useful in pushing to the cloud)
+// ----------------------------------------------------------------------
+// | Returns: bool - If the append was successful                       |
+// | Parameters: std::string, json - Bucket name, JSON object to append |
+// ----------------------------------------------------------------------
 
 void updatePP()
 {
@@ -302,8 +350,60 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 }
 
 // ------------------------------------------------------------------------
-// ------------------------DISPLAY FUNCTIONS-------------------------------
+// ----------------------CORE WORKER FUNCTIONS-----------------------------
 // ------------------------------------------------------------------------
+// This section contains the second layer of functions which uses the core cloud and file functions.
+// The functions are as below:
+// 1. computeTime() - gives the current time in the form of a string
+// ---------------------------------------------------------------
+// | Returns: std::string - present time in the form of a string |
+// | Parameters: NOTHING                                         |
+// ---------------------------------------------------------------
+// 2. resize_event() - resizes the terminal window
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
+// 3. addTodo() - adds a todo to the todo list
+// -----------------------------------------------------------
+// | Returns: bool - If todo was successfully added          |
+// | Parameters: WINDOW* - The terminal WINDOW to display on |
+// -----------------------------------------------------------
+// 4. loading() - displays a loading screen with a custom message
+// --------------------------------------------------------------------------
+// | Returns: NOTHING                                                       |
+// | Parameters: std::string - String to be displayed on the loading screen |
+// --------------------------------------------------------------------------
+// 5. refreshCloudSave() - updates the cloud save, local save and update the push-pull counter
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
+// 6. print_stats() - prints the current stats (i.e push and pull counter)
+// ---------------------------------------------------------------------
+// | Returns: NOTHING                                                  |
+// | Parameters: WINDOW* - the terminal WINDOW to display the stats on |
+// ---------------------------------------------------------------------
+// 7. pullFromCloud() - pulls the todos from the cloud and updates the local save in accordance with the cloud save
+// ------------------------------------------------------------------------
+// | Returns: bool - If pull was successful                               |
+// | Parameters: WINDOW* - the terminal window to display any information |
+// ------------------------------------------------------------------------
+// 8. pushToCloud() - pushes the todos to the cloud and updates the local save as well as the cloud save
+// -----------------------------------------------------------------------------------------
+// | Returns: NOTHING                                                                      |
+// | Parameters: WINDOW* - the terminal window to display any information (loading screen) |
+// -----------------------------------------------------------------------------------------
+// 9. corrupted() - checks if a file is corrupted
+// ------------------------------------------------------
+// | Returns: bool - return false, if file is corrupted |
+// | Parameters: NOTHING                                |
+// ------------------------------------------------------
+// 10. exist() - checks if a file exists
+// -----------------------------------------------
+// | Returns: bool - return true, if file exists |
+// | Parameters: std::string - file name         |
+// -----------------------------------------------
 
 std::string computeTime()
 {
@@ -372,19 +472,52 @@ bool addTodo(WINDOW *win)
     return true;
 }
 
-// ------------------------------------------------------------------------
-// ---------------------------MAIN FUNCTION--------------------------------
-// ------------------------------------------------------------------------
+void loading(std::string loadText)
+{
+    clear();
+    int part = (getmaxx(stdscr) - 25) / 2;
+    int half = ((getmaxy(stdscr) - 5) / 2) - 1;
+    refresh();
+    wrefresh(stdscr);
+    wattron(stdscr, COLOR_PAIR(3));
+    mvwprintw(stdscr, half + 1, part, R"(  ______)");
+    mvwprintw(stdscr, half + 2, part, R"( /_  __/)");
+    mvwprintw(stdscr, half + 3, part, R"(  / /)");
+    mvwprintw(stdscr, half + 4, part, R"( / /)");
+    mvwprintw(stdscr, half + 5, part, R"(/_/)");
+    wattroff(stdscr, COLOR_PAIR(3));
+    wattron(stdscr, COLOR_PAIR(4));
+    mvwprintw(stdscr, half + 1, part + 7, R"()");
+    mvwprintw(stdscr, half + 2, part + 8, R"(___)");
+    mvwprintw(stdscr, half + 3, part + 5, R"( / __ \)");
+    mvwprintw(stdscr, half + 4, part + 5, R"(/ /_/ /)");
+    mvwprintw(stdscr, half + 5, part + 5, R"(\____/)");
+    wattroff(stdscr, COLOR_PAIR(4));
+    wattron(stdscr, COLOR_PAIR(2));
+    mvwprintw(stdscr, half + 1, part + 11, R"(       __)");
+    mvwprintw(stdscr, half + 2, part + 11, R"(  ____/ /)");
+    mvwprintw(stdscr, half + 3, part + 12, R"(/ __  /)");
+    mvwprintw(stdscr, half + 4, part + 11, R"(/ /_/ /)");
+    mvwprintw(stdscr, half + 5, part + 11, R"(\__,_/)");
+    wattroff(stdscr, COLOR_PAIR(2));
+    wattron(stdscr, COLOR_PAIR(5));
+    mvwprintw(stdscr, half + 1, part + 17, R"()");
+    mvwprintw(stdscr, half + 2, part + 20, R"(___)");
+    mvwprintw(stdscr, half + 3, part + 17, R"( / __ \)");
+    mvwprintw(stdscr, half + 4, part + 17, R"(/ /_/ /)");
+    mvwprintw(stdscr, half + 5, part + 17, R"(\____/)");
+    wattroff(stdscr, COLOR_PAIR(5));
+    mvwprintw(stdscr, getmaxy(stdscr) - 2, (getmaxx(stdscr) - loadText.size()) / 2, loadText.c_str());
+    wrefresh(stdscr);
+    refresh();
+}
 
-void loading(std::string);
-
-bool refreshCloudSave()
+void refreshCloudSave()
 {
     loading("Refreshing");
     cloudSave = getBucketDetails(curUser);
     localSave = json::parse(_read_from_file());
     updatePP();
-    return true;
 }
 
 void print_stats(WINDOW *win)
@@ -417,13 +550,7 @@ void pushToCloud(WINDOW *win)
     loading("Pushing to cloud");
     cloudSave = getBucketDetails(curUser);
     localSave = json::parse(_read_from_file());
-    if (localSave == cloudSave)
-    {
-        updatePP();
-        print_stats(win);
-        return;
-    }
-    if (replaceBucket(curUser, localSave))
+    if (localSave == cloudSave || replaceBucket(curUser, localSave))
     {
         updatePP();
         print_stats(win);
@@ -450,6 +577,56 @@ bool corrupted()
     }
     return false;
 }
+
+inline bool exist(const std::string &name)
+{
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
+}
+
+// ------------------------------------------------------------------------
+// -----------------------CORE DISPLAY FUNCTIONS---------------------------
+// ------------------------------------------------------------------------
+// These functions are used to display in the terminal window.
+// The functions are as below:
+// 1. printCenter() - takes a vector of strings and prints them in the center with a focus on selection
+// ---------------------------------------------------------------------
+// | Returns: NOTHING                                                  |
+// | Parameters:                                                       |
+// | int* - the selection pointer                                      |
+// | std::vector<std::string> - vector of strings to display on screen |
+// | WINDOW* - the terminal WINDOW to display on                       |
+// ---------------------------------------------------------------------
+// 2. menu() - displays a custom menu on the basis of a vector of strings
+// ----------------------------------------------------------------------------
+// | Returns: int - returns the choice made                                   |
+// | Parameters: std::vector<std::string> - vector of strings to be displayed |
+// ----------------------------------------------------------------------------
+// 3. main_menu() - displays the main menu
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
+// 4. login() - displays the login screen
+// --------------------------------------------------------
+// | Returns: int - returns a login code                  |
+// | Parameters: std::string* - returning the bucket name |
+// --------------------------------------------------------
+// 5. welcome() - displays the welcome screen
+// -----------------------------------------------------------------------------
+// | Returns: NOTHING                                                          |
+// | Parameters: int - display a welcome screen on the basis of the login code |
+// -----------------------------------------------------------------------------
+// 6. add_colors() - adds the color pairs to the curses setup
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
+// 7. set_title() - sets the title of the terminal window
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
 
 void printCenter(int *selected, std::vector<std::string> a, WINDOW *win)
 {
@@ -731,52 +908,6 @@ void main_menu()
     }
 }
 
-void loading(std::string loadText)
-{
-    clear();
-    int part = (getmaxx(stdscr) - 25) / 2;
-    int half = ((getmaxy(stdscr) - 5) / 2) - 1;
-    refresh();
-    wrefresh(stdscr);
-    wattron(stdscr, COLOR_PAIR(3));
-    mvwprintw(stdscr, half + 1, part, R"(  ______)");
-    mvwprintw(stdscr, half + 2, part, R"( /_  __/)");
-    mvwprintw(stdscr, half + 3, part, R"(  / /)");
-    mvwprintw(stdscr, half + 4, part, R"( / /)");
-    mvwprintw(stdscr, half + 5, part, R"(/_/)");
-    wattroff(stdscr, COLOR_PAIR(3));
-    wattron(stdscr, COLOR_PAIR(4));
-    mvwprintw(stdscr, half + 1, part + 7, R"()");
-    mvwprintw(stdscr, half + 2, part + 8, R"(___)");
-    mvwprintw(stdscr, half + 3, part + 5, R"( / __ \)");
-    mvwprintw(stdscr, half + 4, part + 5, R"(/ /_/ /)");
-    mvwprintw(stdscr, half + 5, part + 5, R"(\____/)");
-    wattroff(stdscr, COLOR_PAIR(4));
-    wattron(stdscr, COLOR_PAIR(2));
-    mvwprintw(stdscr, half + 1, part + 11, R"(       __)");
-    mvwprintw(stdscr, half + 2, part + 11, R"(  ____/ /)");
-    mvwprintw(stdscr, half + 3, part + 12, R"(/ __  /)");
-    mvwprintw(stdscr, half + 4, part + 11, R"(/ /_/ /)");
-    mvwprintw(stdscr, half + 5, part + 11, R"(\__,_/)");
-    wattroff(stdscr, COLOR_PAIR(2));
-    wattron(stdscr, COLOR_PAIR(5));
-    mvwprintw(stdscr, half + 1, part + 17, R"()");
-    mvwprintw(stdscr, half + 2, part + 20, R"(___)");
-    mvwprintw(stdscr, half + 3, part + 17, R"( / __ \)");
-    mvwprintw(stdscr, half + 4, part + 17, R"(/ /_/ /)");
-    mvwprintw(stdscr, half + 5, part + 17, R"(\____/)");
-    wattroff(stdscr, COLOR_PAIR(5));
-    mvwprintw(stdscr, getmaxy(stdscr) - 2, (getmaxx(stdscr) - loadText.size()) / 2, loadText.c_str());
-    wrefresh(stdscr);
-    refresh();
-}
-
-inline bool exist(const std::string &name)
-{
-    struct stat buffer;
-    return (stat(name.c_str(), &buffer) == 0);
-}
-
 int login(std::string *bucket)
 {
     curs_set(0);
@@ -988,6 +1119,10 @@ void set_title()
 #endif
 }
 
+// ------------------------------------------------------------------------
+// ----------------------------MAIN FUNCTION-------------------------------
+// ------------------------------------------------------------------------
+
 int main(int argc, char *argv[])
 {
     if(argc > 1) {
@@ -996,31 +1131,6 @@ int main(int argc, char *argv[])
             std::cout << "Starting testing mode (only for dev-builds)" << std::endl;
         }
     }
-    // json q;
-    // todo t[30];
-    // q["name"] = "special";
-    // q["desc"] = "special";
-    // for (int i = 1; i <= 30; i++)
-    // {
-    //     t[i - 1].name = std::to_string(i);
-    //     t[i - 1].desc = std::to_string(i);
-    //     t[i - 1].time = computeTime();
-    //     t[i - 1].isComplete = false;
-    // }
-    // t[8].isComplete = true;
-    // q["data"] = t;
-    // cloudSave = q;
-    // Appending a todo
-    // todo p;
-    // p.name = "special";
-    // p.desc = "special";
-    // p.time = computeTime();
-    // p.isComplete = false;
-    // q["data"].push_back(p);
-    // appendBucket("ghost",q);
-    // json::parse("{\"Age\": 19}");
-    // std::cout << replaceBucket("ghost",q) << std::endl;
-    // std::cout << appendBucket("ghost",q);
     set_title();
     initscr();
     start_color();
