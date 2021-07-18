@@ -204,9 +204,15 @@ jobs:
         brew install cmake
         brew tap nlohmann/json
         brew install nlohmann-json
-    - name: Building and compiling the build file using CMake
+    - name: Building and compiling the build file using CMake in Apple Clang
       run: |
         mkdir build
         cd build
         cmake ..
         cmake --build .
+    - name: Building and compiling using CMake as Xcode Project
+      run: |
+        mkdir builds
+        cd builds
+        cmake .. -G "Xcode"
+        cmake --build . --config MinSizeRel
