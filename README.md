@@ -33,7 +33,7 @@
     - [In Windows](#in-windows)
     - [In UNIX-based systems](#in-unix-based-systems-use)
 - [Visualising the project](#--visualising-the-project--)
-- [Licenses](#-licenses--)
+- [Licenses](#--licenses--)
   - [Todo license](#todo-license)
   - [The curl license](#the-curl-license)
   - [JSON for Modern C++ license](#json-for-modern-c-license)
