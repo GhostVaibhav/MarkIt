@@ -1,5 +1,5 @@
 <h1 align="center">
-<b> Todo </b>
+<b> Mark It! </b>
 </h1>
 <h3 align="center">
 <b> A cross-platform TODO app in teminal with simple interface and lightning fast speed for everyone </b>
@@ -24,14 +24,15 @@
 
 - [Dependencies](#--dependencies--)
 - [Building the project](#--building-the-project--)
-- [Setting the environment](#1-setting-the-environment)
-  - [On Windows](#on-windows)
-    - [Building automatically](#building-automatically)
-    - [Building manually](#building-manually)
-  - [On UNIX-based systems](#on-unix-based-systems)
-- [Compiling the required files for building project](#2-compiling-the-required-files-for-building-project)
-  - [In Windows](#in-windows)
-  - [In UNIX-based systems](#in-unix-based-systems-use)
+  - [Setting the environment](#1-setting-the-environment)
+    - [On Windows](#on-windows)
+      - [Building automatically](#building-automatically)
+      - [Building manually](#building-manually)
+    - [On UNIX-based systems](#on-unix-based-systems)
+  - [Compiling the required files for building project](#2-compiling-the-required-files-for-building-project)
+    - [In Windows](#in-windows)
+    - [In UNIX-based systems](#in-unix-based-systems-use)
+- [Visualising the project](#--visualising-the-project--)
 - [Licenses](#-licenses--)
   - [Todo license](#todo-license)
   - [The curl license](#the-curl-license)
@@ -140,13 +141,20 @@ CMake for building the project.
 ```
 
 You can know the functionality of all files in the [**FILE_STRUCTURE**](https://github.com/GhostVaibhav/Todo/blob/master/FILE_STRUCTURE.md) file.
-&nbsp;
 
 &nbsp;
 
-<h2 align="center"><b> Licenses </b> </h2>
+<h2 align="center"> <b> Visualising the project </b> </h2>
 
-## **Todo license**
+&nbsp;
+
+You can visit [**Whimsical**](https://whimsical.com/todo-working-6xZbAEdTgBjz2d8a5LQhRV) for an _interactive_ design diagram.
+
+&nbsp;
+
+<h2 align="center"> <b> Licenses </b> </h2>
+
+## **Mark It! license**
 
 Check the [**LICENSE**](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
 

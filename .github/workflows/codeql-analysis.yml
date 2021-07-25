@@ -63,6 +63,8 @@ jobs:
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
       run: |
+        sudo apt update
+        sudo apt upgrade
         sudo apt install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev cmake make
         mkdir build
         cd build

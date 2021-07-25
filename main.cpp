@@ -1,3 +1,31 @@
+/*
+    *      __  ___         __    ______  __
+    *     /  |/  /__ _____/ /__ /  _/ /_/ /
+    *    / /|_/ / _ `/ __/  '_/_/ // __/_/
+    *   /_/  /_/\_,_/_/ /_/\_\/___/\__(_)
+    *   
+    *   MIT License
+    *   
+    *   Copyright (c) 2021 Vaibhav Sharma
+    *   
+    *   Permission is hereby granted, free of charge, to any person obtaining a copy
+    *   of this software and associated documentation files (the "Software"), to deal
+    *   in the Software without restriction, including without limitation the rights
+    *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    *   copies of the Software, and to permit persons to whom the Software is
+    *   furnished to do so, subject to the following conditions:
+    *   
+    *   The above copyright notice and this permission notice shall be included in all
+    *   copies or substantial portions of the Software.
+    *   
+    *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    *   SOFTWARE.
+*/
 // ------------------------------------------------------------------------
 // ---------------------------HEADER FILES---------------------------------
 // ------------------------------------------------------------------------
@@ -12,7 +40,7 @@
 #include <memory>      // For using unique pointer
 #include <sys/stat.h>  // For checking if a file exists or not
 #ifdef _WIN32
-#include <cstdio>   // For using _popen() and _pclose()
+#include <cstdio>            // For using _popen() and _pclose()
 #include <PDCurses/curses.h> // For using PDCurses on Windows platform
 #else
 #include <curses.h> // For using Ncurses on Unix-based platforms
@@ -27,16 +55,16 @@
 nlohmann::json cloudSave; // Cloud save is loaded in the memory once the user signs in
 nlohmann::json localSave; // Local save is also loaded in the memory once the user signs in
 #endif
-using json = nlohmann::json;                                   // Using namespace for minimizing the write effort
-#define minWidth 78                                            // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
-#define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)       // Defining a macro for drawing a border around a border
-std::string curUser = "";                                      // For storing the current username
-std::string curUserHash = "";                                  // For storing the current user password's SHA-256 hash
-std::string PantryID = "test123";                               // ugly: Issue: Remove this exposed API Key
-std::string storageFile = "data.dat";                          // File name of the local storage file - DON'T CHANGE THIS!!
-std::string stateFile = "state.dat";                           // File name of the local state file - DON'T CHANGE THIS!!
-int push = 0;                                                  // Global variable for keeping track of "push" requests
-int pull = 0;                                                  // Global variable for keeping track of "pull" requests
+using json = nlohmann::json;                             // Using namespace for minimizing the write effort
+#define minWidth 78                                      // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
+#define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
+std::string curUser = "";                                // For storing the current username
+std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
+std::string PantryID = "test123";                        // ugly: Issue: Remove this exposed API Key
+std::string storageFile = "data.dat";                    // File name of the local storage file - DON'T CHANGE THIS!!
+std::string stateFile = "state.dat";                     // File name of the local state file - DON'T CHANGE THIS!!
+int push = 0;                                            // Global variable for keeping track of "push" requests
+int pull = 0;                                            // Global variable for keeping track of "pull" requests
 
 // ------------------------------------------------------------------------
 // ---------------------CORE STRUCTURE OF TODO USED------------------------
@@ -82,7 +110,7 @@ std::string _read_from_file(std::string STORAGE_FILE = storageFile)
 {
     std::ifstream f1(STORAGE_FILE.c_str());
     std::string _read_string;
-    if(!f1.is_open())
+    if (!f1.is_open())
         _read_string = "File does not exist";
     else
         std::getline(f1, _read_string);
@@ -475,38 +503,52 @@ bool addTodo(WINDOW *win)
 void loading(std::string loadText)
 {
     clear();
-    int part = (getmaxx(stdscr) - 25) / 2;
-    int half = ((getmaxy(stdscr) - 5) / 2) - 1;
+    int part = (getmaxx(stdscr) - 36) / 2;
+    int half = ((getmaxy(stdscr) - 4) / 2) - 1;
     refresh();
     wrefresh(stdscr);
     wattron(stdscr, COLOR_PAIR(3));
-    mvwprintw(stdscr, half + 1, part, R"(  ______)");
-    mvwprintw(stdscr, half + 2, part, R"( /_  __/)");
-    mvwprintw(stdscr, half + 3, part, R"(  / /)");
-    mvwprintw(stdscr, half + 4, part, R"( / /)");
-    mvwprintw(stdscr, half + 5, part, R"(/_/)");
+    mvwprintw(stdscr, half + 1, part, R"(   __  ___)");
+    mvwprintw(stdscr, half + 2, part, R"(  /  |/  /)");
+    mvwprintw(stdscr, half + 3, part, R"( / /|_/ /)");
+    mvwprintw(stdscr, half + 4, part, R"(/_/  /_/)");
     wattroff(stdscr, COLOR_PAIR(3));
     wattron(stdscr, COLOR_PAIR(4));
     mvwprintw(stdscr, half + 1, part + 7, R"()");
-    mvwprintw(stdscr, half + 2, part + 8, R"(___)");
-    mvwprintw(stdscr, half + 3, part + 5, R"( / __ \)");
-    mvwprintw(stdscr, half + 4, part + 5, R"(/ /_/ /)");
-    mvwprintw(stdscr, half + 5, part + 5, R"(\____/)");
+    mvwprintw(stdscr, half + 2, part + 10, R"(__ _)");
+    mvwprintw(stdscr, half + 3, part + 9, R"( _ `)");
+    mvwprintw(stdscr, half + 4, part + 8, R"(\_,_)");
+    wattroff(stdscr, COLOR_PAIR(4));
+    wattron(stdscr, COLOR_PAIR(4));
+    mvwprintw(stdscr, half + 1, part + 14, R"()");
+    mvwprintw(stdscr, half + 2, part + 14, R"(____)");
+    mvwprintw(stdscr, half + 3, part + 13, R"(/ __)");
+    mvwprintw(stdscr, half + 4, part + 12, R"(/_/ )");
     wattroff(stdscr, COLOR_PAIR(4));
     wattron(stdscr, COLOR_PAIR(2));
-    mvwprintw(stdscr, half + 1, part + 11, R"(       __)");
-    mvwprintw(stdscr, half + 2, part + 11, R"(  ____/ /)");
-    mvwprintw(stdscr, half + 3, part + 12, R"(/ __  /)");
-    mvwprintw(stdscr, half + 4, part + 11, R"(/ /_/ /)");
-    mvwprintw(stdscr, half + 5, part + 11, R"(\__,_/)");
+    mvwprintw(stdscr, half + 1, part + 19, R"(__    )");
+    mvwprintw(stdscr, half + 2, part + 18, R"(/ /__ )");
+    mvwprintw(stdscr, half + 3, part + 17, R"(/  '_/)");
+    mvwprintw(stdscr, half + 4, part + 16, R"(/_/\_\)");
     wattroff(stdscr, COLOR_PAIR(2));
     wattron(stdscr, COLOR_PAIR(5));
-    mvwprintw(stdscr, half + 1, part + 17, R"()");
-    mvwprintw(stdscr, half + 2, part + 20, R"(___)");
-    mvwprintw(stdscr, half + 3, part + 17, R"( / __ \)");
-    mvwprintw(stdscr, half + 4, part + 17, R"(/ /_/ /)");
-    mvwprintw(stdscr, half + 5, part + 17, R"(\____/)");
+    mvwprintw(stdscr, half + 1, part + 25, R"(____)");
+    mvwprintw(stdscr, half + 2, part + 24, R"(/  _)");
+    mvwprintw(stdscr, half + 3, part + 23, R"(_/ /)");
+    mvwprintw(stdscr, half + 4, part + 22, R"(/___/)");
     wattroff(stdscr, COLOR_PAIR(5));
+    wattron(stdscr, COLOR_PAIR(5));
+    mvwprintw(stdscr, half + 1, part + 29, R"(__  )");
+    mvwprintw(stdscr, half + 2, part + 28, R"(/ /_)");
+    mvwprintw(stdscr, half + 3, part + 27, R"(/ __)");
+    mvwprintw(stdscr, half + 4, part + 27, R"(\__)");
+    wattroff(stdscr, COLOR_PAIR(5));
+    wattron(stdscr, COLOR_PAIR(1));
+    mvwprintw(stdscr, half + 1, part + 33, R"(__)");
+    mvwprintw(stdscr, half + 2, part + 32, R"(/ /)");
+    mvwprintw(stdscr, half + 3, part + 31, R"(/_/)");
+    mvwprintw(stdscr, half + 4, part + 30, R"((_))");
+    wattroff(stdscr, COLOR_PAIR(1));
     mvwprintw(stdscr, getmaxy(stdscr) - 2, (getmaxx(stdscr) - loadText.size()) / 2, loadText.c_str());
     wrefresh(stdscr);
     refresh();
@@ -582,6 +624,21 @@ inline bool exist(const std::string &name)
 {
     struct stat buffer;
     return (stat(name.c_str(), &buffer) == 0);
+}
+
+bool deleteTodo(int *selection)
+{
+    if (localSave["data"].size() < *selection)
+        return false;
+    try
+    {
+        localSave["data"].erase(localSave["data"].begin() + localSave["data"].at(*selection));
+    }
+    catch (...)
+    {
+        return false;
+    }
+    return true;
 }
 
 // ------------------------------------------------------------------------
@@ -666,6 +723,7 @@ int menu(std::vector<std::string> a)
         if (getmaxx(stdscr) >= minWidth)
         {
             int part = (getmaxx(title) - 81) / 4;
+            int half = 1;
             if (part <= 0)
                 part = 1;
             wclear(title);
@@ -675,33 +733,47 @@ int menu(std::vector<std::string> a)
             box(title, 0, 0);
             box(menu, 0, 0);
             wattron(title, COLOR_PAIR(3));
-            mvwprintw(title, 2, part, R"(  ______)");
-            mvwprintw(title, 3, part, R"( /_  __/)");
-            mvwprintw(title, 4, part, R"(  / /)");
-            mvwprintw(title, 5, part, R"( / /)");
-            mvwprintw(title, 6, part, R"(/_/)");
+            mvwprintw(title, half + 1, part, R"(   __  ___)");
+            mvwprintw(title, half + 2, part, R"(  /  |/  /)");
+            mvwprintw(title, half + 3, part, R"( / /|_/ /)");
+            mvwprintw(title, half + 4, part, R"(/_/  /_/)");
             wattroff(title, COLOR_PAIR(3));
             wattron(title, COLOR_PAIR(4));
-            mvwprintw(title, 2, part + 7, R"()");
-            mvwprintw(title, 3, part + 8, R"(___)");
-            mvwprintw(title, 4, part + 5, R"( / __ \)");
-            mvwprintw(title, 5, part + 5, R"(/ /_/ /)");
-            mvwprintw(title, 6, part + 5, R"(\____/)");
+            mvwprintw(title, half + 1, part + 7, R"()");
+            mvwprintw(title, half + 2, part + 10, R"(__ _)");
+            mvwprintw(title, half + 3, part + 9, R"( _ `)");
+            mvwprintw(title, half + 4, part + 8, R"(\_,_)");
+            wattroff(title, COLOR_PAIR(4));
+            wattron(title, COLOR_PAIR(4));
+            mvwprintw(title, half + 1, part + 14, R"()");
+            mvwprintw(title, half + 2, part + 14, R"(____)");
+            mvwprintw(title, half + 3, part + 13, R"(/ __)");
+            mvwprintw(title, half + 4, part + 12, R"(/_/ )");
             wattroff(title, COLOR_PAIR(4));
             wattron(title, COLOR_PAIR(2));
-            mvwprintw(title, 2, part + 11, R"(       __)");
-            mvwprintw(title, 3, part + 11, R"(  ____/ /)");
-            mvwprintw(title, 4, part + 12, R"(/ __  /)");
-            mvwprintw(title, 5, part + 11, R"(/ /_/ /)");
-            mvwprintw(title, 6, part + 11, R"(\__,_/)");
+            mvwprintw(title, half + 1, part + 19, R"(__    )");
+            mvwprintw(title, half + 2, part + 18, R"(/ /__ )");
+            mvwprintw(title, half + 3, part + 17, R"(/  '_/)");
+            mvwprintw(title, half + 4, part + 16, R"(/_/\_\)");
             wattroff(title, COLOR_PAIR(2));
             wattron(title, COLOR_PAIR(5));
-            mvwprintw(title, 2, part + 17, R"()");
-            mvwprintw(title, 3, part + 20, R"(___)");
-            mvwprintw(title, 4, part + 17, R"( / __ \)");
-            mvwprintw(title, 5, part + 17, R"(/ /_/ /)");
-            mvwprintw(title, 6, part + 17, R"(\____/)");
+            mvwprintw(title, half + 1, part + 25, R"(____)");
+            mvwprintw(title, half + 2, part + 24, R"(/  _)");
+            mvwprintw(title, half + 3, part + 23, R"(_/ /)");
+            mvwprintw(title, half + 4, part + 22, R"(/___/)");
             wattroff(title, COLOR_PAIR(5));
+            wattron(title, COLOR_PAIR(5));
+            mvwprintw(title, half + 1, part + 29, R"(__  )");
+            mvwprintw(title, half + 2, part + 28, R"(/ /_)");
+            mvwprintw(title, half + 3, part + 27, R"(/ __)");
+            mvwprintw(title, half + 4, part + 27, R"(\__)");
+            wattroff(title, COLOR_PAIR(5));
+            wattron(title, COLOR_PAIR(1));
+            mvwprintw(title, half + 1, part + 33, R"(__)");
+            mvwprintw(title, half + 2, part + 32, R"(/ /)");
+            mvwprintw(title, half + 3, part + 31, R"(/_/)");
+            mvwprintw(title, half + 4, part + 30, R"((_))");
+            wattroff(title, COLOR_PAIR(1));
             mvwprintw(title, 3, 3 * part + 25, ("Username: " + curUser).c_str());
             mvwprintw(title, 5, 3 * part + 25, ("Pantry ID: " + PantryID).c_str());
             printCenter(&pointerIndex, a, menu);
@@ -768,6 +840,7 @@ void main_menu()
         if (getmaxx(stdscr) >= minWidth)
         {
             int part = (getmaxx(todoUserName) - 81) / 4;
+            int half = 1;
             if (part <= 0)
                 part = 1;
             if (c == KEY_RESIZE)
@@ -782,33 +855,47 @@ void main_menu()
             wrefresh(todoBody);
             refresh();
             wattron(todoUserName, COLOR_PAIR(3));
-            mvwprintw(todoUserName, 2, part, R"(  ______)");
-            mvwprintw(todoUserName, 3, part, R"( /_  __/)");
-            mvwprintw(todoUserName, 4, part, R"(  / /)");
-            mvwprintw(todoUserName, 5, part, R"( / /)");
-            mvwprintw(todoUserName, 6, part, R"(/_/)");
+            mvwprintw(todoUserName, half + 1, part, R"(   __  ___)");
+            mvwprintw(todoUserName, half + 2, part, R"(  /  |/  /)");
+            mvwprintw(todoUserName, half + 3, part, R"( / /|_/ /)");
+            mvwprintw(todoUserName, half + 4, part, R"(/_/  /_/)");
             wattroff(todoUserName, COLOR_PAIR(3));
             wattron(todoUserName, COLOR_PAIR(4));
-            mvwprintw(todoUserName, 2, part + 7, R"()");
-            mvwprintw(todoUserName, 3, part + 8, R"(___)");
-            mvwprintw(todoUserName, 4, part + 5, R"( / __ \)");
-            mvwprintw(todoUserName, 5, part + 5, R"(/ /_/ /)");
-            mvwprintw(todoUserName, 6, part + 5, R"(\____/)");
+            mvwprintw(todoUserName, half + 1, part + 7, R"()");
+            mvwprintw(todoUserName, half + 2, part + 10, R"(__ _)");
+            mvwprintw(todoUserName, half + 3, part + 9, R"( _ `)");
+            mvwprintw(todoUserName, half + 4, part + 8, R"(\_,_)");
+            wattroff(todoUserName, COLOR_PAIR(4));
+            wattron(todoUserName, COLOR_PAIR(4));
+            mvwprintw(todoUserName, half + 1, part + 14, R"()");
+            mvwprintw(todoUserName, half + 2, part + 14, R"(____)");
+            mvwprintw(todoUserName, half + 3, part + 13, R"(/ __)");
+            mvwprintw(todoUserName, half + 4, part + 12, R"(/_/ )");
             wattroff(todoUserName, COLOR_PAIR(4));
             wattron(todoUserName, COLOR_PAIR(2));
-            mvwprintw(todoUserName, 2, part + 11, R"(       __)");
-            mvwprintw(todoUserName, 3, part + 11, R"(  ____/ /)");
-            mvwprintw(todoUserName, 4, part + 12, R"(/ __  /)");
-            mvwprintw(todoUserName, 5, part + 11, R"(/ /_/ /)");
-            mvwprintw(todoUserName, 6, part + 11, R"(\__,_/)");
+            mvwprintw(todoUserName, half + 1, part + 19, R"(__    )");
+            mvwprintw(todoUserName, half + 2, part + 18, R"(/ /__ )");
+            mvwprintw(todoUserName, half + 3, part + 17, R"(/  '_/)");
+            mvwprintw(todoUserName, half + 4, part + 16, R"(/_/\_\)");
             wattroff(todoUserName, COLOR_PAIR(2));
             wattron(todoUserName, COLOR_PAIR(5));
-            mvwprintw(todoUserName, 2, part + 17, R"()");
-            mvwprintw(todoUserName, 3, part + 20, R"(___)");
-            mvwprintw(todoUserName, 4, part + 17, R"( / __ \)");
-            mvwprintw(todoUserName, 5, part + 17, R"(/ /_/ /)");
-            mvwprintw(todoUserName, 6, part + 17, R"(\____/)");
+            mvwprintw(todoUserName, half + 1, part + 25, R"(____)");
+            mvwprintw(todoUserName, half + 2, part + 24, R"(/  _)");
+            mvwprintw(todoUserName, half + 3, part + 23, R"(_/ /)");
+            mvwprintw(todoUserName, half + 4, part + 22, R"(/___/)");
             wattroff(todoUserName, COLOR_PAIR(5));
+            wattron(todoUserName, COLOR_PAIR(5));
+            mvwprintw(todoUserName, half + 1, part + 29, R"(__  )");
+            mvwprintw(todoUserName, half + 2, part + 28, R"(/ /_)");
+            mvwprintw(todoUserName, half + 3, part + 27, R"(/ __)");
+            mvwprintw(todoUserName, half + 4, part + 27, R"(\__)");
+            wattroff(todoUserName, COLOR_PAIR(5));
+            wattron(todoUserName, COLOR_PAIR(1));
+            mvwprintw(todoUserName, half + 1, part + 33, R"(__)");
+            mvwprintw(todoUserName, half + 2, part + 32, R"(/ /)");
+            mvwprintw(todoUserName, half + 3, part + 31, R"(/_/)");
+            mvwprintw(todoUserName, half + 4, part + 30, R"((_))");
+            wattroff(todoUserName, COLOR_PAIR(1));
             mvwprintw(todoUserName, 3, 3 * part + 25, ("Username: " + curUser).c_str());
             mvwprintw(todoUserName, 5, 3 * part + 25, ("Pantry ID: " + PantryID).c_str());
             int tabDiv = (getmaxx(todoWindow) - 2) / 3;
@@ -902,6 +989,28 @@ void main_menu()
             break;
         case KEY_F(6):
             return;
+        case KEY_F(4):
+        {
+            refresh();
+            echo();
+            int choice = menu({"1. Delete", "2. Mark/Unmark"});
+            if (choice == 0)
+            {
+                if (deleteTodo(&pointerIndex))
+                {
+                    loading("Todo deleted");
+                }
+                else
+                {
+                    loading("Todo not deleted");
+                }
+            }
+            else if (choice == 1)
+            {
+            }
+            noecho();
+        }
+        break;
         default:
             break;
         }
@@ -949,35 +1058,50 @@ int login(std::string *bucket)
             wborder(stdscr, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
             BORDER(userNameWindow);
             BORDER(passwordWindow);
-            int part = (getmaxx(title) - 24) / 2;
+            int part = (getmaxx(title) - 34) / 2;
+            int half = 0;
             wattron(title, COLOR_PAIR(3));
-            mvwprintw(title, 1, part, R"(  ______)");
-            mvwprintw(title, 2, part, R"( /_  __/)");
-            mvwprintw(title, 3, part, R"(  / /)");
-            mvwprintw(title, 4, part, R"( / /)");
-            mvwprintw(title, 5, part, R"(/_/)");
+            mvwprintw(title, half + 1, part, R"(   __  ___)");
+            mvwprintw(title, half + 2, part, R"(  /  |/  /)");
+            mvwprintw(title, half + 3, part, R"( / /|_/ /)");
+            mvwprintw(title, half + 4, part, R"(/_/  /_/)");
             wattroff(title, COLOR_PAIR(3));
             wattron(title, COLOR_PAIR(4));
-            mvwprintw(title, 1, part + 7, R"()");
-            mvwprintw(title, 2, part + 8, R"(___)");
-            mvwprintw(title, 3, part + 5, R"( / __ \)");
-            mvwprintw(title, 4, part + 5, R"(/ /_/ /)");
-            mvwprintw(title, 5, part + 5, R"(\____/)");
+            mvwprintw(title, half + 1, part + 7, R"()");
+            mvwprintw(title, half + 2, part + 10, R"(__ _)");
+            mvwprintw(title, half + 3, part + 9, R"( _ `)");
+            mvwprintw(title, half + 4, part + 8, R"(\_,_)");
+            wattroff(title, COLOR_PAIR(4));
+            wattron(title, COLOR_PAIR(4));
+            mvwprintw(title, half + 1, part + 14, R"()");
+            mvwprintw(title, half + 2, part + 14, R"(____)");
+            mvwprintw(title, half + 3, part + 13, R"(/ __)");
+            mvwprintw(title, half + 4, part + 12, R"(/_/ )");
             wattroff(title, COLOR_PAIR(4));
             wattron(title, COLOR_PAIR(2));
-            mvwprintw(title, 1, part + 11, R"(       __)");
-            mvwprintw(title, 2, part + 11, R"(  ____/ /)");
-            mvwprintw(title, 3, part + 12, R"(/ __  /)");
-            mvwprintw(title, 4, part + 11, R"(/ /_/ /)");
-            mvwprintw(title, 5, part + 11, R"(\__,_/)");
+            mvwprintw(title, half + 1, part + 19, R"(__    )");
+            mvwprintw(title, half + 2, part + 18, R"(/ /__ )");
+            mvwprintw(title, half + 3, part + 17, R"(/  '_/)");
+            mvwprintw(title, half + 4, part + 16, R"(/_/\_\)");
             wattroff(title, COLOR_PAIR(2));
             wattron(title, COLOR_PAIR(5));
-            mvwprintw(title, 1, part + 17, R"()");
-            mvwprintw(title, 2, part + 20, R"(___)");
-            mvwprintw(title, 3, part + 17, R"( / __ \)");
-            mvwprintw(title, 4, part + 17, R"(/ /_/ /)");
-            mvwprintw(title, 5, part + 17, R"(\____/)");
+            mvwprintw(title, half + 1, part + 25, R"(____)");
+            mvwprintw(title, half + 2, part + 24, R"(/  _)");
+            mvwprintw(title, half + 3, part + 23, R"(_/ /)");
+            mvwprintw(title, half + 4, part + 22, R"(/___/)");
             wattroff(title, COLOR_PAIR(5));
+            wattron(title, COLOR_PAIR(5));
+            mvwprintw(title, half + 1, part + 29, R"(__  )");
+            mvwprintw(title, half + 2, part + 28, R"(/ /_)");
+            mvwprintw(title, half + 3, part + 27, R"(/ __)");
+            mvwprintw(title, half + 4, part + 27, R"(\__)");
+            wattroff(title, COLOR_PAIR(5));
+            wattron(title, COLOR_PAIR(1));
+            mvwprintw(title, half + 1, part + 33, R"(__)");
+            mvwprintw(title, half + 2, part + 32, R"(/ /)");
+            mvwprintw(title, half + 3, part + 31, R"(/_/)");
+            mvwprintw(title, half + 4, part + 30, R"((_))");
+            wattroff(title, COLOR_PAIR(1));
             mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
             mvwprintw(userNameWindow, getmaxy(userNameWindow) / 2, 5, "Username: ");
             mvwprintw(passwordWindow, getmaxy(passwordWindow) / 2, (getmaxx(passwordWindow) - 20) / 2, "Enter your password");
@@ -1053,38 +1177,52 @@ void welcome(int code)
 {
     WINDOW *loading = newwin(0, 0, 0, 0);
     clear();
-    int part = (getmaxx(stdscr) - 25) / 2;
-    int half = ((getmaxy(stdscr) - 5) / 2) - 1;
+    int part = (getmaxx(stdscr) - 36) / 2;
+    int half = ((getmaxy(stdscr) - 4) / 2) - 1;
     refresh();
     wrefresh(loading);
     wattron(loading, COLOR_PAIR(3));
-    mvwprintw(loading, half + 1, part, R"(  ______)");
-    mvwprintw(loading, half + 2, part, R"( /_  __/)");
-    mvwprintw(loading, half + 3, part, R"(  / /)");
-    mvwprintw(loading, half + 4, part, R"( / /)");
-    mvwprintw(loading, half + 5, part, R"(/_/)");
+    mvwprintw(loading, half + 1, part, R"(   __  ___)");
+    mvwprintw(loading, half + 2, part, R"(  /  |/  /)");
+    mvwprintw(loading, half + 3, part, R"( / /|_/ /)");
+    mvwprintw(loading, half + 4, part, R"(/_/  /_/)");
     wattroff(loading, COLOR_PAIR(3));
     wattron(loading, COLOR_PAIR(4));
     mvwprintw(loading, half + 1, part + 7, R"()");
-    mvwprintw(loading, half + 2, part + 8, R"(___)");
-    mvwprintw(loading, half + 3, part + 5, R"( / __ \)");
-    mvwprintw(loading, half + 4, part + 5, R"(/ /_/ /)");
-    mvwprintw(loading, half + 5, part + 5, R"(\____/)");
+    mvwprintw(loading, half + 2, part + 10, R"(__ _)");
+    mvwprintw(loading, half + 3, part + 9, R"( _ `)");
+    mvwprintw(loading, half + 4, part + 8, R"(\_,_)");
+    wattroff(loading, COLOR_PAIR(4));
+    wattron(loading, COLOR_PAIR(4));
+    mvwprintw(loading, half + 1, part + 14, R"()");
+    mvwprintw(loading, half + 2, part + 14, R"(____)");
+    mvwprintw(loading, half + 3, part + 13, R"(/ __)");
+    mvwprintw(loading, half + 4, part + 12, R"(/_/ )");
     wattroff(loading, COLOR_PAIR(4));
     wattron(loading, COLOR_PAIR(2));
-    mvwprintw(loading, half + 1, part + 11, R"(       __)");
-    mvwprintw(loading, half + 2, part + 11, R"(  ____/ /)");
-    mvwprintw(loading, half + 3, part + 12, R"(/ __  /)");
-    mvwprintw(loading, half + 4, part + 11, R"(/ /_/ /)");
-    mvwprintw(loading, half + 5, part + 11, R"(\__,_/)");
+    mvwprintw(loading, half + 1, part + 19, R"(__    )");
+    mvwprintw(loading, half + 2, part + 18, R"(/ /__ )");
+    mvwprintw(loading, half + 3, part + 17, R"(/  '_/)");
+    mvwprintw(loading, half + 4, part + 16, R"(/_/\_\)");
     wattroff(loading, COLOR_PAIR(2));
     wattron(loading, COLOR_PAIR(5));
-    mvwprintw(loading, half + 1, part + 17, R"()");
-    mvwprintw(loading, half + 2, part + 20, R"(___)");
-    mvwprintw(loading, half + 3, part + 17, R"( / __ \)");
-    mvwprintw(loading, half + 4, part + 17, R"(/ /_/ /)");
-    mvwprintw(loading, half + 5, part + 17, R"(\____/)");
+    mvwprintw(loading, half + 1, part + 25, R"(____)");
+    mvwprintw(loading, half + 2, part + 24, R"(/  _)");
+    mvwprintw(loading, half + 3, part + 23, R"(_/ /)");
+    mvwprintw(loading, half + 4, part + 22, R"(/___/)");
     wattroff(loading, COLOR_PAIR(5));
+    wattron(loading, COLOR_PAIR(5));
+    mvwprintw(loading, half + 1, part + 29, R"(__  )");
+    mvwprintw(loading, half + 2, part + 28, R"(/ /_)");
+    mvwprintw(loading, half + 3, part + 27, R"(/ __)");
+    mvwprintw(loading, half + 4, part + 27, R"(\__)");
+    wattroff(loading, COLOR_PAIR(5));
+    wattron(loading, COLOR_PAIR(1));
+    mvwprintw(loading, half + 1, part + 33, R"(__)");
+    mvwprintw(loading, half + 2, part + 32, R"(/ /)");
+    mvwprintw(loading, half + 3, part + 31, R"(/_/)");
+    mvwprintw(loading, half + 4, part + 30, R"((_))");
+    wattroff(loading, COLOR_PAIR(1));
     if (code == 1)
         mvwprintw(loading, getmaxy(stdscr) - 2, (getmaxx(stdscr) - 10 - curUser.size()) / 2, ("Welcome, " + curUser).c_str());
     else if (code == 2)
@@ -1125,9 +1263,11 @@ void set_title()
 
 int main(int argc, char *argv[])
 {
-    if(argc > 1) {
+    if (argc > 1)
+    {
         std::string arg = argv[1];
-        if(arg == "--test") {
+        if (arg == "--test")
+        {
             std::cout << "Starting testing mode (only for dev-builds)" << std::endl;
         }
     }
