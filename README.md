@@ -1,5 +1,5 @@
 <h1 align="center">
-<b> Todo </b>
+<b> Mark It! </b>
 </h1>
 <h3 align="center">
 <b> A cross-platform TODO app in teminal with simple interface and lightning fast speed for everyone </b>
@@ -146,7 +146,7 @@ You can know the functionality of all files in the [**FILE_STRUCTURE**](https://
 
 <h2 align="center"><b> Licenses </b> </h2>
 
-## **Todo license**
+## **Mark It! license**
 
 Check the [**LICENSE**](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
 

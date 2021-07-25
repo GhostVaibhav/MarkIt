@@ -1,5 +1,5 @@
 # :golf:Contribution guidelines
-First of all thank you:tada: for making any contributions (whatsoever) in this _repository_:file_folder:, have a look at the template:ticket:	 for submitting your contributions:
+First of all thank you:tada: for making any contributions (whatsoever) in this _repository_:file_folder:, have a look at the template:ticket: for submitting your contributions:
 
 
 Submit your **contributions** in the form of a **PR**. To make any changes, _fork the project_ and modify it. Be sure to check all of these things before hand:
