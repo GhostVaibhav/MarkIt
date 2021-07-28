@@ -34,11 +34,12 @@
     - [In UNIX-based systems](#in-unix-based-systems-use)
 - [Visualising the project](#--visualising-the-project--)
 - [Licenses](#--licenses--)
-  - [Todo license](#todo-license)
+  - [MarkIt! license](#mark-it-license)
   - [The curl license](#the-curl-license)
   - [JSON for Modern C++ license](#json-for-modern-c-license)
   - [PDCurses](#pdcurses)
   - [Ncurses license](#ncurses-license)
+- [A secret](#-a-special-secret--adseu52--)
 
 <h2 align="center"> <b> Dependencies </b> </h2>
 
@@ -154,7 +155,7 @@ You can visit [**Whimsical**](https://whimsical.com/todo-working-6xZbAEdTgBjz2d8
 
 <h2 align="center"> <b> Licenses </b> </h2>
 
-## **Mark It! license**
+## **MarkIt! license**
 
 Check the [**LICENSE**](https://github.com/GhostVaibhav/Todos/blob/master/LICENSE) file
 
