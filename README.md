@@ -34,7 +34,7 @@
     - [In UNIX-based systems](#in-unix-based-systems-use)
 - [Visualising the project](#--visualising-the-project--)
 - [Licenses](#--licenses--)
-  - [MarkIt! license](#mark-it-license)
+  - [MarkIt! license](#markit-license)
   - [The curl license](#the-curl-license)
   - [JSON for Modern C++ license](#json-for-modern-c-license)
   - [PDCurses](#pdcurses)
