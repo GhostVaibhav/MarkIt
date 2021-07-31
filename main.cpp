@@ -61,9 +61,10 @@ using json = nlohmann::json;                             // Using namespace for 
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
 std::string curUser = "";                                // For storing the current username
 std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
-std::string PantryID = "test123";                        // ugly: Issue: Remove this exposed API Key
+std::string PantryID;                                    // For storing the API key of the Pantry
 std::string storageFile = "data.dat";                    // File name of the local storage file - DON'T CHANGE THIS!!
 std::string stateFile = "state.dat";                     // File name of the local state file - DON'T CHANGE THIS!!
+std::string keyFile = "key.dat";                         // File name of the local key file - DON'T CHANGE THIS!!
 int push = 0;                                            // Global variable for keeping track of "push" requests
 int pull = 0;                                            // Global variable for keeping track of "pull" requests
 
@@ -100,9 +101,9 @@ struct todo
 // | Parameters: std::string - The file to be deleted |
 // ----------------------------------------------------
 
-void _write_to_file(json temp)
+void _write_to_file(json temp, std::string STORAGE_FILE = storageFile)
 {
-    std::ofstream f1(storageFile);
+    std::ofstream f1(STORAGE_FILE);
     f1 << temp.dump();
     f1.close();
 }
@@ -431,7 +432,7 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // | Returns: NOTHING                                                                      |
 // | Parameters: WINDOW* - the terminal window to display any information (loading screen) |
 // -----------------------------------------------------------------------------------------
-// 10. corrupted() - checks if a file is corrupted
+// 10. corruptedData() - checks if a file is corrupted
 // ------------------------------------------------------
 // | Returns: bool - return false, if file is corrupted |
 // | Parameters: NOTHING                                |
@@ -442,7 +443,8 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // | Parameters: std::string - file name         |
 // -----------------------------------------------
 
-void logo(WINDOW *win, int x = 0, int y = 1) {
+void logo(WINDOW *win, int x = 0, int y = 1)
+{
     wattron(win, COLOR_PAIR(3));
     mvwprintw(win, x + 1, y, R"(   __  ___)");
     mvwprintw(win, x + 2, y, R"(  /  |/  /)");
@@ -545,7 +547,9 @@ bool addTodo(WINDOW *win)
         return false;
     t.time = computeTime();
     t.isComplete = false;
-    localSave["data"].push_back(t);
+    std::vector<todo> temp;
+    temp.push_back(t);
+    localSave["data"] = temp;
     int number = localSave["number"];
     number++;
     localSave["number"] = number;
@@ -613,7 +617,28 @@ void pushToCloud(WINDOW *win)
     }
 }
 
-bool corrupted()
+bool corruptedState()
+{
+    try
+    {
+        json temp = json::parse(_read_from_file(stateFile));
+        std::string name = temp["userName"];
+        std::string pass = temp["userHash"];
+        if (name == "" || pass == "") return true;
+        json temp2;
+        temp2 = getBucketDetails(name);
+        if (temp2.is_null()) return true;
+        std::string pass2 = temp2["userHash"];
+        if (pass2 != pass) return true;
+        return false;
+    }
+    catch(...)
+    {
+        return true;
+    }
+}
+
+bool corruptedData()
 {
     if (localSave["number"] != localSave["data"].size() || !localSave["data"].is_array() || localSave["hash"] != curUserHash)
     {
@@ -641,11 +666,17 @@ inline bool exist(const std::string &name)
 
 bool deleteTodo(int *selection)
 {
-    if (localSave["data"].size() < *selection)
+    std::vector<todo> temp = localSave["data"];
+    if (temp.size() < *selection)
         return false;
     try
     {
-        localSave["data"].erase(localSave["data"].begin() + localSave["data"].at(*selection));
+        temp.erase(temp.begin() + (*selection));
+        localSave["data"] = temp;
+        int number = localSave["number"];
+        number--;
+        localSave["number"] = number;
+        _write_to_file(localSave);
     }
     catch (...)
     {
@@ -697,6 +728,74 @@ bool deleteTodo(int *selection)
 // | Returns: NOTHING    |
 // | Parameters: NOTHING |
 // -----------------------
+
+void generateKey()
+{
+    curs_set(0);
+    int part = (getmaxy(stdscr) - 18) / 4;
+    std::string key = "";
+    char userName[36];
+    WINDOW *title = newwin(8, getmaxx(stdscr), part, 0);
+    WINDOW *userNameWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
+    WINDOW *passwordWindow = newwin(5, getmaxx(stdscr) - 20, 3 * part + 13, 10);
+    WINDOW *information = newwin(3, getmaxx(stdscr), getmaxy(stdscr) - 3, 0);
+    while (1)
+    {
+        curs_set(0);
+        clear();
+        resize_event();
+#ifdef _WIN32
+        resize_window(userNameWindow, 5, getmaxx(stdscr) - 20);
+        resize_window(passwordWindow, 5, getmaxx(stdscr) - 20);
+        resize_window(title, 8, getmaxx(stdscr));
+        resize_window(information, 3, getmaxx(stdscr));
+#else
+        wresize(userNameWindow, 5, getmaxx(stdscr) - 20);
+        wresize(passwordWindow, 5, getmaxx(stdscr) - 20);
+        wresize(title, 8, getmaxx(stdscr));
+        wresize(information, 3, getmaxx(stdscr));
+#endif
+        part = (getmaxy(stdscr) - 18) / 4;
+        if (getmaxx(stdscr) >= minWidth)
+        {
+            wclear(userNameWindow);
+            wclear(passwordWindow);
+            wclear(title);
+            wclear(information);
+            wrefresh(userNameWindow);
+            wrefresh(passwordWindow);
+            wborder(stdscr, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+            BORDER(userNameWindow);
+            BORDER(passwordWindow);
+            int part = (getmaxx(title) - 34) / 2;
+            int half = 0;
+            logo(title, half, part);
+            mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
+            mvwprintw(userNameWindow, getmaxy(userNameWindow) / 2, 5, "API Key: ");
+            mvwprintw(passwordWindow, getmaxy(passwordWindow) / 2, (getmaxx(passwordWindow) - 76) / 2, "Get a free API key by visiting getpantry.cloud for storing your data online");
+            wrefresh(title);
+            wrefresh(information);
+            wrefresh(passwordWindow);
+            wbkgd(userNameWindow, COLOR_PAIR(1));
+            wgetnstr(userNameWindow, userName, 36);
+            wbkgd(userNameWindow, COLOR_PAIR(6));
+            BORDER(userNameWindow);
+        }
+        else
+        {
+            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+        }
+        key = userName;
+        json temp;
+        temp["key"] = key;
+        if (key.length() == 36)
+        {
+            _write_to_file(temp, keyFile);
+            PantryID = key;
+        }
+        break;
+    }
+}
 
 void printCenter(int *selected, std::vector<std::string> a, WINDOW *win)
 {
@@ -785,6 +884,7 @@ int menu(std::vector<std::string> a)
 void main_menu()
 {
     curs_set(0);
+    bool changesMade = false;
     WINDOW *todoUserName = newwin(10, getmaxx(stdscr) - 2, 1, 1);
     WINDOW *todoWindow = newwin(getmaxy(stdscr) - 12, getmaxx(stdscr) - 2, 11, 1);
     WINDOW *todoBody = newwin(getmaxy(todoWindow) - 4, getmaxx(todoWindow) - 1, getmaxy(todoUserName) + 4, 1);
@@ -793,6 +893,11 @@ void main_menu()
     while (1)
     {
         std::vector<todo> temp = localSave["data"];
+        if (changesMade)
+        {
+            refreshCloudSave();
+            changesMade = false;
+        }
         noecho();
         updatePP();
         curs_set(0);
@@ -909,9 +1014,15 @@ void main_menu()
                     c = addTodo(todoWindow);
             }
             else if (choice == 1)
+            {
                 pushToCloud(stdscr);
+                changesMade = true;
+            }
             else if (choice == 2)
+            {
                 pullFromCloud(stdscr);
+                changesMade = true;
+            }
             else if (choice == 3)
                 refreshCloudSave();
         }
@@ -920,7 +1031,7 @@ void main_menu()
             break;
         case KEY_F(6):
             return;
-        case KEY_F(4):
+        case '\n':
         {
             refresh();
             echo();
@@ -933,15 +1044,19 @@ void main_menu()
                 }
                 else
                 {
-                    loading("Todo not deleted");
+                    loading("Todo could not be deleted");
                 }
             }
             else if (choice == 1)
             {
+                temp.at(pointerIndex).isComplete = !temp.at(pointerIndex).isComplete;
+                localSave["data"] = temp;
+                _write_to_file(localSave);
             }
-            noecho();
         }
-        break;
+            noecho();
+            c = KEY_RESIZE;
+            break;
         default:
             break;
         }
@@ -1031,6 +1146,10 @@ int login(std::string *bucket)
                     clear();
                     *bucket = userName;
                     curUserHash = passwordString;
+                    json temp;
+                    temp["userName"] = userName;
+                    temp["userHash"] = passwordString;
+                    _write_to_file(temp, stateFile);
                     return 2;
                 }
                 else
@@ -1050,6 +1169,10 @@ int login(std::string *bucket)
                 replaceBucket(userNameString, cloudSave);
                 clear();
                 *bucket = userName;
+                json temp;
+                temp["userName"] = userName;
+                temp["userHash"] = passwordString;
+                _write_to_file(temp, stateFile);
                 return 1;
             }
         }
@@ -1065,6 +1188,8 @@ int login(std::string *bucket)
 
 void welcome(int code)
 {
+    if (code == -1)
+        return;
     WINDOW *loading = newwin(0, 0, 0, 0);
     clear();
     int part = (getmaxx(stdscr) - 36) / 2;
@@ -1112,6 +1237,9 @@ void set_title()
 
 int main(int argc, char *argv[])
 {
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
     if (argc > 1)
     {
         std::string arg = argv[1];
@@ -1126,7 +1254,47 @@ int main(int argc, char *argv[])
     curs_set(0);
     keypad(stdscr, true);
     add_colors();
-    int loggedIn = login(&curUser);
+    if (!exist(keyFile) || _read_from_file(keyFile) == "")
+    {
+        generateKey();
+    }
+    loading("Reading key file");
+    try
+    {
+        json temp = json::parse(_read_from_file(keyFile));
+        PantryID = temp["key"];
+    }
+    catch (...)
+    {
+        generateKey();
+    }
+    int loggedIn = -1;
+    if (!exist(stateFile))
+    {
+        loggedIn = login(&curUser);
+        goto loggedin;
+    }
+    loading("Reading state file");
+    try
+    {
+        if(!corruptedState())
+        {
+            json temp = json::parse(_read_from_file(stateFile));
+            curUser = temp["userName"];
+            cloudSave = getBucketDetails(curUser);
+        }
+        else
+        {
+            _delete_file(stateFile);
+            loggedIn = login(&curUser);
+        }
+    }
+    catch(...)
+    {
+        _delete_file(stateFile);
+        loggedIn = login(&curUser);
+    }
+    loggedin:
     try
     {
         localSave = json::parse(_read_from_file());
@@ -1137,7 +1305,7 @@ int main(int argc, char *argv[])
         localSave = cloudSave;
         _write_to_file(localSave);
     }
-    if (corrupted())
+    if (corruptedData())
     {
         _delete_file();
         localSave = cloudSave;
