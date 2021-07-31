@@ -713,10 +713,10 @@ void generateKey()
     curs_set(0);
     int part = (getmaxy(stdscr) - 18) / 4;
     std::string key = "";
-    char userName[36];
+    char keyC[36];
     WINDOW *title = newwin(8, getmaxx(stdscr), part, 0);
-    WINDOW *userNameWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
-    WINDOW *passwordWindow = newwin(5, getmaxx(stdscr) - 20, 3 * part + 13, 10);
+    WINDOW *keyWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
+    WINDOW *infobox = newwin(5, getmaxx(stdscr) - 20, 3 * part + 13, 10);
     WINDOW *information = newwin(3, getmaxx(stdscr), getmaxy(stdscr) - 3, 0);
     while (1)
     {
@@ -724,47 +724,47 @@ void generateKey()
         clear();
         resize_event();
 #ifdef _WIN32
-        resize_window(userNameWindow, 5, getmaxx(stdscr) - 20);
-        resize_window(passwordWindow, 5, getmaxx(stdscr) - 20);
+        resize_window(keyWindow, 5, getmaxx(stdscr) - 20);
+        resize_window(infobox, 5, getmaxx(stdscr) - 20);
         resize_window(title, 8, getmaxx(stdscr));
         resize_window(information, 3, getmaxx(stdscr));
 #else
-        wresize(userNameWindow, 5, getmaxx(stdscr) - 20);
-        wresize(passwordWindow, 5, getmaxx(stdscr) - 20);
+        wresize(keyWindow, 5, getmaxx(stdscr) - 20);
+        wresize(infobox, 5, getmaxx(stdscr) - 20);
         wresize(title, 8, getmaxx(stdscr));
         wresize(information, 3, getmaxx(stdscr));
 #endif
         part = (getmaxy(stdscr) - 18) / 4;
         if (getmaxx(stdscr) >= minWidth)
         {
-            wclear(userNameWindow);
-            wclear(passwordWindow);
+            wclear(keyWindow);
+            wclear(infobox);
             wclear(title);
             wclear(information);
-            wrefresh(userNameWindow);
-            wrefresh(passwordWindow);
+            wrefresh(keyWindow);
+            wrefresh(infobox);
             wborder(stdscr, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-            BORDER(userNameWindow);
-            BORDER(passwordWindow);
+            BORDER(keyWindow);
+            BORDER(infobox);
             int part = (getmaxx(title) - 34) / 2;
             int half = 0;
             logo(title, half, part);
             mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
-            mvwprintw(userNameWindow, getmaxy(userNameWindow) / 2, 5, "API Key: ");
-            mvwprintw(passwordWindow, getmaxy(passwordWindow) / 2, (getmaxx(passwordWindow) - 76) / 2, "Get a free API key by visiting getpantry.cloud for storing your data online");
+            mvwprintw(keyWindow, getmaxy(keyWindow) / 2, 5, "API Key: ");
+            mvwprintw(infobox, getmaxy(infobox) / 2, (getmaxx(infobox) - 76) / 2, "Get a free API key by visiting getpantry.cloud for storing your data online");
             wrefresh(title);
             wrefresh(information);
-            wrefresh(passwordWindow);
-            wbkgd(userNameWindow, COLOR_PAIR(1));
-            wgetnstr(userNameWindow, userName, 36);
-            wbkgd(userNameWindow, COLOR_PAIR(6));
-            BORDER(userNameWindow);
+            wrefresh(infobox);
+            wbkgd(keyWindow, COLOR_PAIR(1));
+            wgetnstr(keyWindow, keyC, 36);
+            wbkgd(keyWindow, COLOR_PAIR(6));
+            BORDER(keyWindow);
         }
         else
         {
             mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
         }
-        key = userName;
+        key = keyC;
         json temp;
         temp["key"] = key;
         if (key.length() == 36)
