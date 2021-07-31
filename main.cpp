@@ -1158,7 +1158,7 @@ void generateKey()
 {
     curs_set(0);
     int part = (getmaxy(stdscr) - 18) / 4;
-    std::string key = "";
+    std::string key;
     char keyC[36];
     WINDOW *title = newwin(8, getmaxx(stdscr), part, 0);
     WINDOW *keyWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
