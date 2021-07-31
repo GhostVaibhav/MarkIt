@@ -88,7 +88,9 @@ struct todo
 // 1. _write_to_file() - For writing to the local file
 // -----------------------------------------------------------------------
 // | Returns: NOTHING                                                    |
-// | Parameters: json object - The JSON object to be written to the file |
+// | Parameters:                                                         |
+// | json object - The JSON object to be written to the file             |
+// | std::string - The file name to be written to                        |
 // -----------------------------------------------------------------------
 // 2. _read_from_file() - For reading from the local file
 // -------------------------------------------------------------------------------------
@@ -384,7 +386,7 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // ------------------------------------------------------------------------
 // This section contains the second layer of functions which uses the core cloud and file functions.
 // The functions are as below:
-// 1. logo() - gives the current time in the form of a string
+// 1. logo() - prints the logo at the specified location on the screen
 // ------------------------------------------
 // | Returns: NOTHING                       |
 // | Parameters:                            |
@@ -437,7 +439,12 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // | Returns: bool - return false, if file is corrupted |
 // | Parameters: NOTHING                                |
 // ------------------------------------------------------
-// 11. exist() - checks if a file exists
+// 11. deleteTodo() - deletes a todo from the todo list
+// ---------------------------------------------------------
+// | Returns: bool - return true, if todo is deleted       |
+// | Parameters: int* - signifying the index to be deleted |
+// ---------------------------------------------------------
+// 12. exist() - checks if a file exists
 // -----------------------------------------------
 // | Returns: bool - return true, if file exists |
 // | Parameters: std::string - file name         |
@@ -637,12 +644,6 @@ bool corruptedData()
     return false;
 }
 
-inline bool exist(const std::string &name)
-{
-    struct stat buffer;
-    return (stat(name.c_str(), &buffer) == 0);
-}
-
 bool deleteTodo(int *selection)
 {
     std::vector<todo> temp = localSave["data"];
@@ -662,6 +663,12 @@ bool deleteTodo(int *selection)
         return false;
     }
     return true;
+}
+
+inline bool exist(const std::string &name)
+{
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
 }
 
 // ------------------------------------------------------------------------
@@ -707,74 +714,11 @@ bool deleteTodo(int *selection)
 // | Returns: NOTHING    |
 // | Parameters: NOTHING |
 // -----------------------
-
-void generateKey()
-{
-    curs_set(0);
-    int part = (getmaxy(stdscr) - 18) / 4;
-    std::string key = "";
-    char keyC[36];
-    WINDOW *title = newwin(8, getmaxx(stdscr), part, 0);
-    WINDOW *keyWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
-    WINDOW *infobox = newwin(5, getmaxx(stdscr) - 20, 3 * part + 13, 10);
-    WINDOW *information = newwin(3, getmaxx(stdscr), getmaxy(stdscr) - 3, 0);
-    while (1)
-    {
-        curs_set(0);
-        clear();
-        resize_event();
-#ifdef _WIN32
-        resize_window(keyWindow, 5, getmaxx(stdscr) - 20);
-        resize_window(infobox, 5, getmaxx(stdscr) - 20);
-        resize_window(title, 8, getmaxx(stdscr));
-        resize_window(information, 3, getmaxx(stdscr));
-#else
-        wresize(keyWindow, 5, getmaxx(stdscr) - 20);
-        wresize(infobox, 5, getmaxx(stdscr) - 20);
-        wresize(title, 8, getmaxx(stdscr));
-        wresize(information, 3, getmaxx(stdscr));
-#endif
-        part = (getmaxy(stdscr) - 18) / 4;
-        if (getmaxx(stdscr) >= minWidth)
-        {
-            wclear(keyWindow);
-            wclear(infobox);
-            wclear(title);
-            wclear(information);
-            wrefresh(keyWindow);
-            wrefresh(infobox);
-            wborder(stdscr, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-            BORDER(keyWindow);
-            BORDER(infobox);
-            int part = (getmaxx(title) - 34) / 2;
-            int half = 0;
-            logo(title, half, part);
-            mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
-            mvwprintw(keyWindow, getmaxy(keyWindow) / 2, 5, "API Key: ");
-            mvwprintw(infobox, getmaxy(infobox) / 2, (getmaxx(infobox) - 76) / 2, "Get a free API key by visiting getpantry.cloud for storing your data online");
-            wrefresh(title);
-            wrefresh(information);
-            wrefresh(infobox);
-            wbkgd(keyWindow, COLOR_PAIR(1));
-            wgetnstr(keyWindow, keyC, 36);
-            wbkgd(keyWindow, COLOR_PAIR(6));
-            BORDER(keyWindow);
-        }
-        else
-        {
-            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
-        }
-        key = keyC;
-        json temp;
-        temp["key"] = key;
-        if (key.length() == 36)
-        {
-            _write_to_file(temp, keyFile);
-            PantryID = key;
-        }
-        break;
-    }
-}
+// 8. generateKey() - prompts the user to enter his/her API key manually - not prompted if the key file is valid
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
 
 void printCenter(int *selected, std::vector<std::string> a, WINDOW *win)
 {
@@ -1208,6 +1152,74 @@ void set_title()
     std::string title = "Todo";
     std::cout << "\033]0;" << title << "\007";
 #endif
+}
+
+void generateKey()
+{
+    curs_set(0);
+    int part = (getmaxy(stdscr) - 18) / 4;
+    std::string key = "";
+    char keyC[36];
+    WINDOW *title = newwin(8, getmaxx(stdscr), part, 0);
+    WINDOW *keyWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
+    WINDOW *infobox = newwin(5, getmaxx(stdscr) - 20, 3 * part + 13, 10);
+    WINDOW *information = newwin(3, getmaxx(stdscr), getmaxy(stdscr) - 3, 0);
+    while (1)
+    {
+        curs_set(0);
+        clear();
+        resize_event();
+#ifdef _WIN32
+        resize_window(keyWindow, 5, getmaxx(stdscr) - 20);
+        resize_window(infobox, 5, getmaxx(stdscr) - 20);
+        resize_window(title, 8, getmaxx(stdscr));
+        resize_window(information, 3, getmaxx(stdscr));
+#else
+        wresize(keyWindow, 5, getmaxx(stdscr) - 20);
+        wresize(infobox, 5, getmaxx(stdscr) - 20);
+        wresize(title, 8, getmaxx(stdscr));
+        wresize(information, 3, getmaxx(stdscr));
+#endif
+        part = (getmaxy(stdscr) - 18) / 4;
+        if (getmaxx(stdscr) >= minWidth)
+        {
+            wclear(keyWindow);
+            wclear(infobox);
+            wclear(title);
+            wclear(information);
+            wrefresh(keyWindow);
+            wrefresh(infobox);
+            wborder(stdscr, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+            BORDER(keyWindow);
+            BORDER(infobox);
+            int part = (getmaxx(title) - 34) / 2;
+            int half = 0;
+            logo(title, half, part);
+            mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
+            mvwprintw(keyWindow, getmaxy(keyWindow) / 2, 5, "API Key: ");
+            mvwprintw(infobox, getmaxy(infobox) / 2, (getmaxx(infobox) - 76) / 2, "Get a free API key by visiting getpantry.cloud for storing your data online");
+            wrefresh(title);
+            wrefresh(information);
+            wrefresh(infobox);
+            wbkgd(keyWindow, COLOR_PAIR(1));
+            wgetnstr(keyWindow, keyC, 36);
+            wbkgd(keyWindow, COLOR_PAIR(6));
+            BORDER(keyWindow);
+        }
+        else
+        {
+            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+        }
+        key = keyC;
+        json temp;
+        temp["key"] = key;
+        if (key.length() == 36)
+        {
+            _write_to_file(temp, keyFile);
+            PantryID = key;
+        }
+        break;
+    }
 }
 
 // ------------------------------------------------------------------------
