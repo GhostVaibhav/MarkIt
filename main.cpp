@@ -617,27 +617,6 @@ void pushToCloud(WINDOW *win)
     }
 }
 
-bool corruptedState()
-{
-    try
-    {
-        json temp = json::parse(_read_from_file(stateFile));
-        std::string name = temp["userName"];
-        std::string pass = temp["userHash"];
-        if (name == "" || pass == "") return true;
-        json temp2;
-        temp2 = getBucketDetails(name);
-        if (temp2.is_null()) return true;
-        std::string pass2 = temp2["userHash"];
-        if (pass2 != pass) return true;
-        return false;
-    }
-    catch(...)
-    {
-        return true;
-    }
-}
-
 bool corruptedData()
 {
     if (localSave["number"] != localSave["data"].size() || !localSave["data"].is_array() || localSave["hash"] != curUserHash)
@@ -1246,6 +1225,7 @@ int main(int argc, char *argv[])
         if (arg == "--test")
         {
             std::cout << "Starting test mode (only for dev-builds)" << std::endl;
+            return 0;
         }
     }
     set_title();
@@ -1277,17 +1257,9 @@ int main(int argc, char *argv[])
     loading("Reading state file");
     try
     {
-        if(!corruptedState())
-        {
-            json temp = json::parse(_read_from_file(stateFile));
-            curUser = temp["userName"];
-            cloudSave = getBucketDetails(curUser);
-        }
-        else
-        {
-            _delete_file(stateFile);
-            loggedIn = login(&curUser);
-        }
+        json temp = json::parse(_read_from_file(stateFile));
+        curUser = temp["userName"];
+        cloudSave = getBucketDetails(curUser);
     }
     catch(...)
     {
