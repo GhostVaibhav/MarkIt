@@ -1,31 +1,32 @@
 /*
-    *      __  ___         __    ______  __
-    *     /  |/  /__ _____/ /__ /  _/ /_/ /
-    *    / /|_/ / _ `/ __/  '_/_/ // __/_/
-    *   /_/  /_/\_,_/_/ /_/\_\/___/\__(_)
-    *   
-    *   MIT License
-    *   
-    *   Copyright (c) 2021 Vaibhav Sharma
-    *   
-    *   Permission is hereby granted, free of charge, to any person obtaining a copy
-    *   of this software and associated documentation files (the "Software"), to deal
-    *   in the Software without restriction, including without limitation the rights
-    *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    *   copies of the Software, and to permit persons to whom the Software is
-    *   furnished to do so, subject to the following conditions:
-    *   
-    *   The above copyright notice and this permission notice shall be included in all
-    *   copies or substantial portions of the Software.
-    *   
-    *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    *   SOFTWARE.
-*/
+ *      __  ___         __    ____ __  __
+ *     /  |/  /__ _____/ /__ /  _// /_/ /
+ *    / /|_/ / _ `/ __/  '_/_/ / / __/_/
+ *   /_/  /_/\_,_/_/ /_/\_\/___/ \__(_)
+ *   
+ *   MIT License
+ *   
+ *   Copyright (c) 2021 Vaibhav Sharma
+ *   
+ *   Permission is hereby granted, free of charge, to any person obtaining a copy
+ *   of this software and associated documentation files (the "Software"), to deal
+ *   in the Software without restriction, including without limitation the rights
+ *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *   copies of the Software, and to permit persons to whom the Software is
+ *   furnished to do so, subject to the following conditions:
+ *   
+ *   The above copyright notice and this permission notice shall be included in all
+ *   copies or substantial portions of the Software.
+ *   
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *   SOFTWARE.
+ */
+
 // ------------------------------------------------------------------------
 // ---------------------------HEADER FILES---------------------------------
 // ------------------------------------------------------------------------
@@ -60,9 +61,10 @@ using json = nlohmann::json;                             // Using namespace for 
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
 std::string curUser = "";                                // For storing the current username
 std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
-std::string PantryID = "test123";                        // ugly: Issue: Remove this exposed API Key
+std::string PantryID;                                    // For storing the API key of the Pantry
 std::string storageFile = "data.dat";                    // File name of the local storage file - DON'T CHANGE THIS!!
 std::string stateFile = "state.dat";                     // File name of the local state file - DON'T CHANGE THIS!!
+std::string keyFile = "key.dat";                         // File name of the local key file - DON'T CHANGE THIS!!
 int push = 0;                                            // Global variable for keeping track of "push" requests
 int pull = 0;                                            // Global variable for keeping track of "pull" requests
 
@@ -73,7 +75,7 @@ int pull = 0;                                            // Global variable for 
 struct todo
 {
     std::string name;                                                   // Storing the name of Todo
-    std::string desc;                                                   // Storing rge description of Todo
+    std::string desc;                                                   // Storing the description of Todo
     std::string time;                                                   // Automatically generating the time for a Todo
     bool isComplete;                                                    // Marking the Todo as "complete" or "not complete"
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(todo, name, desc, time, isComplete); // For serializing and deserializing JSON from Todo structure and vice-versa
@@ -86,7 +88,9 @@ struct todo
 // 1. _write_to_file() - For writing to the local file
 // -----------------------------------------------------------------------
 // | Returns: NOTHING                                                    |
-// | Parameters: json object - The JSON object to be written to the file |
+// | Parameters:                                                         |
+// | json object - The JSON object to be written to the file             |
+// | std::string - The file name to be written to                        |
 // -----------------------------------------------------------------------
 // 2. _read_from_file() - For reading from the local file
 // -------------------------------------------------------------------------------------
@@ -99,9 +103,9 @@ struct todo
 // | Parameters: std::string - The file to be deleted |
 // ----------------------------------------------------
 
-void _write_to_file(json temp)
+void _write_to_file(json temp, std::string STORAGE_FILE = storageFile)
 {
-    std::ofstream f1(storageFile);
+    std::ofstream f1(STORAGE_FILE);
     f1 << temp.dump();
     f1.close();
 }
@@ -382,56 +386,115 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // ------------------------------------------------------------------------
 // This section contains the second layer of functions which uses the core cloud and file functions.
 // The functions are as below:
-// 1. computeTime() - gives the current time in the form of a string
+// 1. logo() - prints the logo at the specified location on the screen
+// ------------------------------------------
+// | Returns: NOTHING                       |
+// | Parameters:                            |
+// | WINDOW* - the window to print on       |
+// | int - starting x - co-ordinate of logo |
+// | int - starting y - co-ordinate of logo |
+// ------------------------------------------
+// 2. computeTime() - gives the current time in the form of a string
 // ---------------------------------------------------------------
 // | Returns: std::string - present time in the form of a string |
 // | Parameters: NOTHING                                         |
 // ---------------------------------------------------------------
-// 2. resize_event() - resizes the terminal window
+// 3. resize_event() - resizes the terminal window
 // -----------------------
 // | Returns: NOTHING    |
 // | Parameters: NOTHING |
 // -----------------------
-// 3. addTodo() - adds a todo to the todo list
+// 4. addTodo() - adds a todo to the todo list
 // -----------------------------------------------------------
 // | Returns: bool - If todo was successfully added          |
 // | Parameters: WINDOW* - The terminal WINDOW to display on |
 // -----------------------------------------------------------
-// 4. loading() - displays a loading screen with a custom message
+// 5. loading() - displays a loading screen with a custom message
 // --------------------------------------------------------------------------
 // | Returns: NOTHING                                                       |
 // | Parameters: std::string - String to be displayed on the loading screen |
 // --------------------------------------------------------------------------
-// 5. refreshCloudSave() - updates the cloud save, local save and update the push-pull counter
+// 6. refreshCloudSave() - updates the cloud save, local save and update the push-pull counter
 // -----------------------
 // | Returns: NOTHING    |
 // | Parameters: NOTHING |
 // -----------------------
-// 6. print_stats() - prints the current stats (i.e push and pull counter)
+// 7. print_stats() - prints the current stats (i.e push and pull counter)
 // ---------------------------------------------------------------------
 // | Returns: NOTHING                                                  |
 // | Parameters: WINDOW* - the terminal WINDOW to display the stats on |
 // ---------------------------------------------------------------------
-// 7. pullFromCloud() - pulls the todos from the cloud and updates the local save in accordance with the cloud save
+// 8. pullFromCloud() - pulls the todos from the cloud and updates the local save in accordance with the cloud save
 // ------------------------------------------------------------------------
 // | Returns: bool - If pull was successful                               |
 // | Parameters: WINDOW* - the terminal window to display any information |
 // ------------------------------------------------------------------------
-// 8. pushToCloud() - pushes the todos to the cloud and updates the local save as well as the cloud save
+// 9. pushToCloud() - pushes the todos to the cloud and updates the local save as well as the cloud save
 // -----------------------------------------------------------------------------------------
 // | Returns: NOTHING                                                                      |
 // | Parameters: WINDOW* - the terminal window to display any information (loading screen) |
 // -----------------------------------------------------------------------------------------
-// 9. corrupted() - checks if a file is corrupted
+// 10. corruptedData() - checks if a file is corrupted
 // ------------------------------------------------------
 // | Returns: bool - return false, if file is corrupted |
 // | Parameters: NOTHING                                |
 // ------------------------------------------------------
-// 10. exist() - checks if a file exists
+// 11. deleteTodo() - deletes a todo from the todo list
+// ---------------------------------------------------------
+// | Returns: bool - return true, if todo is deleted       |
+// | Parameters: int* - signifying the index to be deleted |
+// ---------------------------------------------------------
+// 12. exist() - checks if a file exists
 // -----------------------------------------------
 // | Returns: bool - return true, if file exists |
 // | Parameters: std::string - file name         |
 // -----------------------------------------------
+
+void logo(WINDOW *win, int x = 0, int y = 1)
+{
+    wattron(win, COLOR_PAIR(3));
+    mvwprintw(win, x + 1, y, R"(   __  ___)");
+    mvwprintw(win, x + 2, y, R"(  /  |/  /)");
+    mvwprintw(win, x + 3, y, R"( / /|_/ /)");
+    mvwprintw(win, x + 4, y, R"(/_/  /_/)");
+    wattroff(win, COLOR_PAIR(3));
+    wattron(win, COLOR_PAIR(4));
+    mvwprintw(win, x + 1, y + 7, R"()");
+    mvwprintw(win, x + 2, y + 10, R"(__ _)");
+    mvwprintw(win, x + 3, y + 9, R"( _ `)");
+    mvwprintw(win, x + 4, y + 8, R"(\_,_)");
+    wattroff(win, COLOR_PAIR(4));
+    wattron(win, COLOR_PAIR(4));
+    mvwprintw(win, x + 1, y + 14, R"()");
+    mvwprintw(win, x + 2, y + 14, R"(____)");
+    mvwprintw(win, x + 3, y + 13, R"(/ __)");
+    mvwprintw(win, x + 4, y + 12, R"(/_/ )");
+    wattroff(win, COLOR_PAIR(4));
+    wattron(win, COLOR_PAIR(2));
+    mvwprintw(win, x + 1, y + 19, R"(__    )");
+    mvwprintw(win, x + 2, y + 18, R"(/ /__ )");
+    mvwprintw(win, x + 3, y + 17, R"(/  '_/)");
+    mvwprintw(win, x + 4, y + 16, R"(/_/\_\)");
+    wattroff(win, COLOR_PAIR(2));
+    wattron(win, COLOR_PAIR(5));
+    mvwprintw(win, x + 1, y + 25, R"(____)");
+    mvwprintw(win, x + 2, y + 24, R"(/  _)");
+    mvwprintw(win, x + 3, y + 23, R"(_/ /)");
+    mvwprintw(win, x + 4, y + 22, R"(/___/)");
+    wattroff(win, COLOR_PAIR(5));
+    wattron(win, COLOR_PAIR(5));
+    mvwprintw(win, x + 1, y + 29, R"(__  )");
+    mvwprintw(win, x + 2, y + 28, R"(/ /_)");
+    mvwprintw(win, x + 3, y + 27, R"(/ __)");
+    mvwprintw(win, x + 4, y + 27, R"(\__)");
+    wattroff(win, COLOR_PAIR(5));
+    wattron(win, COLOR_PAIR(1));
+    mvwprintw(win, x + 1, y + 33, R"(__)");
+    mvwprintw(win, x + 2, y + 32, R"(/ /)");
+    mvwprintw(win, x + 3, y + 31, R"(/_/)");
+    mvwprintw(win, x + 4, y + 30, R"((_))");
+    wattroff(win, COLOR_PAIR(1));
+}
 
 std::string computeTime()
 {
@@ -491,7 +554,9 @@ bool addTodo(WINDOW *win)
         return false;
     t.time = computeTime();
     t.isComplete = false;
-    localSave["data"].push_back(t);
+    std::vector<todo> temp;
+    temp.push_back(t);
+    localSave["data"] = temp;
     int number = localSave["number"];
     number++;
     localSave["number"] = number;
@@ -507,48 +572,7 @@ void loading(std::string loadText)
     int half = ((getmaxy(stdscr) - 4) / 2) - 1;
     refresh();
     wrefresh(stdscr);
-    wattron(stdscr, COLOR_PAIR(3));
-    mvwprintw(stdscr, half + 1, part, R"(   __  ___)");
-    mvwprintw(stdscr, half + 2, part, R"(  /  |/  /)");
-    mvwprintw(stdscr, half + 3, part, R"( / /|_/ /)");
-    mvwprintw(stdscr, half + 4, part, R"(/_/  /_/)");
-    wattroff(stdscr, COLOR_PAIR(3));
-    wattron(stdscr, COLOR_PAIR(4));
-    mvwprintw(stdscr, half + 1, part + 7, R"()");
-    mvwprintw(stdscr, half + 2, part + 10, R"(__ _)");
-    mvwprintw(stdscr, half + 3, part + 9, R"( _ `)");
-    mvwprintw(stdscr, half + 4, part + 8, R"(\_,_)");
-    wattroff(stdscr, COLOR_PAIR(4));
-    wattron(stdscr, COLOR_PAIR(4));
-    mvwprintw(stdscr, half + 1, part + 14, R"()");
-    mvwprintw(stdscr, half + 2, part + 14, R"(____)");
-    mvwprintw(stdscr, half + 3, part + 13, R"(/ __)");
-    mvwprintw(stdscr, half + 4, part + 12, R"(/_/ )");
-    wattroff(stdscr, COLOR_PAIR(4));
-    wattron(stdscr, COLOR_PAIR(2));
-    mvwprintw(stdscr, half + 1, part + 19, R"(__    )");
-    mvwprintw(stdscr, half + 2, part + 18, R"(/ /__ )");
-    mvwprintw(stdscr, half + 3, part + 17, R"(/  '_/)");
-    mvwprintw(stdscr, half + 4, part + 16, R"(/_/\_\)");
-    wattroff(stdscr, COLOR_PAIR(2));
-    wattron(stdscr, COLOR_PAIR(5));
-    mvwprintw(stdscr, half + 1, part + 25, R"(____)");
-    mvwprintw(stdscr, half + 2, part + 24, R"(/  _)");
-    mvwprintw(stdscr, half + 3, part + 23, R"(_/ /)");
-    mvwprintw(stdscr, half + 4, part + 22, R"(/___/)");
-    wattroff(stdscr, COLOR_PAIR(5));
-    wattron(stdscr, COLOR_PAIR(5));
-    mvwprintw(stdscr, half + 1, part + 29, R"(__  )");
-    mvwprintw(stdscr, half + 2, part + 28, R"(/ /_)");
-    mvwprintw(stdscr, half + 3, part + 27, R"(/ __)");
-    mvwprintw(stdscr, half + 4, part + 27, R"(\__)");
-    wattroff(stdscr, COLOR_PAIR(5));
-    wattron(stdscr, COLOR_PAIR(1));
-    mvwprintw(stdscr, half + 1, part + 33, R"(__)");
-    mvwprintw(stdscr, half + 2, part + 32, R"(/ /)");
-    mvwprintw(stdscr, half + 3, part + 31, R"(/_/)");
-    mvwprintw(stdscr, half + 4, part + 30, R"((_))");
-    wattroff(stdscr, COLOR_PAIR(1));
+    logo(stdscr, half, part);
     mvwprintw(stdscr, getmaxy(stdscr) - 2, (getmaxx(stdscr) - loadText.size()) / 2, loadText.c_str());
     wrefresh(stdscr);
     refresh();
@@ -600,7 +624,7 @@ void pushToCloud(WINDOW *win)
     }
 }
 
-bool corrupted()
+bool corruptedData()
 {
     if (localSave["number"] != localSave["data"].size() || !localSave["data"].is_array() || localSave["hash"] != curUserHash)
     {
@@ -620,25 +644,31 @@ bool corrupted()
     return false;
 }
 
-inline bool exist(const std::string &name)
-{
-    struct stat buffer;
-    return (stat(name.c_str(), &buffer) == 0);
-}
-
 bool deleteTodo(int *selection)
 {
-    if (localSave["data"].size() < *selection)
+    std::vector<todo> temp = localSave["data"];
+    if (temp.size() < *selection)
         return false;
     try
     {
-        localSave["data"].erase(localSave["data"].begin() + localSave["data"].at(*selection));
+        temp.erase(temp.begin() + (*selection));
+        localSave["data"] = temp;
+        int number = localSave["number"];
+        number--;
+        localSave["number"] = number;
+        _write_to_file(localSave);
     }
     catch (...)
     {
         return false;
     }
     return true;
+}
+
+inline bool exist(const std::string &name)
+{
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
 }
 
 // ------------------------------------------------------------------------
@@ -680,6 +710,11 @@ bool deleteTodo(int *selection)
 // | Parameters: NOTHING |
 // -----------------------
 // 7. set_title() - sets the title of the terminal window
+// -----------------------
+// | Returns: NOTHING    |
+// | Parameters: NOTHING |
+// -----------------------
+// 8. generateKey() - prompts the user to enter his/her API key manually - not prompted if the key file is valid
 // -----------------------
 // | Returns: NOTHING    |
 // | Parameters: NOTHING |
@@ -732,48 +767,7 @@ int menu(std::vector<std::string> a)
             wrefresh(menu);
             box(title, 0, 0);
             box(menu, 0, 0);
-            wattron(title, COLOR_PAIR(3));
-            mvwprintw(title, half + 1, part, R"(   __  ___)");
-            mvwprintw(title, half + 2, part, R"(  /  |/  /)");
-            mvwprintw(title, half + 3, part, R"( / /|_/ /)");
-            mvwprintw(title, half + 4, part, R"(/_/  /_/)");
-            wattroff(title, COLOR_PAIR(3));
-            wattron(title, COLOR_PAIR(4));
-            mvwprintw(title, half + 1, part + 7, R"()");
-            mvwprintw(title, half + 2, part + 10, R"(__ _)");
-            mvwprintw(title, half + 3, part + 9, R"( _ `)");
-            mvwprintw(title, half + 4, part + 8, R"(\_,_)");
-            wattroff(title, COLOR_PAIR(4));
-            wattron(title, COLOR_PAIR(4));
-            mvwprintw(title, half + 1, part + 14, R"()");
-            mvwprintw(title, half + 2, part + 14, R"(____)");
-            mvwprintw(title, half + 3, part + 13, R"(/ __)");
-            mvwprintw(title, half + 4, part + 12, R"(/_/ )");
-            wattroff(title, COLOR_PAIR(4));
-            wattron(title, COLOR_PAIR(2));
-            mvwprintw(title, half + 1, part + 19, R"(__    )");
-            mvwprintw(title, half + 2, part + 18, R"(/ /__ )");
-            mvwprintw(title, half + 3, part + 17, R"(/  '_/)");
-            mvwprintw(title, half + 4, part + 16, R"(/_/\_\)");
-            wattroff(title, COLOR_PAIR(2));
-            wattron(title, COLOR_PAIR(5));
-            mvwprintw(title, half + 1, part + 25, R"(____)");
-            mvwprintw(title, half + 2, part + 24, R"(/  _)");
-            mvwprintw(title, half + 3, part + 23, R"(_/ /)");
-            mvwprintw(title, half + 4, part + 22, R"(/___/)");
-            wattroff(title, COLOR_PAIR(5));
-            wattron(title, COLOR_PAIR(5));
-            mvwprintw(title, half + 1, part + 29, R"(__  )");
-            mvwprintw(title, half + 2, part + 28, R"(/ /_)");
-            mvwprintw(title, half + 3, part + 27, R"(/ __)");
-            mvwprintw(title, half + 4, part + 27, R"(\__)");
-            wattroff(title, COLOR_PAIR(5));
-            wattron(title, COLOR_PAIR(1));
-            mvwprintw(title, half + 1, part + 33, R"(__)");
-            mvwprintw(title, half + 2, part + 32, R"(/ /)");
-            mvwprintw(title, half + 3, part + 31, R"(/_/)");
-            mvwprintw(title, half + 4, part + 30, R"((_))");
-            wattroff(title, COLOR_PAIR(1));
+            logo(title, half, part);
             mvwprintw(title, 3, 3 * part + 25, ("Username: " + curUser).c_str());
             mvwprintw(title, 5, 3 * part + 25, ("Pantry ID: " + PantryID).c_str());
             printCenter(&pointerIndex, a, menu);
@@ -813,6 +807,7 @@ int menu(std::vector<std::string> a)
 void main_menu()
 {
     curs_set(0);
+    bool changesMade = false;
     WINDOW *todoUserName = newwin(10, getmaxx(stdscr) - 2, 1, 1);
     WINDOW *todoWindow = newwin(getmaxy(stdscr) - 12, getmaxx(stdscr) - 2, 11, 1);
     WINDOW *todoBody = newwin(getmaxy(todoWindow) - 4, getmaxx(todoWindow) - 1, getmaxy(todoUserName) + 4, 1);
@@ -821,6 +816,11 @@ void main_menu()
     while (1)
     {
         std::vector<todo> temp = localSave["data"];
+        if (changesMade)
+        {
+            refreshCloudSave();
+            changesMade = false;
+        }
         noecho();
         updatePP();
         curs_set(0);
@@ -854,48 +854,7 @@ void main_menu()
             wclear(todoBody);
             wrefresh(todoBody);
             refresh();
-            wattron(todoUserName, COLOR_PAIR(3));
-            mvwprintw(todoUserName, half + 1, part, R"(   __  ___)");
-            mvwprintw(todoUserName, half + 2, part, R"(  /  |/  /)");
-            mvwprintw(todoUserName, half + 3, part, R"( / /|_/ /)");
-            mvwprintw(todoUserName, half + 4, part, R"(/_/  /_/)");
-            wattroff(todoUserName, COLOR_PAIR(3));
-            wattron(todoUserName, COLOR_PAIR(4));
-            mvwprintw(todoUserName, half + 1, part + 7, R"()");
-            mvwprintw(todoUserName, half + 2, part + 10, R"(__ _)");
-            mvwprintw(todoUserName, half + 3, part + 9, R"( _ `)");
-            mvwprintw(todoUserName, half + 4, part + 8, R"(\_,_)");
-            wattroff(todoUserName, COLOR_PAIR(4));
-            wattron(todoUserName, COLOR_PAIR(4));
-            mvwprintw(todoUserName, half + 1, part + 14, R"()");
-            mvwprintw(todoUserName, half + 2, part + 14, R"(____)");
-            mvwprintw(todoUserName, half + 3, part + 13, R"(/ __)");
-            mvwprintw(todoUserName, half + 4, part + 12, R"(/_/ )");
-            wattroff(todoUserName, COLOR_PAIR(4));
-            wattron(todoUserName, COLOR_PAIR(2));
-            mvwprintw(todoUserName, half + 1, part + 19, R"(__    )");
-            mvwprintw(todoUserName, half + 2, part + 18, R"(/ /__ )");
-            mvwprintw(todoUserName, half + 3, part + 17, R"(/  '_/)");
-            mvwprintw(todoUserName, half + 4, part + 16, R"(/_/\_\)");
-            wattroff(todoUserName, COLOR_PAIR(2));
-            wattron(todoUserName, COLOR_PAIR(5));
-            mvwprintw(todoUserName, half + 1, part + 25, R"(____)");
-            mvwprintw(todoUserName, half + 2, part + 24, R"(/  _)");
-            mvwprintw(todoUserName, half + 3, part + 23, R"(_/ /)");
-            mvwprintw(todoUserName, half + 4, part + 22, R"(/___/)");
-            wattroff(todoUserName, COLOR_PAIR(5));
-            wattron(todoUserName, COLOR_PAIR(5));
-            mvwprintw(todoUserName, half + 1, part + 29, R"(__  )");
-            mvwprintw(todoUserName, half + 2, part + 28, R"(/ /_)");
-            mvwprintw(todoUserName, half + 3, part + 27, R"(/ __)");
-            mvwprintw(todoUserName, half + 4, part + 27, R"(\__)");
-            wattroff(todoUserName, COLOR_PAIR(5));
-            wattron(todoUserName, COLOR_PAIR(1));
-            mvwprintw(todoUserName, half + 1, part + 33, R"(__)");
-            mvwprintw(todoUserName, half + 2, part + 32, R"(/ /)");
-            mvwprintw(todoUserName, half + 3, part + 31, R"(/_/)");
-            mvwprintw(todoUserName, half + 4, part + 30, R"((_))");
-            wattroff(todoUserName, COLOR_PAIR(1));
+            logo(todoUserName, half, part);
             mvwprintw(todoUserName, 3, 3 * part + 25, ("Username: " + curUser).c_str());
             mvwprintw(todoUserName, 5, 3 * part + 25, ("Pantry ID: " + PantryID).c_str());
             int tabDiv = (getmaxx(todoWindow) - 2) / 3;
@@ -978,9 +937,15 @@ void main_menu()
                     c = addTodo(todoWindow);
             }
             else if (choice == 1)
+            {
                 pushToCloud(stdscr);
+                changesMade = true;
+            }
             else if (choice == 2)
+            {
                 pullFromCloud(stdscr);
+                changesMade = true;
+            }
             else if (choice == 3)
                 refreshCloudSave();
         }
@@ -989,7 +954,7 @@ void main_menu()
             break;
         case KEY_F(6):
             return;
-        case KEY_F(4):
+        case '\n':
         {
             refresh();
             echo();
@@ -1002,15 +967,19 @@ void main_menu()
                 }
                 else
                 {
-                    loading("Todo not deleted");
+                    loading("Todo could not be deleted");
                 }
             }
             else if (choice == 1)
             {
+                temp.at(pointerIndex).isComplete = !temp.at(pointerIndex).isComplete;
+                localSave["data"] = temp;
+                _write_to_file(localSave);
             }
-            noecho();
         }
-        break;
+            noecho();
+            c = KEY_RESIZE;
+            break;
         default:
             break;
         }
@@ -1060,48 +1029,7 @@ int login(std::string *bucket)
             BORDER(passwordWindow);
             int part = (getmaxx(title) - 34) / 2;
             int half = 0;
-            wattron(title, COLOR_PAIR(3));
-            mvwprintw(title, half + 1, part, R"(   __  ___)");
-            mvwprintw(title, half + 2, part, R"(  /  |/  /)");
-            mvwprintw(title, half + 3, part, R"( / /|_/ /)");
-            mvwprintw(title, half + 4, part, R"(/_/  /_/)");
-            wattroff(title, COLOR_PAIR(3));
-            wattron(title, COLOR_PAIR(4));
-            mvwprintw(title, half + 1, part + 7, R"()");
-            mvwprintw(title, half + 2, part + 10, R"(__ _)");
-            mvwprintw(title, half + 3, part + 9, R"( _ `)");
-            mvwprintw(title, half + 4, part + 8, R"(\_,_)");
-            wattroff(title, COLOR_PAIR(4));
-            wattron(title, COLOR_PAIR(4));
-            mvwprintw(title, half + 1, part + 14, R"()");
-            mvwprintw(title, half + 2, part + 14, R"(____)");
-            mvwprintw(title, half + 3, part + 13, R"(/ __)");
-            mvwprintw(title, half + 4, part + 12, R"(/_/ )");
-            wattroff(title, COLOR_PAIR(4));
-            wattron(title, COLOR_PAIR(2));
-            mvwprintw(title, half + 1, part + 19, R"(__    )");
-            mvwprintw(title, half + 2, part + 18, R"(/ /__ )");
-            mvwprintw(title, half + 3, part + 17, R"(/  '_/)");
-            mvwprintw(title, half + 4, part + 16, R"(/_/\_\)");
-            wattroff(title, COLOR_PAIR(2));
-            wattron(title, COLOR_PAIR(5));
-            mvwprintw(title, half + 1, part + 25, R"(____)");
-            mvwprintw(title, half + 2, part + 24, R"(/  _)");
-            mvwprintw(title, half + 3, part + 23, R"(_/ /)");
-            mvwprintw(title, half + 4, part + 22, R"(/___/)");
-            wattroff(title, COLOR_PAIR(5));
-            wattron(title, COLOR_PAIR(5));
-            mvwprintw(title, half + 1, part + 29, R"(__  )");
-            mvwprintw(title, half + 2, part + 28, R"(/ /_)");
-            mvwprintw(title, half + 3, part + 27, R"(/ __)");
-            mvwprintw(title, half + 4, part + 27, R"(\__)");
-            wattroff(title, COLOR_PAIR(5));
-            wattron(title, COLOR_PAIR(1));
-            mvwprintw(title, half + 1, part + 33, R"(__)");
-            mvwprintw(title, half + 2, part + 32, R"(/ /)");
-            mvwprintw(title, half + 3, part + 31, R"(/_/)");
-            mvwprintw(title, half + 4, part + 30, R"((_))");
-            wattroff(title, COLOR_PAIR(1));
+            logo(title, half, part);
             mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
             mvwprintw(userNameWindow, getmaxy(userNameWindow) / 2, 5, "Username: ");
             mvwprintw(passwordWindow, getmaxy(passwordWindow) / 2, (getmaxx(passwordWindow) - 20) / 2, "Enter your password");
@@ -1141,6 +1069,10 @@ int login(std::string *bucket)
                     clear();
                     *bucket = userName;
                     curUserHash = passwordString;
+                    json temp;
+                    temp["userName"] = userName;
+                    temp["userHash"] = passwordString;
+                    _write_to_file(temp, stateFile);
                     return 2;
                 }
                 else
@@ -1160,6 +1092,10 @@ int login(std::string *bucket)
                 replaceBucket(userNameString, cloudSave);
                 clear();
                 *bucket = userName;
+                json temp;
+                temp["userName"] = userName;
+                temp["userHash"] = passwordString;
+                _write_to_file(temp, stateFile);
                 return 1;
             }
         }
@@ -1175,54 +1111,15 @@ int login(std::string *bucket)
 
 void welcome(int code)
 {
+    if (code == -1)
+        return;
     WINDOW *loading = newwin(0, 0, 0, 0);
     clear();
     int part = (getmaxx(stdscr) - 36) / 2;
     int half = ((getmaxy(stdscr) - 4) / 2) - 1;
     refresh();
     wrefresh(loading);
-    wattron(loading, COLOR_PAIR(3));
-    mvwprintw(loading, half + 1, part, R"(   __  ___)");
-    mvwprintw(loading, half + 2, part, R"(  /  |/  /)");
-    mvwprintw(loading, half + 3, part, R"( / /|_/ /)");
-    mvwprintw(loading, half + 4, part, R"(/_/  /_/)");
-    wattroff(loading, COLOR_PAIR(3));
-    wattron(loading, COLOR_PAIR(4));
-    mvwprintw(loading, half + 1, part + 7, R"()");
-    mvwprintw(loading, half + 2, part + 10, R"(__ _)");
-    mvwprintw(loading, half + 3, part + 9, R"( _ `)");
-    mvwprintw(loading, half + 4, part + 8, R"(\_,_)");
-    wattroff(loading, COLOR_PAIR(4));
-    wattron(loading, COLOR_PAIR(4));
-    mvwprintw(loading, half + 1, part + 14, R"()");
-    mvwprintw(loading, half + 2, part + 14, R"(____)");
-    mvwprintw(loading, half + 3, part + 13, R"(/ __)");
-    mvwprintw(loading, half + 4, part + 12, R"(/_/ )");
-    wattroff(loading, COLOR_PAIR(4));
-    wattron(loading, COLOR_PAIR(2));
-    mvwprintw(loading, half + 1, part + 19, R"(__    )");
-    mvwprintw(loading, half + 2, part + 18, R"(/ /__ )");
-    mvwprintw(loading, half + 3, part + 17, R"(/  '_/)");
-    mvwprintw(loading, half + 4, part + 16, R"(/_/\_\)");
-    wattroff(loading, COLOR_PAIR(2));
-    wattron(loading, COLOR_PAIR(5));
-    mvwprintw(loading, half + 1, part + 25, R"(____)");
-    mvwprintw(loading, half + 2, part + 24, R"(/  _)");
-    mvwprintw(loading, half + 3, part + 23, R"(_/ /)");
-    mvwprintw(loading, half + 4, part + 22, R"(/___/)");
-    wattroff(loading, COLOR_PAIR(5));
-    wattron(loading, COLOR_PAIR(5));
-    mvwprintw(loading, half + 1, part + 29, R"(__  )");
-    mvwprintw(loading, half + 2, part + 28, R"(/ /_)");
-    mvwprintw(loading, half + 3, part + 27, R"(/ __)");
-    mvwprintw(loading, half + 4, part + 27, R"(\__)");
-    wattroff(loading, COLOR_PAIR(5));
-    wattron(loading, COLOR_PAIR(1));
-    mvwprintw(loading, half + 1, part + 33, R"(__)");
-    mvwprintw(loading, half + 2, part + 32, R"(/ /)");
-    mvwprintw(loading, half + 3, part + 31, R"(/_/)");
-    mvwprintw(loading, half + 4, part + 30, R"((_))");
-    wattroff(loading, COLOR_PAIR(1));
+    logo(loading, half, part);
     if (code == 1)
         mvwprintw(loading, getmaxy(stdscr) - 2, (getmaxx(stdscr) - 10 - curUser.size()) / 2, ("Welcome, " + curUser).c_str());
     else if (code == 2)
@@ -1257,18 +1154,90 @@ void set_title()
 #endif
 }
 
+void generateKey()
+{
+    curs_set(0);
+    int part = (getmaxy(stdscr) - 18) / 4;
+    std::string key;
+    char keyC[36];
+    WINDOW *title = newwin(8, getmaxx(stdscr), part, 0);
+    WINDOW *keyWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
+    WINDOW *infobox = newwin(5, getmaxx(stdscr) - 20, 3 * part + 13, 10);
+    WINDOW *information = newwin(3, getmaxx(stdscr), getmaxy(stdscr) - 3, 0);
+    while (1)
+    {
+        curs_set(0);
+        clear();
+        resize_event();
+#ifdef _WIN32
+        resize_window(keyWindow, 5, getmaxx(stdscr) - 20);
+        resize_window(infobox, 5, getmaxx(stdscr) - 20);
+        resize_window(title, 8, getmaxx(stdscr));
+        resize_window(information, 3, getmaxx(stdscr));
+#else
+        wresize(keyWindow, 5, getmaxx(stdscr) - 20);
+        wresize(infobox, 5, getmaxx(stdscr) - 20);
+        wresize(title, 8, getmaxx(stdscr));
+        wresize(information, 3, getmaxx(stdscr));
+#endif
+        part = (getmaxy(stdscr) - 18) / 4;
+        if (getmaxx(stdscr) >= minWidth)
+        {
+            wclear(keyWindow);
+            wclear(infobox);
+            wclear(title);
+            wclear(information);
+            wrefresh(keyWindow);
+            wrefresh(infobox);
+            wborder(stdscr, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+            BORDER(keyWindow);
+            BORDER(infobox);
+            int part = (getmaxx(title) - 34) / 2;
+            int half = 0;
+            logo(title, half, part);
+            mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
+            mvwprintw(keyWindow, getmaxy(keyWindow) / 2, 5, "API Key: ");
+            mvwprintw(infobox, getmaxy(infobox) / 2, (getmaxx(infobox) - 76) / 2, "Get a free API key by visiting getpantry.cloud for storing your data online");
+            wrefresh(title);
+            wrefresh(information);
+            wrefresh(infobox);
+            wbkgd(keyWindow, COLOR_PAIR(1));
+            wgetnstr(keyWindow, keyC, 36);
+            wbkgd(keyWindow, COLOR_PAIR(6));
+            BORDER(keyWindow);
+        }
+        else
+        {
+            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+        }
+        key = keyC;
+        json temp;
+        temp["key"] = key;
+        if (key.length() == 36)
+        {
+            _write_to_file(temp, keyFile);
+            PantryID = key;
+        }
+        break;
+    }
+}
+
 // ------------------------------------------------------------------------
 // ----------------------------MAIN FUNCTION-------------------------------
 // ------------------------------------------------------------------------
 
 int main(int argc, char *argv[])
 {
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
     if (argc > 1)
     {
         std::string arg = argv[1];
         if (arg == "--test")
         {
-            std::cout << "Starting testing mode (only for dev-builds)" << std::endl;
+            std::cout << "Starting test mode (only for dev-builds)" << std::endl;
+            return 0;
         }
     }
     set_title();
@@ -1277,7 +1246,39 @@ int main(int argc, char *argv[])
     curs_set(0);
     keypad(stdscr, true);
     add_colors();
-    int loggedIn = login(&curUser);
+    if (!exist(keyFile) || _read_from_file(keyFile) == "")
+    {
+        generateKey();
+    }
+    loading("Reading key file");
+    try
+    {
+        json temp = json::parse(_read_from_file(keyFile));
+        PantryID = temp["key"];
+    }
+    catch (...)
+    {
+        generateKey();
+    }
+    int loggedIn = -1;
+    if (!exist(stateFile))
+    {
+        loggedIn = login(&curUser);
+        goto loggedin;
+    }
+    loading("Reading state file");
+    try
+    {
+        json temp = json::parse(_read_from_file(stateFile));
+        curUser = temp["userName"];
+        cloudSave = getBucketDetails(curUser);
+    }
+    catch(...)
+    {
+        _delete_file(stateFile);
+        loggedIn = login(&curUser);
+    }
+    loggedin:
     try
     {
         localSave = json::parse(_read_from_file());
@@ -1288,7 +1289,7 @@ int main(int argc, char *argv[])
         localSave = cloudSave;
         _write_to_file(localSave);
     }
-    if (corrupted())
+    if (corruptedData())
     {
         _delete_file();
         localSave = cloudSave;
