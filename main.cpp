@@ -1264,21 +1264,22 @@ int main(int argc, char *argv[])
     if (!exist(stateFile))
     {
         loggedIn = login(&curUser);
-        goto loggedin;
     }
     loading("Reading state file");
-    try
+    if(loggedIn == -1)
     {
-        json temp = json::parse(_read_from_file(stateFile));
-        curUser = temp["userName"];
-        cloudSave = getBucketDetails(curUser);
+        try
+        {
+            json temp = json::parse(_read_from_file(stateFile));
+            curUser = temp["userName"];
+            cloudSave = getBucketDetails(curUser);
+        }
+        catch(...)
+        {
+            _delete_file(stateFile);
+            loggedIn = login(&curUser);
+        }
     }
-    catch(...)
-    {
-        _delete_file(stateFile);
-        loggedIn = login(&curUser);
-    }
-    loggedin:
     try
     {
         localSave = json::parse(_read_from_file());
