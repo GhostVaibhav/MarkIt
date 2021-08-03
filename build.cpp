@@ -29,7 +29,7 @@ int main(int argc,char* argv[]) {
         }
         cout << "- Linking object debug file\n";
         #ifdef _WIN32
-        cmd = "g++ include/sha256.cpp -std=c++17 " + fileName + ".o -o " + fileName + "_debug -Llib -lcurl -lpdcurses";
+        cmd = "g++ include/sha256.cpp -std=c++17 -static-libstdc++ -static-libgcc " + fileName + ".o -o " + fileName + "_debug -Llib -lcurl -lpdcurses";
         #else
         cmd = "g++ include/sha256.cpp " + fileName + ".o -o " + fileName + "_debug -lcurl -lncurses";
         #endif
@@ -84,7 +84,7 @@ int main(int argc,char* argv[]) {
         }
         cout << "- Linking object release file\n";
         #ifdef _WIN32
-        cmd = "g++ include/sha256.cpp -std=c++17 " + fileName + ".o -o " + fileName + " -Llib -lcurl -lpdcurses";
+        cmd = "g++ include/sha256.cpp -std=c++17 -static-libstdc++ -static-libgcc " + fileName + ".o -o " + fileName + " -Llib -lcurl -lpdcurses";
         #else
         cmd = "g++ include/sha256.cpp " + fileName + ".o -o " + fileName + " -lcurl -lncurses";
         #endif
