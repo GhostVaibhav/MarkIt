@@ -1245,6 +1245,7 @@ int main(int argc, char *argv[])
         if (arg == "--test")
         {
             std::cout << "Starting test mode (only for dev-builds)" << std::endl;
+            std::cout << "Only call it when you know what you are doing" << std::endl;
             return 0;
         }
     }
