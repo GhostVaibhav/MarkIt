@@ -58,6 +58,7 @@ nlohmann::json localSave; // Local save is also loaded in the memory once the us
 #endif
 using json = nlohmann::json;                             // Using namespace for minimizing the write effort
 #define minWidth 78                                      // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
+#define minHeight 20                                     // Defining the minimum height of the window in pixels - DON'T CHANGE THIS!!
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
 std::string curUser = "";                                // For storing the current username
 std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
@@ -755,7 +756,7 @@ int menu(std::vector<std::string> a)
         wresize(title, 10, getmaxx(stdscr) - 2);
         wresize(menu, getmaxy(stdscr) - 12, getmaxx(stdscr) - 2);
 #endif
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             int part = (getmaxx(title) - 81) / 4;
             int half = 1;
@@ -778,7 +779,8 @@ int menu(std::vector<std::string> a)
         }
         else
         {
-            mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         c = getch();
         switch (c)
@@ -837,7 +839,7 @@ void main_menu()
             wresize(todoBody, getmaxy(todoWindow) - 4, getmaxx(todoWindow) - 1);
 #endif
         }
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             int part = (getmaxx(todoUserName) - 81) / 4;
             int half = 1;
@@ -898,7 +900,8 @@ void main_menu()
         }
         else
         {
-            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         c = getch();
         switch (c)
@@ -1016,7 +1019,7 @@ int login(std::string *bucket)
         wresize(wrongPassword, 3, getmaxx(stdscr));
 #endif
         part = (getmaxy(stdscr) - 18) / 4;
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             wclear(userNameWindow);
             wclear(passwordWindow);
@@ -1052,7 +1055,8 @@ int login(std::string *bucket)
         }
         else
         {
-            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         std::string userNameString = userName;
         std::string passwordString = password;
@@ -1154,7 +1158,7 @@ void set_title()
 #endif
 }
 
-void generateKey()
+bool generateKey()
 {
     curs_set(0);
     int part = (getmaxy(stdscr) - 18) / 4;
@@ -1181,7 +1185,7 @@ void generateKey()
         wresize(information, 3, getmaxx(stdscr));
 #endif
         part = (getmaxy(stdscr) - 18) / 4;
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             wclear(keyWindow);
             wclear(infobox);
@@ -1208,7 +1212,10 @@ void generateKey()
         }
         else
         {
-            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
+            wgetch(stdscr);
+            return false;
         }
         key = keyC;
         json temp;
@@ -1220,6 +1227,7 @@ void generateKey()
         }
         break;
     }
+    return true;
 }
 
 // ------------------------------------------------------------------------
@@ -1248,7 +1256,8 @@ int main(int argc, char *argv[])
     add_colors();
     if (!exist(keyFile) || _read_from_file(keyFile) == "")
     {
-        generateKey();
+        bool valid = generateKey();
+        while(!valid)   valid = generateKey();
     }
     loading("Reading key file");
     try
@@ -1258,7 +1267,8 @@ int main(int argc, char *argv[])
     }
     catch (...)
     {
-        generateKey();
+        bool valid = generateKey();
+        while(!valid)   valid = generateKey();
     }
     int loggedIn = -1;
     if (!exist(stateFile))
