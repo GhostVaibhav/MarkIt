@@ -1150,10 +1150,10 @@ void add_colors()
 void set_title()
 {
 #ifdef _WIN32
-    LPCSTR title = "Todo";
+    LPCSTR title = "MarkIt!";
     SetConsoleTitleA(title);
 #else
-    std::string title = "Todo";
+    std::string title = "MarkIt!";
     std::cout << "\033]0;" << title << "\007";
 #endif
 }
