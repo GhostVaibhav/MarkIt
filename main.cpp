@@ -395,7 +395,7 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // | int - starting x - co-ordinate of logo |
 // | int - starting y - co-ordinate of logo |
 // ------------------------------------------
-// 2. computeTime() - gives the current time in the form of a string
+// 2. computeTime() - a lambda function which gives the current time in the form of a string
 // ---------------------------------------------------------------
 // | Returns: std::string - present time in the form of a string |
 // | Parameters: NOTHING                                         |
@@ -451,7 +451,7 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // | Parameters: std::string - file name         |
 // -----------------------------------------------
 
-void logo(WINDOW *win, int x = 0, int y = 1)
+void logo(WINDOW *win, int x = 0, int y = 1) noexcept
 {
     wattron(win, COLOR_PAIR(3));
     mvwprintw(win, x + 1, y, R"(   __  ___)");
@@ -497,13 +497,12 @@ void logo(WINDOW *win, int x = 0, int y = 1)
     wattroff(win, COLOR_PAIR(1));
 }
 
-std::string computeTime()
-{
+auto computeTime = [] () -> std::string {
     time_t lt;
     lt = time(NULL);
     struct tm *tempTime = localtime(&lt);
     return asctime(tempTime);
-}
+};
 
 struct curses
 {
