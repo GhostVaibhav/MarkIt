@@ -31,18 +31,18 @@
 // ---------------------------HEADER FILES---------------------------------
 // ------------------------------------------------------------------------
 
-#include <iostream>    // For using Strings
-#include <fstream>     // For using File operations
-#include <algorithm>   // For using Standard Algorithms
-#include <vector>      // For using std::vector
-#include <curl/curl.h> // For using Curl
-#include <json.hpp>    // For using nlohmann::json
-#include <sha256.h>    // For using SHA-256 algorithm
-#include <memory>      // For using unique pointer
-#include <sys/stat.h>  // For checking if a file exists or not
+#include <iostream>        // For using Strings
+#include <fstream>         // For using File operations
+#include <algorithm>       // For using Standard Algorithms
+#include <vector>          // For using std::vector
+#include <memory>          // For using unique pointer
+#include <sys/stat.h>      // For checking if a file exists or not
+#include "curl/curl.h"     // For using Curl
+#include "json.hpp"        // For using nlohmann::json
+#include "sha256.h"        // For using SHA-256 algorithm
 #ifdef _WIN32
 #include <cstdio>            // For using _popen() and _pclose()
-#include <PDCurses/curses.h> // For using PDCurses on Windows platform
+#include "PDCurses/curses.h" // For using PDCurses on Windows platform
 #else
 #include <curses.h> // For using Ncurses on Unix-based platforms
 #include <termios.h>
@@ -60,6 +60,7 @@ using json = nlohmann::json;                             // Using namespace for 
 #define minWidth 78                                      // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
 #define minHeight 20                                     // Defining the minimum height of the window in pixels - DON'T CHANGE THIS!!
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
+#define APP_VERSION "0.1"                                // Defining the application version
 std::string curUser = "";                                // For storing the current username
 std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
 std::string PantryID;                                    // For storing the API key of the Pantry
@@ -497,7 +498,8 @@ void logo(WINDOW *win, int x = 0, int y = 1) noexcept
     wattroff(win, COLOR_PAIR(1));
 }
 
-auto computeTime = [] () -> std::string {
+auto computeTime = []() -> std::string
+{
     time_t lt;
     lt = time(NULL);
     struct tm *tempTime = localtime(&lt);
@@ -778,8 +780,10 @@ int menu(std::vector<std::string> a)
         }
         else
         {
-            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
-            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         c = getch();
         switch (c)
@@ -899,8 +903,10 @@ void main_menu()
         }
         else
         {
-            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
-            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         c = getch();
         switch (c)
@@ -1054,8 +1060,10 @@ int login(std::string *bucket)
         }
         else
         {
-            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
-            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         std::string userNameString = userName;
         std::string passwordString = password;
@@ -1211,8 +1219,10 @@ bool generateKey()
         }
         else
         {
-            if(getmaxx(stdscr) < minWidth) mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
-            else    mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
             wgetch(stdscr);
             return false;
         }
@@ -1240,16 +1250,27 @@ int main(int argc, char *argv[])
     std::cout.tie(nullptr);
     if (argc > 1)
     {
-        std::string arg = argv[1];
+        std::vector<std::string> args(0);
+        for (int i = 1; i < argc; i++)
+            args.push_back(argv[i]);
+        std::string arg = args[0];
         if (arg == "--test")
         {
             std::cout << "Starting test mode (only for dev-builds)" << std::endl;
             std::cout << "Only call it when you know what you are doing" << std::endl;
-            return 0;
+            std::cout << "Arguments got: " << std::endl;
+            for (std::string arg : args)
+                std::cout << arg << std::endl;
         }
+        if (arg == "--version")
+        {
+            std::cout << "Version: " << APP_VERSION << std::endl;
+        }
+        return 0;
     }
     set_title();
     initscr();
+    cbreak();
     start_color();
     curs_set(0);
     keypad(stdscr, true);
@@ -1257,7 +1278,8 @@ int main(int argc, char *argv[])
     if (!exist(keyFile) || _read_from_file(keyFile) == "")
     {
         bool valid = generateKey();
-        while(!valid)   valid = generateKey();
+        while (!valid)
+            valid = generateKey();
     }
     loading("Reading key file");
     try
@@ -1268,7 +1290,8 @@ int main(int argc, char *argv[])
     catch (...)
     {
         bool valid = generateKey();
-        while(!valid)   valid = generateKey();
+        while (!valid)
+            valid = generateKey();
     }
     int loggedIn = -1;
     if (!exist(stateFile))
@@ -1276,7 +1299,7 @@ int main(int argc, char *argv[])
         loggedIn = login(&curUser);
     }
     loading("Reading state file");
-    if(loggedIn == -1)
+    if (loggedIn == -1)
     {
         try
         {
@@ -1284,7 +1307,7 @@ int main(int argc, char *argv[])
             curUser = temp["userName"];
             cloudSave = getBucketDetails(curUser);
         }
-        catch(...)
+        catch (...)
         {
             _delete_file(stateFile);
             loggedIn = login(&curUser);
