@@ -47,6 +47,7 @@
 - [curl](https://github.com/curl/curl)
 - [JSON for Modern C++](https://github.com/nlohmann/json)
 - [PDCurses](https://github.com/wmcbrine/PDCurses) for Windows
+- [tabulate](https://github.com/p-ranav/tabulate)
 - ncurses for UNIX-based system
 <h2 align="center"> <b> Building the project </b> </h2>
 
