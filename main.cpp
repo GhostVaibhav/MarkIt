@@ -1270,18 +1270,31 @@ int main(int argc, char *argv[])
         }
         if (arg == "--version")
         {
-            tabulate::Table t;
-            t.add_row({"MarkIt!", "", ""});
-            t.add_row({"", "Version", APP_VERSION});
-            for (int i = 0; i < 3; i++)
+            if (args.size() > 1)
             {
-                t[0][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
-                t[1][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
+                std::transform(args[1].begin(), args[1].end(), args[1].begin(), [](char &a)
+                               { return std::tolower(a); });
+                if (args[1] == "classic" || args[1] == "simple")
+                {
+                    std::cout << "MarkIt!" << std::endl;
+                    std::cout << "Version: " << APP_VERSION << std::endl;
+                }
             }
-            t[0][1].format().font_background_color(tabulate::Color::yellow);
-            t[0][2].format().font_background_color(tabulate::Color::yellow);
-            t[1][0].format().font_background_color(tabulate::Color::yellow);
-            std::cout << t << std::endl;
+            else
+            {
+                tabulate::Table t;
+                t.add_row({"MarkIt!", "", ""});
+                t.add_row({"", "Version", APP_VERSION});
+                for (int i = 0; i < 3; i++)
+                {
+                    t[0][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
+                    t[1][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
+                }
+                t[0][1].format().font_background_color(tabulate::Color::yellow);
+                t[0][2].format().font_background_color(tabulate::Color::yellow);
+                t[1][0].format().font_background_color(tabulate::Color::yellow);
+                std::cout << t << std::endl;
+            }
         }
         if (arg == "--display")
         {
