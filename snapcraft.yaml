@@ -17,4 +17,4 @@ parts:
     - libncursesw5-dev
 apps:
  mark:
-  command: builds/MarkIt
+  command: usr/bin/MarkIt
