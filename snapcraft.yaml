@@ -1,0 +1,20 @@
+name: mark
+version: "v0.1"
+summary: A cross-platform TODO terminal app
+description: |
+ A cross-platform TODO app in teminal with simple interface and lightning fast speed for everyone
+base: core18
+confinement: devmode
+parts:
+ mark:
+  source: https://github.com/GhostVaibhav/MarkIt/archive/refs/tags/v0.1.tar.gz
+   plugin: cmake
+   build-packages:
+    - g++
+    - make
+    - libcurl4-openssl-dev
+    - libncurses5-dev
+    - libncursesw5-dev
+apps:
+ mark:
+  command: builds/MarkIt
