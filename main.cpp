@@ -31,18 +31,19 @@
 // ---------------------------HEADER FILES---------------------------------
 // ------------------------------------------------------------------------
 
-#include <iostream>    // For using Strings
-#include <fstream>     // For using File operations
-#include <algorithm>   // For using Standard Algorithms
-#include <vector>      // For using std::vector
-#include <curl/curl.h> // For using Curl
-#include <json.hpp>    // For using nlohmann::json
-#include <sha256.h>    // For using SHA-256 algorithm
-#include <memory>      // For using unique pointer
-#include <sys/stat.h>  // For checking if a file exists or not
+#include <iostream>              // For using Strings
+#include <fstream>               // For using File operations
+#include <algorithm>             // For using Standard Algorithms
+#include <vector>                // For using std::vector
+#include <memory>                // For using unique pointer
+#include <sys/stat.h>            // For checking if a file exists or not
+#include "curl/curl.h"           // For using Curl
+#include "json.hpp"              // For using nlohmann::json
+#include "sha256.h"              // For using SHA-256 algorithm
+#include "tabulate/tabulate.hpp" // For using tabulate library
 #ifdef _WIN32
 #include <cstdio>            // For using _popen() and _pclose()
-#include <PDCurses/curses.h> // For using PDCurses on Windows platform
+#include "PDCurses/curses.h" // For using PDCurses on Windows platform
 #else
 #include <curses.h> // For using Ncurses on Unix-based platforms
 #include <termios.h>
@@ -58,7 +59,9 @@ nlohmann::json localSave; // Local save is also loaded in the memory once the us
 #endif
 using json = nlohmann::json;                             // Using namespace for minimizing the write effort
 #define minWidth 78                                      // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
+#define minHeight 20                                     // Defining the minimum height of the window in pixels - DON'T CHANGE THIS!!
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
+#define APP_VERSION "0.1"                                // Defining the application version
 std::string curUser = "";                                // For storing the current username
 std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
 std::string PantryID;                                    // For storing the API key of the Pantry
@@ -394,7 +397,7 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // | int - starting x - co-ordinate of logo |
 // | int - starting y - co-ordinate of logo |
 // ------------------------------------------
-// 2. computeTime() - gives the current time in the form of a string
+// 2. computeTime() - a lambda function which gives the current time in the form of a string
 // ---------------------------------------------------------------
 // | Returns: std::string - present time in the form of a string |
 // | Parameters: NOTHING                                         |
@@ -450,7 +453,7 @@ bool appendBucket(const std::string &bucketName, const json &patch)
 // | Parameters: std::string - file name         |
 // -----------------------------------------------
 
-void logo(WINDOW *win, int x = 0, int y = 1)
+void logo(WINDOW *win, int x = 0, int y = 1) noexcept
 {
     wattron(win, COLOR_PAIR(3));
     mvwprintw(win, x + 1, y, R"(   __  ___)");
@@ -496,13 +499,13 @@ void logo(WINDOW *win, int x = 0, int y = 1)
     wattroff(win, COLOR_PAIR(1));
 }
 
-std::string computeTime()
+auto computeTime = []() -> std::string
 {
     time_t lt;
     lt = time(NULL);
     struct tm *tempTime = localtime(&lt);
     return asctime(tempTime);
-}
+};
 
 struct curses
 {
@@ -755,7 +758,7 @@ int menu(std::vector<std::string> a)
         wresize(title, 10, getmaxx(stdscr) - 2);
         wresize(menu, getmaxy(stdscr) - 12, getmaxx(stdscr) - 2);
 #endif
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             int part = (getmaxx(title) - 81) / 4;
             int half = 1;
@@ -778,7 +781,10 @@ int menu(std::vector<std::string> a)
         }
         else
         {
-            mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         c = getch();
         switch (c)
@@ -837,7 +843,7 @@ void main_menu()
             wresize(todoBody, getmaxy(todoWindow) - 4, getmaxx(todoWindow) - 1);
 #endif
         }
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             int part = (getmaxx(todoUserName) - 81) / 4;
             int half = 1;
@@ -898,7 +904,10 @@ void main_menu()
         }
         else
         {
-            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         c = getch();
         switch (c)
@@ -1016,7 +1025,7 @@ int login(std::string *bucket)
         wresize(wrongPassword, 3, getmaxx(stdscr));
 #endif
         part = (getmaxy(stdscr) - 18) / 4;
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             wclear(userNameWindow);
             wclear(passwordWindow);
@@ -1052,7 +1061,10 @@ int login(std::string *bucket)
         }
         else
         {
-            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
         }
         std::string userNameString = userName;
         std::string passwordString = password;
@@ -1146,15 +1158,15 @@ void add_colors()
 void set_title()
 {
 #ifdef _WIN32
-    LPCSTR title = "Todo";
+    LPCSTR title = "MarkIt!";
     SetConsoleTitleA(title);
 #else
-    std::string title = "Todo";
+    std::string title = "MarkIt!";
     std::cout << "\033]0;" << title << "\007";
 #endif
 }
 
-void generateKey()
+bool generateKey()
 {
     curs_set(0);
     int part = (getmaxy(stdscr) - 18) / 4;
@@ -1181,7 +1193,7 @@ void generateKey()
         wresize(information, 3, getmaxx(stdscr));
 #endif
         part = (getmaxy(stdscr) - 18) / 4;
-        if (getmaxx(stdscr) >= minWidth)
+        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
         {
             wclear(keyWindow);
             wclear(infobox);
@@ -1208,7 +1220,12 @@ void generateKey()
         }
         else
         {
-            mvwprintw(stdscr, LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            if (getmaxx(stdscr) < minWidth)
+                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
+            else
+                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
+            wgetch(stdscr);
+            return false;
         }
         key = keyC;
         json temp;
@@ -1220,6 +1237,7 @@ void generateKey()
         }
         break;
     }
+    return true;
 }
 
 // ------------------------------------------------------------------------
@@ -1233,22 +1251,96 @@ int main(int argc, char *argv[])
     std::cout.tie(nullptr);
     if (argc > 1)
     {
-        std::string arg = argv[1];
+        std::vector<std::string> args(0);
+        for (int i = 1; i < argc; i++)
+            args.push_back(argv[i]);
+        std::string arg = args[0];
         if (arg == "--test")
         {
-            std::cout << "Starting test mode (only for dev-builds)" << std::endl;
-            return 0;
+            tabulate::Table t;
+            t.add_row({"Starting test mode (only for dev-builds)"});
+            t.add_row({"Only call it when you know what you are doing"});
+            t.add_row({"Arguments got: "});
+            for (std::string arg : args)
+                t.add_row({arg});
+            t[0][0].format().font_color(tabulate::Color::blue).font_style({tabulate::FontStyle::bold}).font_align(tabulate::FontAlign::center);
+            t[1][0].format().font_color(tabulate::Color::red).font_style({tabulate::FontStyle::bold}).font_align(tabulate::FontAlign::center);
+            t[2][0].format().font_color(tabulate::Color::green);
+            std::cout << t << std::endl;
         }
+        if (arg == "--version")
+        {
+            if (args.size() > 1)
+            {
+                std::transform(args[1].begin(), args[1].end(), args[1].begin(), [](char &a)
+                               { return std::tolower(a); });
+                if (args[1] == "classic" || args[1] == "simple")
+                {
+                    std::cout << "MarkIt!" << std::endl;
+                    std::cout << "Version: " << APP_VERSION << std::endl;
+                }
+            }
+            else
+            {
+                tabulate::Table t;
+                t.add_row({"MarkIt!", "", ""});
+                t.add_row({"", "Version", APP_VERSION});
+                for (int i = 0; i < 3; i++)
+                {
+                    t[0][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
+                    t[1][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
+                }
+                t[0][1].format().font_background_color(tabulate::Color::yellow);
+                t[0][2].format().font_background_color(tabulate::Color::yellow);
+                t[1][0].format().font_background_color(tabulate::Color::yellow);
+                std::cout << t << std::endl;
+            }
+        }
+        if (arg == "--display")
+        {
+            if (!exist(storageFile))
+            {
+                std::cout << "No data found" << std::endl;
+                return 0;
+            }
+            tabulate::Table t;
+            json j = json::parse(_read_from_file(storageFile));
+            std::vector<todo> temp = j["data"];
+            t.add_row({"Name", "Description", "Time", "Completed"});
+            for (int i = 0; i < temp.size(); i++)
+            {
+                if (temp[i].isComplete)
+                {
+                    t.add_row({temp[i].name, temp[i].desc, temp[i].time, "Yes"});
+                    t[i + 1][3].format().font_color(tabulate::Color::green);
+                }
+                else
+                {
+                    t.add_row({temp[i].name, temp[i].desc, temp[i].time, "No"});
+                    t[i + 1][3].format().font_color(tabulate::Color::red);
+                }
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                t.column(i).format().font_align(tabulate::FontAlign::center);
+                t[0][i].format().font_color(tabulate::Color::blue).font_style({tabulate::FontStyle::bold});
+            }
+            std::cout << t << std::endl;
+        }
+        return 0;
     }
     set_title();
     initscr();
+    cbreak();
     start_color();
     curs_set(0);
     keypad(stdscr, true);
     add_colors();
     if (!exist(keyFile) || _read_from_file(keyFile) == "")
     {
-        generateKey();
+        bool valid = generateKey();
+        while (!valid)
+            valid = generateKey();
     }
     loading("Reading key file");
     try
@@ -1258,27 +1350,30 @@ int main(int argc, char *argv[])
     }
     catch (...)
     {
-        generateKey();
+        bool valid = generateKey();
+        while (!valid)
+            valid = generateKey();
     }
     int loggedIn = -1;
     if (!exist(stateFile))
     {
         loggedIn = login(&curUser);
-        goto loggedin;
     }
     loading("Reading state file");
-    try
+    if (loggedIn == -1)
     {
-        json temp = json::parse(_read_from_file(stateFile));
-        curUser = temp["userName"];
-        cloudSave = getBucketDetails(curUser);
+        try
+        {
+            json temp = json::parse(_read_from_file(stateFile));
+            curUser = temp["userName"];
+            cloudSave = getBucketDetails(curUser);
+        }
+        catch (...)
+        {
+            _delete_file(stateFile);
+            loggedIn = login(&curUser);
+        }
     }
-    catch(...)
-    {
-        _delete_file(stateFile);
-        loggedIn = login(&curUser);
-    }
-    loggedin:
     try
     {
         localSave = json::parse(_read_from_file());
