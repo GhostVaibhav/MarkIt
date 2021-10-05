@@ -1270,6 +1270,25 @@ namespace cli
                 std::cout << "MarkIt!" << std::endl;
                 std::cout << "Version: " << APP_VERSION << std::endl;
             }
+            else if (args[1] == "modern")
+            {
+                tabulate::Table t;
+                t.add_row({"MarkIt!", "", ""});
+                t.add_row({"", "Version", APP_VERSION});
+                for (int i = 0; i < 3; i++)
+                {
+                    t[0][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
+                    t[1][i].format().font_align(tabulate::FontAlign::center).font_color(tabulate::Color::yellow).font_style({tabulate::FontStyle::bold});
+                }
+                t[0][1].format().font_background_color(tabulate::Color::yellow);
+                t[0][2].format().font_background_color(tabulate::Color::yellow);
+                t[1][0].format().font_background_color(tabulate::Color::yellow);
+                std::cout << t << std::endl;
+            }
+            else
+            {
+                std::cout << "No format \"" << args[1] << "\" known" << std::endl;
+            }
         }
         else
         {
@@ -1334,15 +1353,15 @@ int main(int argc, char *argv[])
         std::vector<std::string> args(0);
         for (int i = 1; i < argc; i++)
             args.push_back(argv[i]);
-        if (args[0] == "--test")
+        if (args[0] == "--test" || args[0] == "test")
         {
             cli::test(args);
         }
-        if (args[0] == "--version")
+        if (args[0] == "--version" || args[0] == "version")
         {
             cli::version(args);
         }
-        if (args[0] == "--display")
+        if (args[0] == "--display" || args[0] == "display")
         {
             cli::display(args);
         }
