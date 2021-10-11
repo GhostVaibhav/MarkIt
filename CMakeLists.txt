@@ -12,7 +12,7 @@ project ("MarkIt")
 include_directories("include")
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "main.cpp" "include/sha256.cpp")
+add_executable (${PROJECT_NAME} "src/main.cpp" "include/sha256.cpp")
 
 if(WIN32)
 	ExternalProject_Add(

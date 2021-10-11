@@ -7,7 +7,9 @@ inline bool exist (const std::string& name) {
 }
 int main(int argc,char* argv[]) {
     for(int i = 1 ; i < argc ; i++) {
-        string fileName = argv[1];
+        string fileName = argv[i];
+        string temp = "../src/";
+        temp += fileName;
         string cmd;
         #ifdef _WIN32
             system("cls");
@@ -15,7 +17,7 @@ int main(int argc,char* argv[]) {
             system("clear");
         #endif
         cout << "- Compiling debug object file\n";
-        cmd = "g++ -Iinclude -Og -g -w -c -std=gnu++17 " + fileName + ".cpp";
+        cmd = "g++ -I../include -Og -g -w -c -std=gnu++17 " + temp + ".cpp";
         system(cmd.c_str());
         if(!exist("main.o")) {
             #ifdef __APPLE__
@@ -29,9 +31,9 @@ int main(int argc,char* argv[]) {
         }
         cout << "- Linking object debug file\n";
         #ifdef _WIN32
-        cmd = "g++ include/sha256.cpp -std=c++17 -static-libstdc++ -static-libgcc " + fileName + ".o -o " + fileName + "_debug -Llib -lcurl -lpdcurses";
+        cmd = "g++ ../include/sha256.cpp -std=c++17 -static-libstdc++ -static-libgcc " + fileName + ".o -o " + fileName + "_debug -Llib -lcurl -lpdcurses";
         #else
-        cmd = "g++ include/sha256.cpp " + fileName + ".o -o " + fileName + "_debug -lcurl -lncurses";
+        cmd = "g++ ../include/sha256.cpp " + fileName + ".o -o " + fileName + "_debug -lcurl -lncurses";
         #endif
         system(cmd.c_str());
         #ifdef _WIN32
@@ -70,7 +72,7 @@ int main(int argc,char* argv[]) {
         cout << "\u001b[32m- Build Success - Debug\u001b[0m\n";
         #endif
         cout << "- Compiling release object file\n";
-        cmd = "g++ -Iinclude -Ofast -w -c -s -std=gnu++17 " + fileName + ".cpp";
+        cmd = "g++ -I../include -Ofast -w -c -s -std=gnu++17 " + temp + ".cpp";
         system(cmd.c_str());
         if(!exist("main.o")) {
             #ifdef __APPLE__
@@ -84,9 +86,9 @@ int main(int argc,char* argv[]) {
         }
         cout << "- Linking object release file\n";
         #ifdef _WIN32
-        cmd = "g++ include/sha256.cpp -std=c++17 -static-libstdc++ -static-libgcc " + fileName + ".o -o " + fileName + " -Llib -lcurl -lpdcurses";
+        cmd = "g++ ../include/sha256.cpp -std=c++17 -static-libstdc++ -static-libgcc " + fileName + ".o -o " + fileName + " -Llib -lcurl -lpdcurses";
         #else
-        cmd = "g++ include/sha256.cpp " + fileName + ".o -o " + fileName + " -lcurl -lncurses";
+        cmd = "g++ ../include/sha256.cpp " + fileName + ".o -o " + fileName + " -lcurl -lncurses";
         #endif
         system(cmd.c_str());
         #ifdef _WIN32
