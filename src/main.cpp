@@ -1260,15 +1260,15 @@ int main(int argc, char *argv[])
         std::vector<std::string> args(0);
         for (int i = 1; i < argc; i++)
             args.push_back(argv[i]);
-        if (args[0] == "--test" || args[0] == "test")
+        if (args[0] == "--test" || args[0] == "-t" || args[0] == "test")
         {
             cli::test(args);
         }
-        if (args[0] == "--version" || args[0] == "version")
+        if (args[0] == "--version" || args[0] == "-v" || args[0] == "version")
         {
             cli::version(args);
         }
-        if (args[0] == "--display" || args[0] == "display")
+        if (args[0] == "--display" || args[0] == "-d" || args[0] == "display")
         {
             cli::display(args);
         }
