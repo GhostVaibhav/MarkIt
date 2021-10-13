@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodule: true
     - name: Getting prerequisites
       run: |
         sudo apt update
@@ -41,6 +43,8 @@ jobs:
     container: debian
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Getting prerequisites
         run: |
           apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
@@ -54,6 +58,8 @@ jobs:
     container: archlinux
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Getting prerequisites
         run: |
           pacman -Syy --noconfirm
@@ -74,6 +80,8 @@ jobs:
     container: centos
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Getting prerequisites
         run: |
           yum -y update
@@ -94,6 +102,8 @@ jobs:
     container: fedora
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Getting prerequisites
         run: |
           dnf -y upgrade
@@ -117,6 +127,8 @@ jobs:
           zypper update -y
           zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -136,6 +148,8 @@ jobs:
           zypper update -y
           zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -150,6 +164,8 @@ jobs:
     container: kalilinux/kali-rolling
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Getting prerequisites
         run: |
           apt -y update
@@ -169,6 +185,8 @@ jobs:
     container: alpine
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodule: true
       - name: Getting prerequisites
         run: |
           apk update
@@ -188,6 +206,8 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodule: true
     - name: Building the dependencies for MinGW G++ compiler
       run: |
         mkdir builds && cd builds
@@ -217,6 +237,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodule: true
     - name: Installing prerequisites
       run: |
         brew install gcc
