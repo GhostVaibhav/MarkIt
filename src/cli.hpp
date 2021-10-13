@@ -38,7 +38,7 @@
 
 namespace cli
 {
-    void test(std::vector<std::string> args)
+    void test(const std::vector<std::string>& args)
     {
         tabulate::Table t;
         t.add_row({"Starting test mode (only for dev-builds)"});
@@ -51,7 +51,7 @@ namespace cli
         t[2][0].format().font_color(tabulate::Color::green);
         std::cout << t << std::endl;
     }
-    void version(std::vector<std::string> args)
+    void version(std::vector<std::string>& args)
     {
         if (args.size() > 1)
         {
@@ -98,7 +98,7 @@ namespace cli
             std::cout << t << std::endl;
         }
     }
-    void display(std::vector<std::string> args)
+    void display(const std::vector<std::string>& args)
     {
         if (!exist(storageFile))
         {
