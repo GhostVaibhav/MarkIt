@@ -25,7 +25,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodule: true
+        submodules: true
     - name: Getting prerequisites
       run: |
         sudo apt update
@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Getting prerequisites
         run: |
           apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
@@ -59,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Getting prerequisites
         run: |
           pacman -Syy --noconfirm
@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Getting prerequisites
         run: |
           yum -y update
@@ -103,7 +103,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Getting prerequisites
         run: |
           dnf -y upgrade
@@ -128,7 +128,7 @@ jobs:
           zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -149,7 +149,7 @@ jobs:
           zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -165,7 +165,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Getting prerequisites
         run: |
           apt -y update
@@ -186,7 +186,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
       - name: Getting prerequisites
         run: |
           apk update
@@ -207,7 +207,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-          submodule: true
+          submodules: true
     - name: Building the dependencies for MinGW G++ compiler
       run: |
         mkdir builds && cd builds
@@ -238,7 +238,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-          submodule: true
+          submodules: true
     - name: Installing prerequisites
       run: |
         brew install gcc
