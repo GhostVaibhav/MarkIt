@@ -14,6 +14,10 @@ endif()
 
 project ("MarkIt")
 
+if(DEFINED INFOEX)
+	set(CMAKE_C_FLAGS "-DHAVE_NO_INFOEX")
+endif()
+
 add_subdirectory(deps/tabulate)
 
 if(DEFINED COMPILE OR NOT WIN32)
