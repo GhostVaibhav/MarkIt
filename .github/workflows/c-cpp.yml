@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          auth_header="$(git config --global --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Getting prerequisites
@@ -206,11 +206,13 @@ jobs:
         cd MarkIt
         mkdir builds && cd builds
         cmake .. -G "MinGW Makefiles" -DCOMPILE=0
+        cmake --build . --config MinSizeRel
     - name: Compiling the main project for MinGW G++ compiler
       run: |
         cd MarkIt
         cd builds
         cmake .. -G "MinGW Makefiles" -DCOMPILE=1
+        cmake --build . --config MinSizeRel
         copy "MarkIt.exe" "bin\"
         cd bin
         MarkIt --version classic
@@ -219,11 +221,13 @@ jobs:
         cd MarkIt
         mkdir build && cd build
         cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=0
+        cmake --build . --config MinSizeRel
     - name: Compiling the main project for MSVC compiler
       run: |
         cd MarkIt
         cd build
         cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=1
+        cmake --build . --config MinSizeRel
         copy "MinSizeRel\MarkIt.exe" "bin\"
         cd bin
         MarkIt --version classic
