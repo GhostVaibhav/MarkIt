@@ -43,7 +43,7 @@
 #include "tabulate/tabulate.hpp" // For using tabulate library
 #ifdef _WIN32
 #include <cstdio>            // For using _popen() and _pclose()
-#include "PDCurses/curses.h" // For using PDCurses on Windows platform
+#include "curses.h" // For using PDCurses on Windows platform
 #else
 #include <curses.h> // For using Ncurses on Unix-based platforms
 #include <termios.h>

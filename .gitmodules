@@ -1,0 +1,6 @@
+[submodule "deps/tabulate"]
+	path = deps/tabulate
+	url = https://github.com/p-ranav/tabulate
+[submodule "deps/pdcurses"]
+	path = deps/pdcurses
+	url = https://github.com/GhostVaibhav/PDCurses
