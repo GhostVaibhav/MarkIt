@@ -188,21 +188,28 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Getting prerequisites for building on MinGW
-      run: |
-        start prereq.bat 1
-        exit
-    - name: Getting prerequisites for building on Visual Studio
-      run: |
-        start prereq.bat 2
-        exit
-    - name: Compiling the build file
-      run: |
-        g++ build.cpp -o build
-    - name: Compiling and linking the main file
-      run: |
-        start build.exe main
-        exit
+      - name: Building the dependencies for MinGW G++ compiler
+        run: |
+          mkdir builds && cd builds
+          cmake .. -G "MinGW Makefiles" -DCOMPILE=0
+      - name: Compiling the main project for MinGW G++ compiler
+        run: |
+          cd builds
+          cmake .. -G "MinGW Makefiles" -DCOMPILE=1
+          xcopy "MarkIt.exe" "bin/"
+          cd bin
+          MarkIt --version classic
+      - name: Building the dependencies for MSVC compiler
+        run: |
+          mkdir build && cd build
+          cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=0
+      - name: Compiling the main project for MSVC compiler
+        run: |
+          cd build
+          cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=1
+          xcopy "MinSizeRel/MarkIt.exe" "bin/"
+          cd bin
+          MarkIt --version classic
   
   MacOS:
   
