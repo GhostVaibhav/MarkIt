@@ -46,14 +46,14 @@ jobs:
     container: debian
     steps:
       - uses: actions/checkout@v2
+      - name: Getting prerequisites
+        run: |
+          apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
       - name: Checkout submodules
         run: |
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Getting prerequisites
-        run: |
-          apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git && cd Todo && mkdir build && cd build && cmake .. && cmake --build .
@@ -63,18 +63,18 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux
     steps:
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Getting prerequisites
         run: |
           pacman -Syy --noconfirm
           pacman -Syu --noconfirm
           pacman -Sy gcc --noconfirm
           pacman -S curl ncurses git cmake make --noconfirm
+      - uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -88,18 +88,18 @@ jobs:
     runs-on: ubuntu-latest
     container: centos
     steps:
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Getting prerequisites
         run: |
           yum -y update
           yum -y group install "Development Tools"
           yum -y install libcurl --allowerasing
           yum -y install curl-devel ncurses-devel cmake
+      - uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -113,16 +113,16 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora
     steps:
+      - name: Getting prerequisites
+        run: |
+          dnf -y upgrade
+          dnf -y install git gcc-c++ libcurl-devel ncurses-devel cmake
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Getting prerequisites
-        run: |
-          dnf -y upgrade
-          dnf -y install git gcc-c++ libcurl-devel ncurses-devel cmake
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -142,8 +142,11 @@ jobs:
           zypper update -y
           zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
       - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
+      - name: Checkout submodules
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -181,17 +184,17 @@ jobs:
     runs-on: ubuntu-latest
     container: kalilinux/kali-rolling
     steps:
+      - name: Getting prerequisites
+        run: |
+          apt -y update
+          apt -y upgrade
+          apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev cmake git
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Getting prerequisites
-        run: |
-          apt -y update
-          apt -y upgrade
-          apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev cmake git
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
@@ -205,17 +208,17 @@ jobs:
     runs-on: ubuntu-latest
     container: alpine
     steps:
+      - name: Getting prerequisites
+        run: |
+          apk update
+          apk upgrade
+          apk add g++ ncurses-dev curl-dev git cmake make
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Getting prerequisites
-        run: |
-          apk update
-          apk upgrade
-          apk add g++ ncurses-dev curl-dev git cmake make
       - name: Building application
         run: | 
           git clone https://github.com/GhostVaibhav/Todo.git
