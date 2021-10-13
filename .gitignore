@@ -2,3 +2,4 @@
 *.dat
 *.json
 builds/
+build/

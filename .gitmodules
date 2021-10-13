@@ -1,0 +1,3 @@
+[submodule "deps/tabulate"]
+	path = deps/tabulate
+	url = https://github.com/p-ranav/tabulate
