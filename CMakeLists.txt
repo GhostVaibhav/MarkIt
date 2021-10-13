@@ -14,7 +14,7 @@ endif()
 
 project ("MarkIt")
 
-if(DEFINED INFOEX)
+if((DEFINED INFOEX) AND (INFOEX EQUAL 1))
 	set(CMAKE_C_FLAGS "-DHAVE_NO_INFOEX")
 endif()
 
