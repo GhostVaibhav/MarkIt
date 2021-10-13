@@ -16,6 +16,7 @@ project ("MarkIt")
 
 if((DEFINED INFOEX) AND (INFOEX EQUAL 1))
 	set(CMAKE_C_FLAGS "-DHAVE_NO_INFOEX")
+	set(CMAKE_CXX_FLAGS "-DHAVE_NO_INFOEX")
 endif()
 
 add_subdirectory(deps/tabulate)
@@ -47,6 +48,8 @@ if((${COMPILE} EQUAL 0) OR (NOT WIN32))
 			URL "https://github.com/GhostVaibhav/PDCurses/archive/refs/tags/4.0.zip"
 			INSTALL_COMMAND ""
 			CMAKE_ARGS
+			-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+			-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
 			-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 			-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
 			-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
