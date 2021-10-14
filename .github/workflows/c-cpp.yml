@@ -200,7 +200,7 @@ jobs:
       run: |
         cd MarkIt
         mkdir builds && cd builds
-        cmake .. -G "MinGW Makefiles" -DCOMPILE=0 -DINFOEX=1
+        cmake .. -G "MinGW Makefiles" -DCOMPILE=0 -DINFOEX=0
         cmake --build . --config MinSizeRel
     - name: Compiling the main project for MinGW G++ compiler
       run: |
@@ -215,7 +215,7 @@ jobs:
       run: |
         cd MarkIt
         mkdir build && cd build
-        cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=0 -DINFOEX=1
+        cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=0 -DINFOEX=0
         cmake --build . --config MinSizeRel
     - name: Compiling the main project for MSVC compiler
       run: |
