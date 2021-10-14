@@ -45,7 +45,7 @@ if((${COMPILE} EQUAL 0) OR (NOT WIN32))
 		)
 		ExternalProject_Add(
 			pdcurses_project
-			URL "https://github.com/GhostVaibhav/PDCurses/archive/refs/tags/4.0.zip"
+			URL "https://github.com/GhostVaibhav/PDCurses/archive/refs/tags/4.1.zip"
 			INSTALL_COMMAND ""
 			CMAKE_ARGS
 			-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
