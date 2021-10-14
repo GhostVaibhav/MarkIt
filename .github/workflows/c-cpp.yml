@@ -131,24 +131,24 @@ jobs:
         run: | 
           mkdir build && cd build && cmake .. && cmake --build .
 
-  OpenSUSE-Tumbleweed:
-    runs-on: ubuntu-latest
-    container: opensuse/tumbleweed
-    steps:
-      - name: Getting prerequisites
-        run: |
-          zypper refresh
-          zypper update -y
-          zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Building application
-        run: | 
-          mkdir build && cd build && cmake .. && cmake --build .
+#  OpenSUSE-Tumbleweed:
+#    runs-on: ubuntu-latest
+#    container: opensuse/tumbleweed
+#    steps:
+#      - name: Getting prerequisites
+#        run: |
+#          zypper refresh
+#          zypper update -y
+#          zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
+#      - uses: actions/checkout@v2
+#      - name: Checkout submodules
+#        run: |
+#          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+#          git submodule sync --recursive
+#          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+#      - name: Building application
+#        run: | 
+#          mkdir build && cd build && cmake .. && cmake --build .
   
   Kali-Linux:
     runs-on: ubuntu-latest
@@ -210,7 +210,7 @@ jobs:
         cmake --build . --config MinSizeRel
         copy "MarkIt.exe" "bin\"
         cd bin
-        MarkIt --version classic
+        ./MarkIt --version classic
     - name: Building the dependencies for MSVC compiler
       run: |
         cd MarkIt
@@ -225,7 +225,7 @@ jobs:
         cmake --build . --config MinSizeRel
         copy "MinSizeRel\MarkIt.exe" "bin\"
         cd bin
-        MarkIt --version classic
+        ./MarkIt --version classic
   
   MacOS:
   
