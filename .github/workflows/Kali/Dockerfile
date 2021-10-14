@@ -1,13 +1,13 @@
-FROM kalilinux/kali-rolling
+FROM kalilinux/kali-rolling:latest
 RUN apt -y update \
     && apt -y upgrade \
-    && apt -y install g++ \
-    && apt -y install libcurl4-openssl-dev \
-    && apt-get -y install libncurses5-dev libncursesw5-dev \
-    && apt -y install cmake \
-    && apt -y install git \
-    && git clone https://github.com/GhostVaibhav/Todo.git \
-    && cd Todo \
+    && apt -y install --no-install-recommends g++ \
+    && apt -y install --no-install-recommends libcurl4-openssl-dev \
+    && apt-get -y install --no-install-recommends libncurses5-dev libncursesw5-dev \
+    && apt -y install --no-install-recommends cmake \
+    && apt -y install --no-install-recommends git \
+    && git clone https://github.com/GhostVaibhav/MarkIt.git \
+    && cd MarkIt \
     && mkdir build \
     && cd build \
     && cmake .. \

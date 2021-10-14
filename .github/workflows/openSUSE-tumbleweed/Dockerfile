@@ -1,4 +1,4 @@
-FROM opensuse/tumbleweed
+FROM opensuse/tumbleweed:latest
 RUN zypper refresh \
     && zypper update -y \
     && zypper install -y gcc-c++ \
@@ -6,8 +6,8 @@ RUN zypper refresh \
     && zypper install -y ncurses-devel \
     && zypper install -y cmake \
     && zypper install -y git \
-    && git clone https://github.com/GhostVaibhav/Todo.git \
-    && cd Todo \
+    && git clone https://github.com/GhostVaibhav/MarkIt.git \
+    && cd MarkIt \
     && mkdir build \
     && cd build \
     && cmake .. \

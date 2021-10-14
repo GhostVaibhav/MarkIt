@@ -1,4 +1,4 @@
-FROM fedora
+FROM fedora:latest
 RUN dnf -y upgrade \
     && dnf -y install git \
     && dnf -y install gcc-c++ \

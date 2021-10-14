@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:latest
 RUN apk update \
     && apk upgrade \
     && apk add g++ ncurses-dev curl-dev git cmake make \

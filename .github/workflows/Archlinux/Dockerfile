@@ -1,4 +1,4 @@
-FROM archlinux
+FROM archlinux:latest
 RUN pacman -Syy --noconfirm \
     && pacman -Syu --noconfirm \
     && pacman -Sy gcc --noconfirm \
