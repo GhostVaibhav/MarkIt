@@ -1,4 +1,4 @@
-FROM opensuse/leap:latest
+FROM opensuse/leap:15
 RUN zypper refresh \
     && zypper update -y \
     && zypper install -y gcc-c++ \

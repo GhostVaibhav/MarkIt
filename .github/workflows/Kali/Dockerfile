@@ -1,4 +1,4 @@
-FROM kalilinux/kali-rolling:latest
+FROM kalilinux/kali-rolling:amd64
 RUN apt -y update \
     && apt -y upgrade \
     && apt -y install --no-install-recommends g++ \
