@@ -215,13 +215,13 @@ jobs:
       run: |
         cd MarkIt
         mkdir build && cd build
-        cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=0 -DINFOEX=0
+        cmake .. -G "Visual Studio 16 2019" -DCOMPILE=0 -DINFOEX=0
         cmake --build . --config MinSizeRel
     - name: Compiling the main project for MSVC compiler
       run: |
         cd MarkIt
         cd build
-        cmake .. -G "Microsoft Visual Studio 2019" -DCOMPILE=1
+        cmake .. -G "Visual Studio 16 2019" -DCOMPILE=1
         cmake --build . --config MinSizeRel
         copy "MinSizeRel\MarkIt.exe" "bin\"
         cd bin
