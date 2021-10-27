@@ -72,14 +72,17 @@ if((${COMPILE} EQUAL 0) OR (NOT WIN32))
 endif()
 
 if((${COMPILE} EQUAL 1) OR (NOT WIN32))
-	add_executable (${PROJECT_NAME} "src/main.cpp" "include/sha256.cpp")
+	file(GLOB srcs "${PROJECT_SOURCE_DIR}/src/*.cpp" "${PROJECT_SOURCE_DIR}/src/*.hpp")
+	add_executable (${PROJECT_NAME} ${srcs})
 	if(WIN32)
-		find_library(CURL_LIBRARY
+		find_library (
+			CURL_LIBRARY
 			NAMES curl curllib libcurl_imp curllib_static
 			HINTS "${CMAKE_BINARY_DIR}/lib"
 			REQUIRED
 		)
-		find_library(PDCURSES_LIBRARY
+		find_library (
+			PDCURSES_LIBRARY
 			NAMES libpdcurses pdcurses curses
 			HINTS "${CMAKE_BINARY_DIR}/pdcurses_project-prefix/src/pdcurses_project-build" "${CMAKE_BINARY_DIR}/pdcurses_project-prefix/src/pdcurses_project-build/MinSizeRel/" "${CMAKE_BINARY_DIR}/pdcurses_project-prefix/src/pdcurses_project-build/Debug/" "${CMAKE_BINARY_DIR}/pdcurses_project-prefix/src/pdcurses_project-build/RelWithDebInfo/" "${CMAKE_BINARY_DIR}/pdcurses_project-prefix/src/pdcurses_project-build/Release/"
 			REQUIRED
@@ -94,6 +97,14 @@ if((${COMPILE} EQUAL 1) OR (NOT WIN32))
 	else()
 		include_directories("include" "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate" "${nlohmann_json_SOURCE_DIR}/include/nlohmann")
 		target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${NCURSES_LIBRARY})
+	endif()
+	if(MSVC)
+		target_compile_options(${PROJECT_NAME} PRIVATE /MT)
+		target_link_options(${PROJECT_NAME} PRIVATE /INCREMENTAL:NO /NODEFAULTLIB:MSVCRT)
+	elseif(CMAKE_CXX_COMPILER_ID EQUAL GNU OR CMAKE_CXX_COMPILER_ID EQUAL Clang)
+		set(CMAKE_EXE_LINKER_FLAGS "-static")
+	else()
+		target_link_libraries(${PROJECT_NAME} "-static")
 	endif()
 	unset(COMPILE CACHE)
 endif()
