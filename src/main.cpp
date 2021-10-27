@@ -31,21 +31,21 @@
 // ---------------------------HEADER FILES---------------------------------
 // ------------------------------------------------------------------------
 
-#include <iostream>              // For using Strings
-#include <fstream>               // For using File operations
-#include <algorithm>             // For using Standard Algorithms
-#include <vector>                // For using std::vector
-#include <memory>                // For using unique pointer
-#include <sys/stat.h>            // For checking if a file exists or not
-#include "curl/curl.h"           // For using Curl
-#include "json.hpp"              // For using nlohmann::json
-#include "sha256.h"              // For using SHA-256 algorithm
-#include "tabulate.hpp"          // For using tabulate library
+#include <iostream>     // For using Strings
+#include <fstream>      // For using File operations
+#include <algorithm>    // For using Standard Algorithms
+#include <vector>       // For using std::vector
+#include <memory>       // For using unique pointer
+#include <sys/stat.h>   // For checking if a file exists or not
+#include "curl/curl.h"  // For using Curl
+#include "json.hpp"     // For using nlohmann::json
+#include "sha256.h"     // For using SHA-256 algorithm
+#include "tabulate.hpp" // For using tabulate library
 #ifdef _WIN32
-#include <cstdio>                // For using _popen() and _pclose()
-#include "curses.h"              // For using PDCurses on Windows platform
+#include <cstdio>   // For using _popen() and _pclose()
+#include "curses.h" // For using PDCurses on Windows platform
 #else
-#include <curses.h>              // For using Ncurses on Unix-based platforms
+#include <curses.h> // For using Ncurses on Unix-based platforms
 #include <termios.h>
 #endif
 
@@ -182,6 +182,11 @@ void _delete_file(std::string STORAGE_FILE = storageFile)
 // | Returns: bool - If the append was successful                       |
 // | Parameters: std::string, json - Bucket name, JSON object to append |
 // ----------------------------------------------------------------------
+// 9. getAPIKey() - Getting the API key from the cloud through an API call
+// -------------------------------------------------------------
+// | Returns: bool - If the API key was successfully evaluated |
+// | Parameters: std::string - User name                       |
+// -------------------------------------------------------------
 
 void updatePP()
 {
@@ -383,6 +388,43 @@ bool appendBucket(const std::string &bucketName, const json &patch)
         return false;
     else
         return true;
+}
+
+bool getAPIKey(std::string userName)
+{
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    json key;
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        std::string url = "https://markit-backend.herokuapp.com/user=" + userName;
+        curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        const char *data = "";
+        std::string result;
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+        if (res != 0)
+            throw curl_easy_strerror(res);
+        key = json::parse(result);
+    }
+    curl_easy_cleanup(curl);
+    if (key["key"] != "" || key["error"] == "")
+    {
+        PantryID = key["key"];
+        return true;
+    }
+    else
+        return false;
 }
 
 // ------------------------------------------------------------------------
@@ -714,11 +756,6 @@ inline bool exist(const std::string &name)
 // | Parameters: NOTHING |
 // -----------------------
 // 7. set_title() - sets the title of the terminal window
-// -----------------------
-// | Returns: NOTHING    |
-// | Parameters: NOTHING |
-// -----------------------
-// 8. generateKey() - prompts the user to enter his/her API key manually - not prompted if the key file is valid
 // -----------------------
 // | Returns: NOTHING    |
 // | Parameters: NOTHING |
@@ -1071,6 +1108,14 @@ int login(std::string *bucket)
         std::string passwordString = password;
         passwordString = sha256(passwordString);
         loading("Generating keys...");
+        if (!getAPIKey(userNameString))
+            throw std::runtime_error("Could not get API key");
+        else
+        {
+            json temp;
+            temp["key"] = PantryID;
+            _write_to_file(temp, keyFile);
+        }
         loading("Loading bucket details...");
         try
         {
@@ -1167,82 +1212,8 @@ void set_title()
 #endif
 }
 
-bool generateKey()
-{
-    curs_set(0);
-    int part = (getmaxy(stdscr) - 18) / 4;
-    std::string key;
-    char keyC[36];
-    WINDOW *title = newwin(8, getmaxx(stdscr), part, 0);
-    WINDOW *keyWindow = newwin(5, getmaxx(stdscr) - 20, 2 * part + 8, 10);
-    WINDOW *infobox = newwin(5, getmaxx(stdscr) - 20, 3 * part + 13, 10);
-    WINDOW *information = newwin(3, getmaxx(stdscr), getmaxy(stdscr) - 3, 0);
-    while (1)
-    {
-        curs_set(0);
-        clear();
-        resize_event();
-#ifdef _WIN32
-        resize_window(keyWindow, 5, getmaxx(stdscr) - 20);
-        resize_window(infobox, 5, getmaxx(stdscr) - 20);
-        resize_window(title, 8, getmaxx(stdscr));
-        resize_window(information, 3, getmaxx(stdscr));
-#else
-        wresize(keyWindow, 5, getmaxx(stdscr) - 20);
-        wresize(infobox, 5, getmaxx(stdscr) - 20);
-        wresize(title, 8, getmaxx(stdscr));
-        wresize(information, 3, getmaxx(stdscr));
-#endif
-        part = (getmaxy(stdscr) - 18) / 4;
-        if (getmaxx(stdscr) >= minWidth && getmaxy(stdscr) >= minHeight)
-        {
-            wclear(keyWindow);
-            wclear(infobox);
-            wclear(title);
-            wclear(information);
-            wrefresh(keyWindow);
-            wrefresh(infobox);
-            wborder(stdscr, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-            BORDER(keyWindow);
-            BORDER(infobox);
-            int part = (getmaxx(title) - 34) / 2;
-            int half = 0;
-            logo(title, half, part);
-            mvwprintw(information, 1, (getmaxx(information) - 26) / 2, "Don't resize this window!");
-            mvwprintw(keyWindow, getmaxy(keyWindow) / 2, 5, "API Key: ");
-            mvwprintw(infobox, getmaxy(infobox) / 2, (getmaxx(infobox) - 76) / 2, "Get a free API key by visiting getpantry.cloud for storing your data online");
-            wrefresh(title);
-            wrefresh(information);
-            wrefresh(infobox);
-            wbkgd(keyWindow, COLOR_PAIR(1));
-            wgetnstr(keyWindow, keyC, 36);
-            wbkgd(keyWindow, COLOR_PAIR(6));
-            BORDER(keyWindow);
-        }
-        else
-        {
-            if (getmaxx(stdscr) < minWidth)
-                mvprintw(LINES / 2, (COLS - 35) / 2, "Please increase your window's width");
-            else
-                mvprintw(LINES / 2, (COLS - 36) / 2, "Please increase your window's height");
-            wgetch(stdscr);
-            return false;
-        }
-        key = keyC;
-        json temp;
-        temp["key"] = key;
-        if (key.length() == 36)
-        {
-            _write_to_file(temp, keyFile);
-            PantryID = key;
-        }
-        break;
-    }
-    return true;
-}
-
 #ifdef CLI
-#include "cli.hpp"                      // For adding the CLI functionality
+#include "cli.hpp" // For adding the CLI functionality
 #endif
 
 // ------------------------------------------------------------------------
@@ -1282,12 +1253,6 @@ int main(int argc, char *argv[])
     curs_set(0);
     keypad(stdscr, true);
     add_colors();
-    if (!exist(keyFile) || _read_from_file(keyFile) == "")
-    {
-        bool valid = generateKey();
-        while (!valid)
-            valid = generateKey();
-    }
     loading("Reading key file");
     try
     {
@@ -1296,9 +1261,6 @@ int main(int argc, char *argv[])
     }
     catch (...)
     {
-        bool valid = generateKey();
-        while (!valid)
-            valid = generateKey();
     }
     int loggedIn = -1;
     if (!exist(stateFile))
