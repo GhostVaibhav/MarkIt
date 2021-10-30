@@ -96,7 +96,7 @@ if(${COMPILE} EQUAL 0)
 			-DUSE_WIN32_LDAP=ON
 			-DENABLE_THREADED_RESOLVER=OFF
 			-DUSE_LIBIDN2=OFF
-			BUILD_COMMAND ../curl_project/configure --prefix=${CMAKE_BINARY_DIR}
+			BUILD_COMMAND ../curl_project/configure --without-ssl --prefix=${CMAKE_BINARY_DIR}
 			COMMAND ${CMAKE_COMMAND} --build .
 			INSTALL_COMMAND ${CMAKE_COMMAND} --build . -- install
 		)
