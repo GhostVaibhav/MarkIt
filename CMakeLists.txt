@@ -5,6 +5,7 @@ include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR} CACHE STRING "Final install location")
+set(CMAKE ${CMAKE_COMMAND})
 
 if(NOT WIN32)
   string(ASCII 27 Esc)
@@ -82,7 +83,32 @@ if(${COMPILE} EQUAL 0)
 			-DUSE_LIBIDN2=OFF
 		)
 	else()
-		ExternalProject_Add(
+		if(APPLE)
+			ExternalProject_Add(
+			curl_project
+			URL "https://github.com/curl/curl/releases/download/curl-7_79_1/curl-7.79.1.zip"
+			CMAKE_ARGS
+			-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+			-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+			-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+			-DBUILD_CURL_EXE=OFF
+			-DBUILD_SHARED_LIBS=ON
+			-DBUILD_TESTING=OFF
+			-DCMAKE_USE_SCHANNEL=ON
+			-DUSE_WIN32_LDAP=ON
+			-DENABLE_THREADED_RESOLVER=OFF
+			-DUSE_LIBIDN2=OFF
+			BUILD_COMMAND export ARCH=x86_64
+			COMMAND export SDK=macosx
+			COMMAND export DEPLOYMENT_TARGET=10.8
+			COMMAND export CFLAGS=\"-arch $ARCH -isysroot $(xcrun -sdk $SDK --show-sdk-path) -m$SDK-version-min=$DEPLOYMENT_TARGET\"
+./configure --host=$ARCH-apple-darwin --prefix $(pwd)/artifacts --with-secure-transport
+			# ../curl_project/configure --without-ssl --prefix=${CMAKE_BINARY_DIR}
+			COMMAND ${CMAKE_COMMAND} --build . -j8
+			INSTALL_COMMAND ${CMAKE_COMMAND} --build . -- install
+		)
+		else()
+			ExternalProject_Add(
 			curl_project
 			URL "https://github.com/curl/curl/releases/download/curl-7_79_1/curl-7.79.1.zip"
 			CMAKE_ARGS
@@ -100,6 +126,7 @@ if(${COMPILE} EQUAL 0)
 			COMMAND ${CMAKE_COMMAND} --build .
 			INSTALL_COMMAND ${CMAKE_COMMAND} --build . -- install
 		)
+		endif()
 		ExternalProject_Add(
 			ncurses_project
 			URL "https://github.com/mirror/ncurses/archive/refs/tags/v6.2.zip"
