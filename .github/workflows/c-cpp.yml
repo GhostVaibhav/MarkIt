@@ -39,6 +39,8 @@ jobs:
       run: |
         mkdir build
         cd build
+        cmake .. -DCOMPILE=0
+        cmake --build .
         cmake ..
         cmake --build .
   
@@ -52,7 +54,7 @@ jobs:
           apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
       - name: Building application
         run: | 
-          git clone --recurse-submodules --remote-submodules https://github.com/GhostVaibhav/MarkIt.git && cd MarkIt && mkdir build && cd build && cmake .. && cmake --build .
+          git clone --recurse-submodules --remote-submodules https://github.com/GhostVaibhav/MarkIt.git && cd MarkIt && mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
 
 
   Arch-Linux:
@@ -73,7 +75,7 @@ jobs:
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. && cmake --build .
+          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
 
   CentOS:
     runs-on: ubuntu-latest
@@ -111,7 +113,7 @@ jobs:
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. && cmake --build .
+          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
 
   OpenSUSE-Leap:
     runs-on: ubuntu-latest
@@ -130,7 +132,7 @@ jobs:
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. && cmake --build .
+          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
 
 #  OpenSUSE-Tumbleweed:
 #    runs-on: ubuntu-latest
@@ -168,7 +170,7 @@ jobs:
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. && cmake --build .
+          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
 
   Alpine:
     runs-on: ubuntu-latest
@@ -187,7 +189,7 @@ jobs:
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. && cmake --build .
+          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
         
   Windows:
   
@@ -252,11 +254,15 @@ jobs:
       run: |
         mkdir build
         cd build
+        cmake .. -DCOMPILE=0
+        cmake --build .
         cmake ..
         cmake --build .
     - name: Building and compiling using CMake as Xcode Project
       run: |
         mkdir builds
         cd builds
+        cmake .. -G "Xcode" -DCOMPILE=0
+        cmake --build . --config MinSizeRel
         cmake .. -G "Xcode"
         cmake --build . --config MinSizeRel
