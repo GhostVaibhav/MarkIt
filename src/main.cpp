@@ -45,10 +45,10 @@
 #include "cloudFunctions.h" // For using other Core Cloud functions
 #include "globalVariable.h" // For using PantryID
 #ifdef _WIN32
-#include <cstdio>   // For using _popen() and _pclose()
-#include "curses.h" // For using PDCurses on Windows platform
+#include <cstdio>           // For using _popen() and _pclose()
+#include "ncurses/curses.h" // For using PDCurses on Windows platform
 #else
-#include <curses.h> // For using Ncurses on Unix-based platforms
+#include <curses.h>         // For using Ncurses on Unix-based platforms
 #include <termios.h>
 #endif
 
