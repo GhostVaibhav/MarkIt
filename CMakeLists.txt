@@ -101,8 +101,8 @@ if(${COMPILE} EQUAL 0)
 			BUILD_COMMAND export ARCH=x86_64
 			COMMAND export SDK=macosx
 			COMMAND export DEPLOYMENT_TARGET=10.8
-			COMMAND export CFLAGS=\"-arch $ARCH -isysroot $(xcrun -sdk $SDK --show-sdk-path) -m$SDK-version-min=$DEPLOYMENT_TARGET\"
-./configure --host=$ARCH-apple-darwin --prefix $(pwd)/artifacts --with-secure-transport
+			COMMAND "export CFLAGS=\"-arch $ARCH -isysroot $(xcrun -sdk $SDK --show-sdk-path) -m$SDK-version-min=$DEPLOYMENT_TARGET\"
+./configure --host=$ARCH-apple-darwin --prefix $(pwd)/artifacts --with-secure-transport"
 			# ../curl_project/configure --without-ssl --prefix=${CMAKE_BINARY_DIR}
 			COMMAND ${CMAKE_COMMAND} --build . -j8
 			INSTALL_COMMAND ${CMAKE_COMMAND} --build . -- install
