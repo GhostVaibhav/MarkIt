@@ -142,7 +142,7 @@ else()
 	else()
 		find_library(
 			NCURSES_LIBRARY 
-			NAMES libncurses.a
+			NAMES libncurses ncurses
 			HINTS "${CMAKE_BINARY_DIR}/lib"
 			REQUIRED
 		)
