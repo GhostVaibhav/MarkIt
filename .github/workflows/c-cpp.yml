@@ -34,7 +34,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt upgrade
-        sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
+        sudo apt -y install g++ cmake
     - name: Building application
       run: |
         mkdir build
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Getting prerequisites
         run: |
-          apt update && apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev git cmake
+          apt update && apt -y install g++ git cmake
       - name: Building application
         run: | 
           git clone --recurse-submodules --remote-submodules https://github.com/GhostVaibhav/MarkIt.git && cd MarkIt && mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
@@ -66,7 +66,7 @@ jobs:
           pacman -Syy --noconfirm
           pacman -Syu --noconfirm
           pacman -Sy gcc --noconfirm
-          pacman -S curl ncurses git cmake make --noconfirm
+          pacman -S git cmake make --noconfirm
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
@@ -85,8 +85,6 @@ jobs:
         run: |
           yum -y update
           yum -y group install "Development Tools"
-          yum -y install libcurl --allowerasing
-          yum -y install curl-devel ncurses-devel cmake
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
@@ -104,7 +102,7 @@ jobs:
       - name: Getting prerequisites
         run: |
           dnf -y upgrade
-          dnf -y install git gcc-c++ libcurl-devel ncurses-devel cmake
+          dnf -y install git gcc-c++ cmake
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
@@ -123,7 +121,7 @@ jobs:
         run: |
           zypper refresh
           zypper update -y
-          zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
+          zypper install -y gcc-c++ cmake git
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
@@ -161,7 +159,7 @@ jobs:
         run: |
           apt -y update
           apt -y upgrade
-          apt -y install g++ libcurl4-openssl-dev libncurses5-dev libncursesw5-dev cmake git
+          apt -y install g++ cmake git
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
@@ -180,7 +178,7 @@ jobs:
         run: |
           apk update
           apk upgrade
-          apk add g++ ncurses-dev curl-dev git cmake make
+          apk add g++ git cmake make
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
@@ -245,9 +243,8 @@ jobs:
       run: |
         brew install gcc
         brew install make
-        brew install curl
-        brew install ncurses
         brew install cmake
+        brew install curl
         brew tap nlohmann/json
         brew install nlohmann-json
     - name: Building and compiling the build file using CMake in Apple Clang

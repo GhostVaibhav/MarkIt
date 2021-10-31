@@ -98,7 +98,7 @@ if(${COMPILE} EQUAL 0)
 			-DUSE_WIN32_LDAP=ON
 			-DENABLE_THREADED_RESOLVER=OFF
 			-DUSE_LIBIDN2=OFF
-			BUILD_COMMAND export ARCH=x86_64;export SDK=macosx;export DEPLOYMENT_TARGET=10.8;export CFLAGS="-arch $ARCH -isysroot $(xcrun -sdk $SDK --show-sdk-path) -m$SDK-version-min=$DEPLOYMENT_TARGET"
+			BUILD_COMMAND export ARCH=x86_64;export SDK=macosx;export DEPLOYMENT_TARGET=10.8;export CFLAGS=\"-arch $ARCH -isysroot $(xcrun -sdk $SDK --show-sdk-path) -m$SDK-version-min=$DEPLOYMENT_TARGET\"
 			COMMAND "../curl_project/configure --host=$ARCH-apple-darwin --prefix $(pwd)/artifacts --with-secure-transport"
 			# ../curl_project/configure --without-ssl --prefix=${CMAKE_BINARY_DIR}
 			COMMAND ${CMAKE_COMMAND} --build . -j8
