@@ -98,7 +98,7 @@ if(${COMPILE} EQUAL 0)
 			-DUSE_WIN32_LDAP=ON
 			-DENABLE_THREADED_RESOLVER=OFF
 			-DUSE_LIBIDN2=OFF
-			BUILD_COMMAND "ls && pwd"
+			BUILD_COMMAND ls && pwd
 			COMMAND "./configure --without-ssl --prefix=${CMAKE_BINARY_DIR}"
 			COMMAND "${CMAKE_COMMAND} --build . -- -j8"
 			INSTALL_COMMAND ${CMAKE_COMMAND} --build . -- install
