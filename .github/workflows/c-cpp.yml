@@ -85,6 +85,7 @@ jobs:
         run: |
           yum -y update
           yum -y group install "Development Tools"
+          yum -y install cmake
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: |
