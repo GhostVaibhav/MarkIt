@@ -270,7 +270,7 @@ jobs:
       run: |
         mkdir builds
         cd builds
-        cmake .. -G "Xcode" -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake .. -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
-        cmake .. -G "Xcode" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config =${{ matrix.build_type }}
