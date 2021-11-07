@@ -258,7 +258,8 @@ jobs:
         brew install curl
         brew tap nlohmann/json
         brew install nlohmann-json
-        xcode-select --install
+        sudo xcode-select --reset
+        sudo xcodebuild -license accept
     # - name: Building and compiling the build file using CMake in Apple Clang
     #   run: |
     #     mkdir build
