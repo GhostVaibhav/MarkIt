@@ -27,21 +27,22 @@
  *   SOFTWARE.
  */
 
-#ifndef CLOUD_FUNCTIONS_H
-#define CLOUD_FUNCTIONS_H
+#ifndef STRUCTURE_H
+#define STRUCTURE_H
 
 #include "json.hpp"
-#include "globalVariable.h"
-#include "curl/curl.h"
 
-using json = nlohmann::json;
+// ------------------------------------------------------------------------
+// ---------------------CORE STRUCTURE OF TODO USED------------------------
+// ------------------------------------------------------------------------
 
-size_t write_to_string(void *, size_t, size_t, void *);
-bool getBucket(const std::string &);
-int createBucket(const std::string &);
-bool replaceBucket(const std::string &, const json &);
-bool deleteBucket(const std::string &);
-json getBucketDetails(const std::string &);
-bool appendBucket(const std::string &, const json &);
+struct todo
+{
+    std::string name;                                                   // Storing the name of Todo
+    std::string desc;                                                   // Storing the description of Todo
+    std::string time;                                                   // Automatically generating the time for a Todo
+    bool isComplete;                                                    // Marking the Todo as "complete" or "not complete"
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(todo, name, desc, time, isComplete); // For serializing and deserializing JSON from Todo structure and vice-versa
+};
 
 #endif

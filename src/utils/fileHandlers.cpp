@@ -28,8 +28,8 @@
  */
 
 #include <fstream>
+#include <sys/stat.h>
 #include "fileHandlers.h"
-using json = nlohmann::json;
 
 // ------------------------------------------------------------------------
 // ---------------------CORE FILE SERVICE FUNCTIONS------------------------
@@ -52,6 +52,11 @@ using json = nlohmann::json;
 // | Returns: NOTHING                                 |
 // | Parameters: std::string - The file to be deleted |
 // ----------------------------------------------------
+// 4. exist() - checks if a file exists
+// -----------------------------------------------
+// | Returns: bool - return true, if file exists |
+// | Parameters: std::string - file name         |
+// -----------------------------------------------
 
 void _write_to_file(json temp, std::string STORAGE_FILE)
 {
@@ -77,4 +82,10 @@ void _delete_file(std::string STORAGE_FILE)
     std::ofstream f1;
     f1.open(STORAGE_FILE, std::ofstream::out | std::ofstream::trunc);
     f1.close();
+}
+
+bool exist(const std::string &name)
+{
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
 }

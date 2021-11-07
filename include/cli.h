@@ -27,21 +27,14 @@
  *   SOFTWARE.
  */
 
-#ifndef CLOUD_FUNCTIONS_H
-#define CLOUD_FUNCTIONS_H
+#ifndef CLI_H
+#define CLI_H
 
-#include "json.hpp"
-#include "globalVariable.h"
-#include "curl/curl.h"
-
-using json = nlohmann::json;
-
-size_t write_to_string(void *, size_t, size_t, void *);
-bool getBucket(const std::string &);
-int createBucket(const std::string &);
-bool replaceBucket(const std::string &, const json &);
-bool deleteBucket(const std::string &);
-json getBucketDetails(const std::string &);
-bool appendBucket(const std::string &, const json &);
+namespace cli
+{
+    void test(const std::vector<std::string>);
+    void version(std::vector<std::string>);
+    void display(const std::vector<std::string>);
+}
 
 #endif

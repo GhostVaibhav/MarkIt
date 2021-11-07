@@ -36,5 +36,6 @@ using json = nlohmann::json;
 void _write_to_file(json, std::string);
 std::string _read_from_file(std::string);
 void _delete_file(std::string);
+bool exist(const std::string&);
 
 #endif

@@ -30,16 +30,18 @@
 #ifndef GLOBAL_VARIABLE_H
 #define GLOBAL_VARIABLE_H
 
-#include <iostream>
-
-extern std::string PantryID;
-extern std::string curUser;             // For storing the current username
-extern std::string curUserHash;         // For storing the current user password's SHA-256 hash
-extern std::string PantryID;            // For storing the API key of the Pantry
-extern std::string storageFile;         // File name of the local storage file - DON'T CHANGE THIS!!
-extern std::string stateFile;           // File name of the local state file - DON'T CHANGE THIS!!
-extern std::string keyFile;             // File name of the local key file - DON'T CHANGE THIS!!
-extern int push;                        // Global variable for keeping track of "push" requests
-extern int pull;                        // Global variable for keeping track of "pull" requests
+extern std::string PantryID;                                // For storing the Pantry ID unique to the user
+extern std::string curUser;                                 // For storing the current username
+extern std::string curUserHash;                             // For storing the current user password's SHA-256 hash
+extern std::string PantryID;                                // For storing the API key of the Pantry
+extern std::string storageFile;                             // File name of the local storage file - DON'T CHANGE THIS!!
+extern std::string stateFile;                               // File name of the local state file - DON'T CHANGE THIS!!
+extern std::string keyFile;                                 // File name of the local key file - DON'T CHANGE THIS!!
+extern int push;                                            // Global variable for keeping track of "push" requests
+extern int pull;                                            // Global variable for keeping track of "pull" requests
+#define minWidth 78                                         // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
+#define minHeight 20                                        // Defining the minimum height of the window in pixels - DON'T CHANGE THIS!!
+#define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)    // Defining a macro for drawing a border around a border
+#define APP_VERSION "0.1"                                   // Defining the application version
 
 #endif

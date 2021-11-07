@@ -27,10 +27,14 @@
  *   SOFTWARE.
  */
 
-#ifndef CLI_HPP
-#define CLI_HPP
-
 #include "tabulate.hpp"
+#include "globalVariable.h"
+#include "json.hpp"
+#include "fileHandlers.h"
+#include "structure.h"
+#include "cli.h"
+
+using json = nlohmann::json;
 
 // ------------------------------------------------------------------------
 // --------------------------CLI FUNCTIONALITY-----------------------------
@@ -130,5 +134,3 @@ namespace cli
         std::cout << t << std::endl;
     }
 }
-
-#endif

@@ -31,24 +31,21 @@
 // ---------------------------HEADER FILES---------------------------------
 // ------------------------------------------------------------------------
 
-#include <iostream>         // For using Strings
-#include <fstream>          // For using File operations
-#include <algorithm>        // For using Standard Algorithms
-#include <vector>           // For using std::vector
-#include <memory>           // For using unique pointer
-#include <sys/stat.h>       // For checking if a file exists or not
-#include "curl/curl.h"      // For using Curl
-#include "json.hpp"         // For using nlohmann::json
-#include "sha256.h"         // For using SHA-256 algorithm
-#include "tabulate.hpp"     // For using tabulate library
-#include "fileHandlers.h"   // For using fileHandlers
-#include "cloudFunctions.h" // For using other Core Cloud functions
-#include "globalVariable.h" // For using PantryID
+#include "curl/curl.h"          // For using Curl
+#include "json.hpp"             // For using nlohmann::json
+#include "sha256.h"             // For using SHA-256 algorithm
+#include "tabulate.hpp"         // For using tabulate library
+#include "fileHandlers.h"       // For using file handler functions
+#include "cloudFunctions.h"     // For using other Core Cloud functions
+#include "globalVariable.h"     // For using PantryID
+#include "structure.h"          // For using Todo structure
+#include "cli.h"                // For adding the CLI functionality
+
 #ifdef _WIN32
-#include <cstdio>           // For using _popen() and _pclose()
-#include "curses.h"         // For using PDCurses on Windows platform
+#include <cstdio>               // For using _popen() and _pclose()
+#include "curses.h"             // For using PDCurses on Windows platform
 #else
-#include <ncurses/curses.h> // For using Ncurses on Unix-based platforms
+#include <ncurses/curses.h>     // For using Ncurses on Unix-based platforms
 #include <termios.h>
 #endif
 
@@ -56,29 +53,11 @@
 // ------------------MACROS, NAMESPACES AND DEFINITIONS--------------------
 // ------------------------------------------------------------------------
 
-#define CLI
-#ifndef JSON              // Checking if JSON is defined or not
-nlohmann::json cloudSave; // Cloud save is loaded in the memory once the user signs in
-nlohmann::json localSave; // Local save is also loaded in the memory once the user signs in
+#ifndef JSON                    // Checking if JSON is defined or not
+nlohmann::json cloudSave;       // Cloud save is loaded in the memory once the user signs in
+nlohmann::json localSave;       // Local save is also loaded in the memory once the user signs in
 #endif
-using json = nlohmann::json;                             // Using namespace for minimizing the write effort
-#define minWidth 78                                      // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
-#define minHeight 20                                     // Defining the minimum height of the window in pixels - DON'T CHANGE THIS!!
-#define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
-#define APP_VERSION "0.1"                                // Defining the application version
-
-// ------------------------------------------------------------------------
-// ---------------------CORE STRUCTURE OF TODO USED------------------------
-// ------------------------------------------------------------------------
-
-struct todo
-{
-    std::string name;                                                   // Storing the name of Todo
-    std::string desc;                                                   // Storing the description of Todo
-    std::string time;                                                   // Automatically generating the time for a Todo
-    bool isComplete;                                                    // Marking the Todo as "complete" or "not complete"
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(todo, name, desc, time, isComplete); // For serializing and deserializing JSON from Todo structure and vice-versa
-};
+using json = nlohmann::json;    // Using namespace for minimizing the write effort
 
 // ------------------------------------------------------------------------
 // --------------------CORE CLOUD SERVICE FUNCTIONS------------------------
@@ -211,11 +190,6 @@ bool getAPIKey(std::string userName)
 // | Returns: bool - return true, if todo is deleted       |
 // | Parameters: int* - signifying the index to be deleted |
 // ---------------------------------------------------------
-// 12. exist() - checks if a file exists
-// -----------------------------------------------
-// | Returns: bool - return true, if file exists |
-// | Parameters: std::string - file name         |
-// -----------------------------------------------
 
 void logo(WINDOW *win, int x = 0, int y = 1) noexcept
 {
@@ -430,12 +404,6 @@ bool deleteTodo(int *selection)
         return false;
     }
     return true;
-}
-
-inline bool exist(const std::string &name)
-{
-    struct stat buffer;
-    return (stat(name.c_str(), &buffer) == 0);
 }
 
 // ------------------------------------------------------------------------
@@ -943,10 +911,6 @@ void set_title()
     std::cout << "\033]0;" << title << "\007";
 #endif
 }
-
-#ifdef CLI
-#include "cli.hpp" // For adding the CLI functionality
-#endif
 
 // ------------------------------------------------------------------------
 // ----------------------------MAIN FUNCTION-------------------------------

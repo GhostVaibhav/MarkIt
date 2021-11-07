@@ -27,6 +27,7 @@
  *   SOFTWARE.
  */
 
+#include <iostream>
 #include "globalVariable.h"
 
 // ------------------------------------------------------------------------
