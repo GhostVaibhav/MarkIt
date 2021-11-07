@@ -275,4 +275,4 @@ jobs:
         cmake .. -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
         cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config =${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
