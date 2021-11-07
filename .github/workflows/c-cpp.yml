@@ -114,24 +114,24 @@ jobs:
         run: | 
           mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
 
-  OpenSUSE-Leap:
-    runs-on: ubuntu-latest
-    container: opensuse/leap
-    steps:
-      - name: Getting prerequisites
-        run: |
-          zypper refresh
-          zypper update -y
-          zypper install -y gcc-c++ cmake git
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Building application
-        run: | 
-          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
+# OpenSUSE-Leap:
+#   runs-on: ubuntu-latest
+#   container: opensuse/leap
+#   steps:
+#     - name: Getting prerequisites
+#       run: |
+#         zypper refresh
+#         zypper update -y
+#         zypper install -y gcc-c++ cmake git
+#     - uses: actions/checkout@v2
+#     - name: Checkout submodules
+#       run: |
+#         auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+#         git submodule sync --recursive
+#         git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+#     - name: Building application
+#       run: | 
+#         mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
 
 #  OpenSUSE-Tumbleweed:
 #    runs-on: ubuntu-latest
@@ -193,6 +193,10 @@ jobs:
   Windows:
   
     runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release, MinSizeRel]
+          architecture: [Win32, x64]
     steps:
     - uses: actions/checkout@v2
     - name: Checkout submodules
@@ -202,14 +206,14 @@ jobs:
       run: |
         cd MarkIt
         mkdir builds && cd builds
-        cmake .. -G "MinGW Makefiles" -DCOMPILE=0 -DINFOEX=0
-        cmake --build . --config MinSizeRel
+        cmake .. -G "MinGW Makefiles" -DCOMPILE=0 -DINFOEX=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
     - name: Compiling the main project for MinGW G++ compiler
       run: |
         cd MarkIt
         cd builds
-        cmake .. -G "MinGW Makefiles" -DCOMPILE=1
-        cmake --build . --config MinSizeRel
+        cmake .. -G "MinGW Makefiles" -DCOMPILE=1 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
         copy "MarkIt.exe" "bin\"
         cd bin
         ./MarkIt --version classic
@@ -217,14 +221,14 @@ jobs:
       run: |
         cd MarkIt
         mkdir build && cd build
-        cmake .. -G "Visual Studio 16 2019" -DCOMPILE=0 -DINFOEX=0
-        cmake --build . --config MinSizeRel
+        cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} -DCOMPILE=0 -DINFOEX=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
     - name: Compiling the main project for MSVC compiler
       run: |
         cd MarkIt
         cd build
-        cmake .. -G "Visual Studio 16 2019" -DCOMPILE=1
-        cmake --build . --config MinSizeRel
+        cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} -DCOMPILE=1 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
         copy "MinSizeRel\MarkIt.exe" "bin\"
         cd bin
         ./MarkIt --version classic
