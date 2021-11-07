@@ -258,14 +258,14 @@ jobs:
         brew install curl
         brew tap nlohmann/json
         brew install nlohmann-json
-    - name: Building and compiling the build file using CMake in Apple Clang
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
-        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
+    # - name: Building and compiling the build file using CMake in Apple Clang
+    #   run: |
+    #     mkdir build
+    #     cd build
+    #     cmake .. -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+    #     cmake --build . --config ${{ matrix.build_type }}
+    #     cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+    #     cmake --build . --config ${{ matrix.build_type }}
     - name: Building and compiling using CMake as Xcode Project
       run: |
         mkdir builds
