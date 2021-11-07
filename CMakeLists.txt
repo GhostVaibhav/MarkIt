@@ -83,24 +83,27 @@ if(${COMPILE} EQUAL 0)
 			-DUSE_LIBIDN2=OFF
 		)
 	else()
-		ExternalProject_Add(
-			curl_project
-			URL "https://github.com/curl/curl/releases/download/curl-7_79_1/curl-7.79.1.zip"
-			CMAKE_ARGS
-			-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-			-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-			-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-			-DBUILD_CURL_EXE=OFF
-			-DBUILD_SHARED_LIBS=ON
-			-DBUILD_TESTING=OFF
-			-DCMAKE_USE_SCHANNEL=ON
-			-DUSE_WIN32_LDAP=ON
-			-DENABLE_THREADED_RESOLVER=OFF
-			-DUSE_LIBIDN2=OFF
-			BUILD_COMMAND ../curl_project/configure --without-ssl --prefix=${CMAKE_BINARY_DIR}
-			COMMAND ${CMAKE_COMMAND} --build .
-			INSTALL_COMMAND ${CMAKE_COMMAND} --build . -- install
-		)
+		if(APPLE)
+		else()
+			ExternalProject_Add(
+				curl_project
+				URL "https://github.com/curl/curl/releases/download/curl-7_79_1/curl-7.79.1.zip"
+				CMAKE_ARGS
+				-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+				-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+				-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+				-DBUILD_CURL_EXE=OFF
+				-DBUILD_SHARED_LIBS=ON
+				-DBUILD_TESTING=OFF
+				-DCMAKE_USE_SCHANNEL=ON
+				-DUSE_WIN32_LDAP=ON
+				-DENABLE_THREADED_RESOLVER=OFF
+				-DUSE_LIBIDN2=OFF
+				BUILD_COMMAND ../curl_project/configure --without-ssl --prefix=${CMAKE_BINARY_DIR}
+				COMMAND ${CMAKE_COMMAND} --build .
+				INSTALL_COMMAND ${CMAKE_COMMAND} --build . -- install
+			)
+		endif()
 		ExternalProject_Add(
 			ncurses_project
 			URL "https://github.com/mirror/ncurses/archive/refs/tags/v6.2.zip"
@@ -129,8 +132,8 @@ else()
 	add_executable (${PROJECT_NAME} ${srcs})
 	find_library (
 		CURL_LIBRARY
-		NAMES curl curllib libcurl_imp curllib_static
-		HINTS "${CMAKE_BINARY_DIR}/lib"
+		NAMES curl curllib libcurl_imp curllib_static libcurl
+		HINTS "${CMAKE_BINARY_DIR}/lib" "usr/lib"
 		REQUIRED
 	)
 	if(WIN32)
@@ -151,6 +154,9 @@ else()
 	if(WIN32)
 		include_directories("include" "${CMAKE_BINARY_DIR}/include" "${nlohmann_json_SOURCE_DIR}/include/nlohmann" "${MarkIt_BINARY_DIR}/pdcurses_project-prefix/src/pdcurses_project/" "${tabulate_SOURCE_DIR}/single_include/tabulate/")
 		target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${PDCURSES_LIBRARY} tabulate)
+	elseif(APPLE)
+		include_directories("usr/include" "include" "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate" "${nlohmann_json_SOURCE_DIR}/include/nlohmann")
+		target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${NCURSES_LIBRARY})
 	else()
 		include_directories("include" "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate" "${nlohmann_json_SOURCE_DIR}/include/nlohmann")
 		target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${NCURSES_LIBRARY})

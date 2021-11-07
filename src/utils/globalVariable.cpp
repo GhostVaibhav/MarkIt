@@ -27,19 +27,16 @@
  *   SOFTWARE.
  */
 
-#ifndef GLOBAL_VARIABLE_H
-#define GLOBAL_VARIABLE_H
+#include "globalVariable.h"
 
-#include <iostream>
-
-extern std::string PantryID;
-extern std::string curUser;             // For storing the current username
-extern std::string curUserHash;         // For storing the current user password's SHA-256 hash
-extern std::string PantryID;            // For storing the API key of the Pantry
-extern std::string storageFile;         // File name of the local storage file - DON'T CHANGE THIS!!
-extern std::string stateFile;           // File name of the local state file - DON'T CHANGE THIS!!
-extern std::string keyFile;             // File name of the local key file - DON'T CHANGE THIS!!
-extern int push;                        // Global variable for keeping track of "push" requests
-extern int pull;                        // Global variable for keeping track of "pull" requests
-
-#endif
+// ------------------------------------------------------------------------
+// ---------------------------GLOBAL VARIABLES-----------------------------
+// ------------------------------------------------------------------------
+std::string curUser = "";                                // For storing the current username
+std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
+std::string PantryID;                                    // For storing the API key of the Pantry
+std::string storageFile = "data.dat";                    // File name of the local storage file - DON'T CHANGE THIS!!
+std::string stateFile = "state.dat";                     // File name of the local state file - DON'T CHANGE THIS!!
+std::string keyFile = "key.dat";                         // File name of the local key file - DON'T CHANGE THIS!!
+int push = 0;                                            // Global variable for keeping track of "push" requests
+int pull = 0;                                            // Global variable for keeping track of "pull" requests

@@ -46,9 +46,9 @@
 #include "globalVariable.h" // For using PantryID
 #ifdef _WIN32
 #include <cstdio>           // For using _popen() and _pclose()
-#include "curses.h" // For using PDCurses on Windows platform
+#include "curses.h"         // For using PDCurses on Windows platform
 #else
-#include <ncurses/curses.h>         // For using Ncurses on Unix-based platforms
+#include <ncurses/curses.h> // For using Ncurses on Unix-based platforms
 #include <termios.h>
 #endif
 
@@ -66,14 +66,6 @@ using json = nlohmann::json;                             // Using namespace for 
 #define minHeight 20                                     // Defining the minimum height of the window in pixels - DON'T CHANGE THIS!!
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0) // Defining a macro for drawing a border around a border
 #define APP_VERSION "0.1"                                // Defining the application version
-std::string curUser = "";                                // For storing the current username
-std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
-std::string PantryID;                                    // For storing the API key of the Pantry
-std::string storageFile = "data.dat";                    // File name of the local storage file - DON'T CHANGE THIS!!
-std::string stateFile = "state.dat";                     // File name of the local state file - DON'T CHANGE THIS!!
-std::string keyFile = "key.dat";                         // File name of the local key file - DON'T CHANGE THIS!!
-int push = 0;                                            // Global variable for keeping track of "push" requests
-int pull = 0;                                            // Global variable for keeping track of "pull" requests
 
 // ------------------------------------------------------------------------
 // ---------------------CORE STRUCTURE OF TODO USED------------------------
