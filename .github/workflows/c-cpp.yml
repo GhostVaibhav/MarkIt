@@ -207,7 +207,6 @@ jobs:
         cd MarkIt
         mkdir builds && cd builds
         cmake .. -G "MinGW Makefiles" -DCOMPILE=0 -DINFOEX=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        ls 
         cmake --build . --config ${{ matrix.build_type }}
     - name: Compiling the main project for MinGW G++ compiler
       run: |
@@ -230,7 +229,7 @@ jobs:
         cd build
         cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} -DCOMPILE=1 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
-        copy "MinSizeRel\MarkIt.exe" "bin\"
+        copy "${{ matrix.build_type }}\MarkIt.exe" "bin\"
         cd bin
         ./MarkIt --version classic
   
