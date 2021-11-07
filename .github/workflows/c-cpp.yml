@@ -207,6 +207,7 @@ jobs:
         cd MarkIt
         mkdir builds && cd builds
         cmake .. -G "MinGW Makefiles" -DCOMPILE=0 -DINFOEX=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        ls 
         cmake --build . --config ${{ matrix.build_type }}
     - name: Compiling the main project for MinGW G++ compiler
       run: |
@@ -236,7 +237,12 @@ jobs:
   MacOS:
   
     runs-on: macos-latest
-    
+    strategy:
+      matrix:
+        xcode: [12.4, 12.3, 12.2, 12.1.1, 12.1, 12, 11.7, 11.6, 11.5, 11.4.1, 11.3.1, 11.2.1, 10.3]
+        build_type: [Debug, Release, MinSizeRel]
+      env:
+        DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
     steps:
     - uses: actions/checkout@v2
     - name: Checkout submodules
@@ -256,15 +262,15 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCOMPILE=0
-        cmake --build .
-        cmake ..
-        cmake --build .
+        cmake .. -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
+        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
     - name: Building and compiling using CMake as Xcode Project
       run: |
         mkdir builds
         cd builds
-        cmake .. -G "Xcode" -DCOMPILE=0
-        cmake --build . --config MinSizeRel
-        cmake .. -G "Xcode"
-        cmake --build . --config MinSizeRel
+        cmake .. -G "Xcode" -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
+        cmake .. -G "Xcode" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config =${{ matrix.build_type }}

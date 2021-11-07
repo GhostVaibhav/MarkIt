@@ -132,7 +132,7 @@ else()
 	add_executable (${PROJECT_NAME} ${srcs})
 	find_library (
 		CURL_LIBRARY
-		NAMES curl curllib libcurl_imp curllib_static libcurl
+		NAMES curl curllib libcurl_imp curllib_static libcurl libcurl_imp-d libcurl-d
 		HINTS "${CMAKE_BINARY_DIR}/lib" "usr/lib"
 		REQUIRED
 	)
