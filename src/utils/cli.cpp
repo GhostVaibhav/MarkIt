@@ -34,6 +34,7 @@
 #include "structure.h"
 #include "cli.h"
 
+#define CLI
 using json = nlohmann::json;
 
 // ------------------------------------------------------------------------

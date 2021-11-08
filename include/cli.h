@@ -30,11 +30,12 @@
 #ifndef CLI_H
 #define CLI_H
 
+#define CLI
 namespace cli
 {
-    void test(const std::vector<std::string>);
-    void version(std::vector<std::string>);
-    void display(const std::vector<std::string>);
+    void test(const std::vector<std::string>&);
+    void version(std::vector<std::string>&);
+    void display(const std::vector<std::string>&);
 }
 
 #endif

@@ -130,12 +130,21 @@ if(${COMPILE} EQUAL 0)
 else()
 	file(GLOB srcs "${PROJECT_SOURCE_DIR}/src/*.cpp" "${PROJECT_SOURCE_DIR}/src/utils/*.cpp")
 	add_executable (${PROJECT_NAME} ${srcs})
-	find_library (
-		CURL_LIBRARY
-		NAMES curl curllib libcurl_imp curllib_static libcurl libcurl_imp-d libcurl-d libcurl-d_imp
-		HINTS "${CMAKE_BINARY_DIR}/lib" "usr/lib"
-		REQUIRED
-	)
+	if(APPLE)
+		find_library (
+			CURL_LIBRARY
+			NAMES curl curllib libcurl_imp curllib_static libcurl libcurl_imp-d libcurl-d libcurl-d_imp
+			HINTS "usr/lib"
+			REQUIRED
+		)
+	else()
+		find_library (
+			CURL_LIBRARY
+			NAMES curl curllib libcurl_imp curllib_static libcurl libcurl_imp-d libcurl-d libcurl-d_imp
+			HINTS "${CMAKE_BINARY_DIR}/lib"
+			REQUIRED
+		)
+	endif()
 	if(WIN32)
 		find_library (
 			PDCURSES_LIBRARY

@@ -42,11 +42,9 @@
 #include "cli.h"                // For adding the CLI functionality
 
 #ifdef _WIN32
-#include <cstdio>               // For using _popen() and _pclose()
 #include "curses.h"             // For using PDCurses on Windows platform
 #else
 #include <ncurses/curses.h>     // For using Ncurses on Unix-based platforms
-#include <termios.h>
 #endif
 
 // ------------------------------------------------------------------------
