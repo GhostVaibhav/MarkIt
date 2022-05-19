@@ -58,7 +58,7 @@
 // | Parameters: std::string - file name         |
 // -----------------------------------------------
 
-void _write_to_file(json temp, std::string STORAGE_FILE)
+void _write_to_file(nlohmann::json temp, std::string STORAGE_FILE)
 {
     std::ofstream f1(STORAGE_FILE);
     f1 << temp.dump();

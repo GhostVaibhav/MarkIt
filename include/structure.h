@@ -32,17 +32,13 @@
 
 #include "json.hpp"
 
-// ------------------------------------------------------------------------
-// ---------------------CORE STRUCTURE OF TODO USED------------------------
-// ------------------------------------------------------------------------
-
 struct todo
 {
-    std::string name;                                                   // Storing the name of Todo
-    std::string desc;                                                   // Storing the description of Todo
-    std::string time;                                                   // Automatically generating the time for a Todo
-    bool isComplete;                                                    // Marking the Todo as "complete" or "not complete"
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(todo, name, desc, time, isComplete); // For serializing and deserializing JSON from Todo structure and vice-versa
+    std::string name;                                                   //!< Storing the name of Todo
+    std::string desc;                                                   //!< Storing the description of Todo
+    std::string time;                                                   //!< Automatically generating the time for a Todo
+    bool isComplete;                                                    //!< Marking the Todo as "complete" or "not complete"
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(todo, name, desc, time, isComplete); //!< For serializing and deserializing JSON from Todo structure and vice-versa
 };
 
 #endif

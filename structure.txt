@@ -1,0 +1,8 @@
+my app = frontend + backend
+
+frontend = display function to be made as a virtual base class
+screens =>
+1. login
+2. 
+
+backend = data handling + cloud handling

@@ -34,14 +34,58 @@
 #include "globalVariable.h"
 #include "curl/curl.h"
 
-using json = nlohmann::json;
-
+/*! @brief For using it with Curl and writing response to a string
+ *
+ * @return size_t (Determining the size of the string)
+ * @param void* Storing the pointer to the text to append
+ * @param size_t Size of a character
+ * @param size_t Count of a character
+ * @param void* Main string to write
+ */
 size_t write_to_string(void *, size_t, size_t, void *);
+
+/*! @brief Getting a bucket from an API call
+ *
+ * @return bool (If the bucket exists)
+ * @param std::string Bucket name
+ */
 bool getBucket(const std::string &);
+
+/*! @brief Creating a bucket through an API call
+ *
+ * @return int (Returning a creation code)
+ * @param std::string Bucket name
+ */
 int createBucket(const std::string &);
-bool replaceBucket(const std::string &, const json &);
+
+/*! @brief Replacing an existing bucket through an API call
+ *
+ * @return bool (If the replacement was successful)
+ * @param std::string Bucket name
+ * @param nlohmann::json JSON object to replace
+ */
+bool replaceBucket(const std::string &, const nlohmann::json &);
+
+/*! @brief Deleting a bucket through an API call
+ *
+ * @return bool (If the delete was successful)
+ * @param std::string Bucket name
+ */
 bool deleteBucket(const std::string &);
-json getBucketDetails(const std::string &);
-bool appendBucket(const std::string &, const json &);
+
+/*! @brief Getting the bucket details (in the form of string) and serializing it to a JSON structure through an API call
+ *
+ * @return nlohmann::json (JSON object of bucket details)
+ * @param std::string Bucket name
+ */
+nlohmann::json getBucketDetails(const std::string &);
+
+/*! @brief Appending to the end of a bucket through an API call (useful in pushing to the cloud)
+ *
+ * @return bool (If the append was successful)
+ * @param std::string Bucket name
+ * @param nlohmann::json JSON object to append
+ */
+bool appendBucket(const std::string &, const nlohmann::json &);
 
 #endif

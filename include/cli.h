@@ -30,7 +30,13 @@
 #ifndef CLI_H
 #define CLI_H
 
+/*!
+ * This variable defines if CLI is included in application or not
+ */
 #define CLI
+/*!
+ * Namespace CLI defining command-line interface functions
+ */
 namespace cli
 {
     void test(const std::vector<std::string>&);

@@ -29,13 +29,35 @@
 
 #ifndef FILE_HANDLERS_H
 #define FILE_HANDLERS_H
-
 #include "json.hpp"
-using json = nlohmann::json;
 
-void _write_to_file(json, std::string);
+/*! @brief For writing to the local file
+ *
+ * @return NOTHING
+ * @param nlohmann::json The JSON object to be written to the file
+ * @param std::string The file name to be written to
+ */
+void _write_to_file(nlohmann::json, std::string);
+
+/*! @brief For reading from the local file
+ *
+ * @return std::string (The JSON object read from the file in the form of a string)
+ * @param std::string The file name to be read from
+ */
 std::string _read_from_file(std::string);
+
+/*! @brief For deleting the file's contents
+ *
+ * @return NOTHING
+ * @param std::string The file to be deleted
+ */
 void _delete_file(std::string);
+
+/*! @brief Checks if a file exists
+ *
+ * @return bool (return true, if file exists)
+ * @param std::string File name
+ */
 bool exist(const std::string&);
 
 #endif
