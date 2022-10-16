@@ -1,3 +1,32 @@
+#[[
+ *      __  ___         __    ____ __  __
+ *     /  |/  /__ _____/ /__ /  _// /_/ /
+ *    / /|_/ / _ `/ __/  '_/_/ / / __/_/
+ *   /_/  /_/\_,_/_/ /_/\_\/___/ \__(_)
+ *   
+ *   MIT License
+ *   
+ *   Copyright (c) 2021 Vaibhav Sharma
+ *   
+ *   Permission is hereby granted, free of charge, to any person obtaining a copy
+ *   of this software and associated documentation files (the "Software"), to deal
+ *   in the Software without restriction, including without limitation the rights
+ *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *   copies of the Software, and to permit persons to whom the Software is
+ *   furnished to do so, subject to the following conditions:
+ *   
+ *   The above copyright notice and this permission notice shall be included in all
+ *   copies or substantial portions of the Software.
+ *   
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *   SOFTWARE.
+ ]]
+
 cmake_minimum_required (VERSION 3.8)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -147,7 +176,7 @@ elseif(${COMPILE} EQUAL 1)
 		target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${NCURSES_LIBRARY})
 	else()
 		include_directories("include" "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate" "${nlohmann_json_SOURCE_DIR}/include/nlohmann")
-		target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${NCURSES_LIBRARY})
+		target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${NCURSES_LIBRARY} tabulate)
 	endif()
 	if(WIN32)
 		message(STATUS "Curl Library: ${CURL_LIBRARY}")
@@ -159,6 +188,6 @@ elseif(${COMPILE} EQUAL 1)
 	install(
 		TARGETS ${PROJECT_NAME}
 		DESTINATION ${CMAKE_INSTALL_BINDIR}
-		)
+	)
 	unset(COMPILE CACHE)
 endif()

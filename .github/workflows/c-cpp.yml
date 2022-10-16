@@ -178,7 +178,6 @@ jobs:
       - name: Getting prerequisites
         run: |
           apk update
-          apk upgrade
           apk add g++ git cmake make
       - uses: actions/checkout@v2
       - name: Checkout submodules
@@ -188,7 +187,7 @@ jobs:
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
+          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. -DCOMPILE=1 && cmake --build . --target install
         
   Windows:
   

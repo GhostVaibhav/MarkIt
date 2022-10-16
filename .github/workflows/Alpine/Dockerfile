@@ -1,11 +1,12 @@
 FROM alpine:20210804
 RUN apk update \
-    && apk upgrade \
-    && apk add g++ ncurses-dev curl-dev git cmake make \
-    && git clone https://github.com/GhostVaibhav/Todo.git \
+    && apk add g++ git cmake make \
+    && git clone --recursive https://github.com/GhostVaibhav/MarkIt.git \
     && cd Todo \
     && mkdir build \
     && cd build \
-    && cmake .. \
-    && cmake --build .
+    && cmake .. -DCOMPILE=0 \
+    && cmake --build . \
+    && cmake .. -DCOMPILE=1 \
+    && cmake --build . --target install \
 CMD ["echo", "Successfully built application on Alpine"]
