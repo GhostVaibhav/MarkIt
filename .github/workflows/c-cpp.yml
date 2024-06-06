@@ -24,13 +24,16 @@ jobs:
   Ubuntu:
     runs-on: ubuntu-latest
     steps:
+    - name: Updating Git
+      run: |
+        sudo apt update
+        sudo apt -y install git
     - uses: actions/checkout@v4
       with:
         submodules: 'true'
         token: ${{ secrets.SUBMODULE_KEY }}
     - name: Getting prerequisites
       run: |
-        sudo apt update
         sudo apt upgrade
         sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
     - name: Building application
@@ -43,6 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     container: debian
     steps:
+      - name: Updating Git
+        run: |
+          sudo apt update
+          sudo apt install -y git
       - uses: actions/checkout@v4
         with:
           submodules: 'true'
@@ -63,15 +70,18 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux
     steps:
+      - name: Updating Git
+        run: |
+          pacman -Syy --noconfirm
+          pacman -S git --noconfirm
       - uses: actions/checkout@v4
         with:
           submodules: 'true'
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
-          pacman -Syy --noconfirm
           pacman -Syu --noconfirm
-          pacman -S gcc git cmake make curl ncurses --noconfirm
+          pacman -S gcc cmake make curl ncurses --noconfirm
       - name: Building application
         run: | 
           cd MarkIt && mkdir build && cd build
@@ -82,13 +92,16 @@ jobs:
     runs-on: ubuntu-latest
     container: centos
     steps:
-      - uses: actions/checkout@v4
-        with:
-            submodules: 'true'
-            token: ${{ secrets.SUBMODULE_KEY }}
-      - name: Getting prerequisites
+      - name: Updating Git
         run: |
           yum -y update
+          yum -y install git
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Getting prerequisites
+        run: |
           yum -y group install "Development Tools"
           yum -y install cmake libcurl ncurses-devel
       - name: Building application
@@ -101,14 +114,18 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora
     steps:
+      - name: Updating Git
+        run: |
+          dnf -y upgrade
+          dnf -y install git
       - uses: actions/checkout@v4
         with:
-            submodules: 'true'
-            token: ${{ secrets.SUBMODULE_KEY }}
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           dnf -y upgrade
-          dnf -y install git gcc-c++ cmake ncurses-devel libcurl-devel
+          dnf -y install gcc-c++ cmake ncurses-devel libcurl-devel
       - name: Building application
         run: | 
           cd MarkIt && mkdir build && cd build
@@ -119,15 +136,18 @@ jobs:
     runs-on: ubuntu-latest
     container: kalilinux/kali-rolling
     steps:
-      - uses: actions/checkout@v4
-        with:
-            submodules: 'true'
-            token: ${{ secrets.SUBMODULE_KEY }}
-      - name: Getting prerequisites
+      - name: Updating Git
         run: |
           apt -y update
+          apt -y install git
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Getting prerequisites
+        run: |
           apt -y upgrade
-          apt -y install g++ cmake git libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
+          apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
         run: | 
           cd MarkIt && mkdir build && cd build
@@ -138,15 +158,18 @@ jobs:
     runs-on: ubuntu-latest
     container: alpine
     steps:
-      - uses: actions/checkout@v4
-        with:
-            submodules: 'true'
-            token: ${{ secrets.SUBMODULE_KEY }}
-      - name: Getting prerequisites
+      - name: Updating Git
         run: |
           apk update
+          apk add git
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Getting prerequisites
+        run: |
           apk upgrade
-          apk add g++ git cmake make libcurl ncurses
+          apk add g++ cmake make libcurl ncurses
       - name: Building application
         run: | 
           cd MarkIt && mkdir build && cd build
@@ -167,14 +190,12 @@ jobs:
     - name: Compiling the main project for MinGW G++ compiler
       run: |
         ./prereq.bat "MinGW Makefiles"
-        cd MarkIt
         mkdir build && cd build
         cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
     - name: Compiling the main project for MSVC compiler
       run: |
         ./prereq.bat "Visual Studio 17 2022"
-        cd MarkIt
         mkdir build && cd build
         cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
