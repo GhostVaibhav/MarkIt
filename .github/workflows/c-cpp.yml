@@ -146,7 +146,7 @@ jobs:
       - name: Getting prerequisites
         run: |
           apk upgrade
-          apk add g++ cmake make libcurl ncurses
+          apk add g++ cmake make curl-dev ncurses
       - name: Building application
         run: | 
           mkdir build && cd build
@@ -170,14 +170,14 @@ jobs:
         mkdir build && cd build
         cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
-        cd .. && rm -rf build
+        cd .. && rm -r -force build
     - name: Compiling the main project for MSVC compiler
       run: |
         ./prereq.bat "Visual Studio 17 2022"
         mkdir build && cd build
         cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
-        cd .. && rm -rf build
+        cd .. && rm -r -force build
   
   MacOS:
     runs-on: macos-latest
@@ -194,15 +194,15 @@ jobs:
         token: ${{ secrets.SUBMODULE_KEY }}
     - name: Installing prerequisites
       run: |
-        brew install gcc
         brew install make
         brew install cmake
         brew install curl
         brew install ncurses
         sudo xcode-select --reset
         sudo xcodebuild -license accept
+        xcode-select --install
     - name: Building and compiling using CMake as Xcode Project
       run: |
         mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake .. -G "Xcode" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
