@@ -43,11 +43,7 @@
 #include "spdlog/async.h"   // For adding the logging functionality
 #include "spdlog/sinks/basic_file_sink.h"
 
-#ifdef _WIN32
-#include "curses.h" // For using PDCurses on Windows platform
-#else
-#include <ncurses/curses.h> // For using Ncurses on Unix-based platforms
-#endif
+#include "curses.h"         // For using Curses
 
 #include <iostream>
 #include <optional>

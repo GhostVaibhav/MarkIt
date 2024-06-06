@@ -24,11 +24,10 @@ if(WIN32)
     REQUIRED
   )
 else()
-	find_library (
-		CURL_LIBRARY
-		NAMES libcurl
-		REQUIRED
-	)
+	find_package(
+    CURL
+    REQUIRED
+  )
 endif()
 if(WIN32)
   find_library (
@@ -38,23 +37,44 @@ if(WIN32)
     REQUIRED
   )
 else()
-	find_library (
-		CURSES_LIBRARY 
-		NAMES libncurses ncurses
-		REQUIRED
-	)
+	find_package(
+    Curses
+    REQUIRED
+  )
 endif()
 
 add_executable (${PROJECT_NAME} ${srcs})
-target_include_directories(${PROJECT_NAME} PRIVATE "include"
-                          "${CMAKE_SOURCE_DIR}/deps/curl/library/include"
-                          "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate"
-                          "${CMAKE_SOURCE_DIR}/deps/json/single_include/nlohmann"
-                          "${CMAKE_SOURCE_DIR}/deps/PDCurses/library/include"
-                          "${CMAKE_SOURCE_DIR}/deps/spdlog/include")
-target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARY} ${CURSES_LIBRARY})
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                  COMMAND ${CMAKE_COMMAND} -E copy_directory
-                  "${CMAKE_SOURCE_DIR}/deps/curl/library/bin"
-                  $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+if(WIN32)
+  target_include_directories(${PROJECT_NAME} PRIVATE "include"
+                            "${CMAKE_SOURCE_DIR}/deps/curl/library/include"
+                            "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate"
+                            "${CMAKE_SOURCE_DIR}/deps/json/single_include/nlohmann"
+                            "${CMAKE_SOURCE_DIR}/deps/PDCurses/library/include"
+                            "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
+                          )
+else()
+  target_include_directories(${PROJECT_NAME} PRIVATE "include"
+                            "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate"
+                            "${CMAKE_SOURCE_DIR}/deps/json/single_include/nlohmann"
+                            ${CURSES_INCLUDE_DIR}
+                            "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
+                          )
+endif()
+
+if(WIN32)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARY} ${CURSES_LIBRARY})
+else()
+  target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl ${CURSES_LIBRARIES})
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+endif()
+
+if(WIN32)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${CMAKE_SOURCE_DIR}/deps/curl/library/bin"
+                    $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                  )
+endif()
