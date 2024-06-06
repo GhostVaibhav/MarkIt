@@ -146,7 +146,7 @@ jobs:
       - name: Getting prerequisites
         run: |
           apk upgrade
-          apk add g++ cmake make curl-dev ncurses
+          apk add g++ cmake make curl-dev ncurses-dev
       - name: Building application
         run: | 
           mkdir build && cd build
@@ -198,9 +198,6 @@ jobs:
         brew install cmake
         brew install curl
         brew install ncurses
-        sudo xcode-select --reset
-        sudo xcodebuild -license accept
-        xcode-select --install
     - name: Building and compiling using CMake as Xcode Project
       run: |
         mkdir build && cd build
