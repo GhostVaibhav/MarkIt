@@ -1,5 +1,12 @@
 @echo off
 
+SET generator=%~1%
+SET generatorString=
+
+IF NOT "%generator%" == "" (
+    SET generatorString=-G "%generator%"
+)
+
 call :colorEcho 0a "[PREREQ] - Preparing to install [Curl]"
 cd "deps/curl"
 
@@ -11,7 +18,7 @@ echo.
 
 call :colorEcho 0a "[PREREQ] - Configuring Curl"
 echo.
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../library -DBUILD_CURL_EXE=OFF -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DCURL_USE_SCHANNEL=ON -DUSE_WIN32_LDAP=ON -DENABLE_THREADED_RESOLVER=OFF -DUSE_LIBIDN2=OFF
+cmake .. %generatorString% -DCMAKE_BUILD_TYPE=%buildType% -DCMAKE_INSTALL_PREFIX=../library -DBUILD_CURL_EXE=OFF -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DCURL_USE_SCHANNEL=ON -DUSE_WIN32_LDAP=ON -DENABLE_THREADED_RESOLVER=OFF -DUSE_LIBIDN2=OFF
 echo.
 call :colorEcho 0a "[PREREQ] - Building Curl"
 echo.
@@ -35,7 +42,7 @@ echo.
 
 call :colorEcho 0a "[PREREQ] - Configuring PDCurses"
 echo.
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../library
+cmake .. %generatorString% -DCMAKE_BUILD_TYPE=%buildType% -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../library
 echo.
 call :colorEcho 0a "[PREREQ] - Building PDCurses"
 echo.

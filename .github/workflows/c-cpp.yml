@@ -24,211 +24,162 @@ jobs:
   Ubuntu:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: |
-        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-        git submodule sync --recursive
-        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+        token: ${{ secrets.SUBMODULE_KEY }}
     - name: Getting prerequisites
       run: |
         sudo apt update
         sudo apt upgrade
-        sudo apt -y install g++ cmake
+        sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
     - name: Building application
       run: |
-        mkdir build
-        cd build
-        cmake .. -DCOMPILE=0
-        cmake --build .
-        cmake ..
-        cmake --build .
+        cd MarkIt && mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --config Release
   
   Debian:
     runs-on: ubuntu-latest
     container: debian
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
-          apt update && apt -y install g++ git cmake
+          sudo apt update
+          sudo apt upgrade
+          sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
         run: | 
-          git clone --recurse-submodules --remote-submodules https://github.com/GhostVaibhav/MarkIt.git && cd MarkIt && mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
+          cd MarkIt && mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
 
 
   Arch-Linux:
     runs-on: ubuntu-latest
     container: archlinux
     steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           pacman -Syy --noconfirm
           pacman -Syu --noconfirm
-          pacman -Sy gcc --noconfirm
-          pacman -S git cmake make --noconfirm
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+          pacman -S gcc git cmake make curl ncurses --noconfirm
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
+          cd MarkIt && mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
 
   CentOS:
     runs-on: ubuntu-latest
     container: centos
     steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: 'true'
+            token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           yum -y update
           yum -y group install "Development Tools"
-          yum -y install cmake
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+          yum -y install cmake libcurl ncurses-devel
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
+          cd MarkIt && mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
 
   Fedora-Linux:
     runs-on: ubuntu-latest
     container: fedora
     steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: 'true'
+            token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           dnf -y upgrade
-          dnf -y install git gcc-c++ cmake
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+          dnf -y install git gcc-c++ cmake ncurses-devel libcurl-devel
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
-
-# OpenSUSE-Leap:
-#   runs-on: ubuntu-latest
-#   container: opensuse/leap
-#   steps:
-#     - name: Getting prerequisites
-#       run: |
-#         zypper refresh
-#         zypper update -y
-#         zypper install -y gcc-c++ cmake git
-#     - uses: actions/checkout@v2
-#     - name: Checkout submodules
-#       run: |
-#         auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-#         git submodule sync --recursive
-#         git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-#     - name: Building application
-#       run: | 
-#         mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
-
-#  OpenSUSE-Tumbleweed:
-#    runs-on: ubuntu-latest
-#    container: opensuse/tumbleweed
-#    steps:
-#      - name: Getting prerequisites
-#        run: |
-#          zypper refresh
-#          zypper update -y
-#          zypper install -y gcc-c++ libcurl-devel ncurses-devel cmake git
-#      - uses: actions/checkout@v2
-#      - name: Checkout submodules
-#        run: |
-#          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-#          git submodule sync --recursive
-#          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-#      - name: Building application
-#        run: | 
-#          mkdir build && cd build && cmake .. && cmake --build .
+          cd MarkIt && mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
   
   Kali-Linux:
     runs-on: ubuntu-latest
     container: kalilinux/kali-rolling
     steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: 'true'
+            token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           apt -y update
           apt -y upgrade
-          apt -y install g++ cmake git
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+          apt -y install g++ cmake git libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
+          cd MarkIt && mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
 
   Alpine:
     runs-on: ubuntu-latest
     container: alpine
     steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: 'true'
+            token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           apk update
           apk upgrade
-          apk add g++ git cmake make
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+          apk add g++ git cmake make libcurl ncurses
       - name: Building application
         run: | 
-          mkdir build && cd build && cmake .. -DCOMPILE=0 && cmake --build . && cmake .. && cmake --build .
-        
+          cd MarkIt && mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+
   Windows:
-  
     runs-on: windows-latest
     strategy:
       matrix:
         build_type: [Debug, Release, MinSizeRel]
         architecture: [Win32, x64]
     steps:
-    - uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: |
-        git clone --recurse-submodules --remote-submodules https://github.com/GhostVaibhav/MarkIt.git
-    - name: Building the dependencies for MinGW G++ compiler
-      run: |
-        cd MarkIt
-        mkdir builds && cd builds
-        cmake .. -G "MinGW Makefiles" -DCOMPILE=0 -DINFOEX=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+        token: ${{ secrets.SUBMODULE_KEY }}
     - name: Compiling the main project for MinGW G++ compiler
       run: |
-        cd MarkIt
-        cd builds
-        cmake .. -G "MinGW Makefiles" -DCOMPILE=1 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
-    - name: Building the dependencies for MSVC compiler
-      run: |
+        ./prereq.bat "MinGW Makefiles"
         cd MarkIt
         mkdir build && cd build
-        cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} -DCOMPILE=0 -DINFOEX=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
     - name: Compiling the main project for MSVC compiler
       run: |
+        ./prereq.bat "Visual Studio 17 2022"
         cd MarkIt
-        cd build
-        cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} -DCOMPILE=1 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        mkdir build && cd build
+        cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
   
   MacOS:
-  
     runs-on: macos-latest
     strategy:
       matrix:
@@ -237,35 +188,21 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
     steps:
-    - uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: |
-        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-        git submodule sync --recursive
-        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+        token: ${{ secrets.SUBMODULE_KEY }}
     - name: Installing prerequisites
       run: |
-        brew install gcc
+        brew install g++
         brew install make
         brew install cmake
         brew install curl
-        brew tap nlohmann/json
-        brew install nlohmann-json
+        brew install ncurses
         sudo xcode-select --reset
         sudo xcodebuild -license accept
-    # - name: Building and compiling the build file using CMake in Apple Clang
-    #   run: |
-    #     mkdir build
-    #     cd build
-    #     cmake .. -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-    #     cmake --build . --config ${{ matrix.build_type }}
-    #     cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-    #     cmake --build . --config ${{ matrix.build_type }}
     - name: Building and compiling using CMake as Xcode Project
       run: |
-        mkdir builds
-        cd builds
-        cmake .. -DCOMPILE=0 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
+        mkdir build && cd build
         cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}

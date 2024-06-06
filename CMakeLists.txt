@@ -8,7 +8,7 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	message(FATAL_ERROR “${BoldRed}In-source build detected!${ColourReset}”)
 endif()
 
-if(NOT DEFINED CMAKE_BUILD_TYPE)
+if(NOT DEFINED ${CMAKE_BUILD_TYPE})
 	set(CMAKE_BUILD_TYPE "Release")
 endif()
 
