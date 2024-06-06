@@ -38,7 +38,7 @@ jobs:
         sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
     - name: Building application
       run: |
-        cd MarkIt && mkdir build && cd build
+        mkdir build && cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
         cmake --build . --config Release
   
@@ -48,20 +48,19 @@ jobs:
     steps:
       - name: Updating Git
         run: |
-          sudo apt update
-          sudo apt install -y git
+          apt update
+          apt install -y git
       - uses: actions/checkout@v4
         with:
           submodules: 'true'
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
-          sudo apt update
-          sudo apt upgrade
-          sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
+          apt upgrade
+          apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
         run: | 
-          cd MarkIt && mkdir build && cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
 
@@ -84,29 +83,7 @@ jobs:
           pacman -S gcc cmake make curl ncurses --noconfirm
       - name: Building application
         run: | 
-          cd MarkIt && mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
-          cmake --build . --config Release
-
-  CentOS:
-    runs-on: ubuntu-latest
-    container: centos
-    steps:
-      - name: Updating Git
-        run: |
-          yum -y update
-          yum -y install git
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'true'
-          token: ${{ secrets.SUBMODULE_KEY }}
-      - name: Getting prerequisites
-        run: |
-          yum -y group install "Development Tools"
-          yum -y install cmake libcurl ncurses-devel
-      - name: Building application
-        run: | 
-          cd MarkIt && mkdir build && cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
 
@@ -128,7 +105,7 @@ jobs:
           dnf -y install gcc-c++ cmake ncurses-devel libcurl-devel
       - name: Building application
         run: | 
-          cd MarkIt && mkdir build && cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
   
@@ -150,7 +127,7 @@ jobs:
           apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
         run: | 
-          cd MarkIt && mkdir build && cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
 
@@ -172,7 +149,7 @@ jobs:
           apk add g++ cmake make libcurl ncurses
       - name: Building application
         run: | 
-          cd MarkIt && mkdir build && cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
 
@@ -193,12 +170,14 @@ jobs:
         mkdir build && cd build
         cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
+        cd .. && rm -rf build
     - name: Compiling the main project for MSVC compiler
       run: |
         ./prereq.bat "Visual Studio 17 2022"
         mkdir build && cd build
         cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build . --config ${{ matrix.build_type }}
+        cd .. && rm -rf build
   
   MacOS:
     runs-on: macos-latest
@@ -215,7 +194,7 @@ jobs:
         token: ${{ secrets.SUBMODULE_KEY }}
     - name: Installing prerequisites
       run: |
-        brew install g++
+        brew install gcc
         brew install make
         brew install cmake
         brew install curl
