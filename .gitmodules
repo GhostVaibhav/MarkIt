@@ -1,3 +1,17 @@
+[submodule "deps/PDCurses"]
+	path = deps/PDCurses
+	url = https://github.com/scivision/PDCurses
+	branch = cmake
+[submodule "deps/curl"]
+	path = deps/curl
+	url = https://github.com/curl/curl.git
 [submodule "deps/tabulate"]
 	path = deps/tabulate
 	url = https://github.com/p-ranav/tabulate
+[submodule "deps/json"]
+	path = deps/json
+	url = https://github.com/nlohmann/json.git
+[submodule "deps/spdlog"]
+	path = deps/spdlog
+	url = https://github.com/gabime/spdlog.git
+	branch = v1.x

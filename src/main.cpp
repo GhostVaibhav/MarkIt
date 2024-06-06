@@ -3,21 +3,21 @@
  *     /  |/  /__ _____/ /__ /  _// /_/ /
  *    / /|_/ / _ `/ __/  '_/_/ / / __/_/
  *   /_/  /_/\_,_/_/ /_/\_\/___/ \__(_)
- *   
+ *
  *   MIT License
- *   
+ *
  *   Copyright (c) 2021 Vaibhav Sharma
- *   
+ *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
  *   in the Software without restriction, including without limitation the rights
  *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *   copies of the Software, and to permit persons to whom the Software is
  *   furnished to do so, subject to the following conditions:
- *   
+ *
  *   The above copyright notice and this permission notice shall be included in all
  *   copies or substantial portions of the Software.
- *   
+ *
  *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,31 +31,48 @@
 // ---------------------------HEADER FILES---------------------------------
 // ------------------------------------------------------------------------
 
-#include "curl/curl.h"          // For using Curl
-#include "json.hpp"             // For using nlohmann::json
-#include "sha256.h"             // For using SHA-256 algorithm
-#include "tabulate.hpp"         // For using tabulate library
-#include "fileHandlers.h"       // For using file handler functions
-#include "cloudFunctions.h"     // For using other Core Cloud functions
-#include "globalVariable.h"     // For using PantryID
-#include "structure.h"          // For using Todo structure
-#include "cli.h"                // For adding the CLI functionality
+#include "curl/curl.h"      // For using Curl
+#include "json.hpp"         // For using nlohmann::json
+#include "sha256.h"         // For using SHA-256 algorithm
+#include "tabulate.hpp"     // For using tabulate library
+#include "fileHandlers.h"   // For using file handler functions
+#include "cloudFunctions.h" // For using other Core Cloud functions
+#include "globalVariable.h" // For using PantryID
+#include "structure.h"      // For using Todo structure
+#include "cli.h"            // For adding the CLI functionality
+#include "spdlog/async.h"   // For adding the logging functionality
+#include "spdlog/sinks/basic_file_sink.h"
 
 #ifdef _WIN32
-#include "curses.h"             // For using PDCurses on Windows platform
+#include "curses.h" // For using PDCurses on Windows platform
 #else
-#include <ncurses/curses.h>     // For using Ncurses on Unix-based platforms
+#include <ncurses/curses.h> // For using Ncurses on Unix-based platforms
+#endif
+
+#include <iostream>
+#include <optional>
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#define SystemOpenURL(url) system("start " url);
+#elif __APPLE__
+#define SystemOpenURL(url) system("open " url);
+#elif __linux__
+#define SystemOpenURL(url) system("xdg-open" url);
+#else
+#error "Unknown compiler"
 #endif
 
 // ------------------------------------------------------------------------
 // ------------------MACROS, NAMESPACES AND DEFINITIONS--------------------
 // ------------------------------------------------------------------------
 
-#ifndef JSON                    // Checking if JSON is defined or not
-nlohmann::json cloudSave;       // Cloud save is loaded in the memory once the user signs in
-nlohmann::json localSave;       // Local save is also loaded in the memory once the user signs in
+#ifndef JSON              // Checking if JSON is defined or not
+nlohmann::json cloudSave; // Cloud save is loaded in the memory once the user signs in
+nlohmann::json localSave; // Local save is also loaded in the memory once the user signs in
 #endif
-using json = nlohmann::json;    // Using namespace for minimizing the write effort
+using json = nlohmann::json; // Using namespace for minimizing the write effort
+
+static std::shared_ptr<spdlog::logger> logger;
 
 // ------------------------------------------------------------------------
 // --------------------CORE CLOUD SERVICE FUNCTIONS------------------------
@@ -111,11 +128,13 @@ bool getAPIKey(std::string userName)
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
         res = curl_easy_perform(curl);
-        if (res != 0)
-            throw curl_easy_strerror(res);
-        key = json::parse(result);
+        // if (res != 0) {
+            // throw curl_easy_strerror(res);
+        // }
+        // key = json::parse(result);
     }
     curl_easy_cleanup(curl);
+    key["key"] = PantryID;
     if (key["key"] != "" || key["error"] == "")
     {
         PantryID = key["key"];
@@ -341,12 +360,19 @@ bool pullFromCloud(WINDOW *win)
 {
     loading("Pulling from cloud");
     cloudSave = getBucketDetails(curUser);
-    if (localSave == cloudSave)
+    if (localSave == cloudSave) {
+        logger->info("Local and cloud saves are same, therefore not pulling");
+        logger->flush();
         return true;
+    }
     json j = localSave.diff(localSave, cloudSave);
-    if (!j.is_null())
+    if (!j.is_null()) {
+        logger->info("Pull patch exists: " + j.dump());
+        logger->flush();
+        localSave = cloudSave;
+        updatePP();
         return false;
-    localSave = cloudSave;
+    }
     return true;
 }
 
@@ -365,15 +391,21 @@ void pushToCloud(WINDOW *win)
 
 bool corruptedData()
 {
-    if (localSave["number"] != localSave["data"].size() || !localSave["data"].is_array() || localSave["hash"] != curUserHash)
+    if (std::stoi(localSave["number"].dump()) != localSave["data"].size() || !localSave["data"].is_array() || localSave["hash"] != curUserHash)
     {
+        logger->error(std::stoi(localSave["number"].dump()));
+        logger->error(localSave["data"].size());
+        logger->error(localSave["data"].is_array());
+        logger->error(localSave["hash"]);
+        logger->error(curUserHash);
+        logger->flush();
         return true;
     }
     try
     {
         std::vector<todo> t = localSave["data"];
         for (todo a : t)
-            if (!a.name.size() || !a.desc.size() || !a.time.size())
+            if (a.name.size() == 0 || a.desc.size() == 0 || a.time.size() == 0)
                 return true;
     }
     catch (json::out_of_range &e)
@@ -549,13 +581,12 @@ void main_menu()
     while (1)
     {
         std::vector<todo> temp = localSave["data"];
-        if (changesMade)
-        {
-            refreshCloudSave();
-            changesMade = false;
-        }
+        // if (changesMade)
+        // {
+        //     refreshCloudSave();
+        //     changesMade = false;
+        // }
         noecho();
-        updatePP();
         curs_set(0);
         if (c == KEY_RESIZE)
         {
@@ -919,6 +950,9 @@ int main(int argc, char *argv[])
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
     std::cout.tie(nullptr);
+
+    logger = spdlog::basic_logger_mt<spdlog::async_factory>("async_file_logger", "markit_logs.txt");
+    logger->info("Logger initialized");
 #ifdef CLI
     if (argc > 1)
     {
@@ -955,7 +989,12 @@ int main(int argc, char *argv[])
     }
     catch (...)
     {
+        logger->error("JSON parsing failed");
+        logger->flush();
     }
+
+    // SystemOpenURL("https://getpantry.cloud");
+
     int loggedIn = -1;
     if (!exist(stateFile))
     {
@@ -968,10 +1007,13 @@ int main(int argc, char *argv[])
         {
             json temp = json::parse(_read_from_file(stateFile));
             curUser = temp["userName"];
+            curUserHash = temp["userHash"];
             cloudSave = getBucketDetails(curUser);
         }
         catch (...)
         {
+            logger->debug("Current user doesn't exist");
+            logger->flush();
             _delete_file(stateFile);
             loggedIn = login(&curUser);
         }
@@ -988,6 +1030,8 @@ int main(int argc, char *argv[])
     }
     if (corruptedData())
     {
+        logger->error("Data in the save file is corrupted");
+        logger->flush();
         _delete_file(storageFile);
         localSave = cloudSave;
         _write_to_file(localSave, storageFile);

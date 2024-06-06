@@ -35,7 +35,7 @@
 // ------------------------------------------------------------------------
 std::string curUser = "";                                // For storing the current username
 std::string curUserHash = "";                            // For storing the current user password's SHA-256 hash
-std::string PantryID;                                    // For storing the API key of the Pantry
+std::string PantryID = "dc8b010b-5dea-48f8-8ce9-21bf93b71aca";  // For storing the API key of the Pantry
 std::string storageFile = "data.dat";                    // File name of the local storage file - DON'T CHANGE THIS!!
 std::string stateFile = "state.dat";                     // File name of the local state file - DON'T CHANGE THIS!!
 std::string keyFile = "key.dat";                         // File name of the local key file - DON'T CHANGE THIS!!
