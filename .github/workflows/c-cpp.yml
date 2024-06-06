@@ -199,6 +199,7 @@ jobs:
         brew install curl
         brew install ncurses
         sudo xcode-select --reset
+        sudo xcodebuild -license accept
         sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
     - name: Building and compiling using CMake as Xcode Project
       run: |
