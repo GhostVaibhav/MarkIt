@@ -3,4 +3,3 @@
 *.json
 builds/
 build/
-deps/*

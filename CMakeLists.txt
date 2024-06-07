@@ -8,11 +8,24 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	message(FATAL_ERROR “${BoldRed}In-source build detected!${ColourReset}”)
 endif()
 
-if(NOT DEFINED ${CMAKE_BUILD_TYPE})
-	set(CMAKE_BUILD_TYPE "Release")
+if(DEFINED CMAKE_BUILD_GUI)
+  set(CMAKE_BUILD_GUI ${CMAKE_BUILD_GUI})
+else()
+  set(CMAKE_BUILD_GUI 1)
+endif()
+
+if(DEFINED CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE})
+else()
+  set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
 project ("MarkIt")
+
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/toggles.h.in"
+  "${PROJECT_SOURCE_DIR}/include/toggles.h"
+)
 
 file(GLOB srcs "${PROJECT_SOURCE_DIR}/src/*.cpp" "${PROJECT_SOURCE_DIR}/src/utils/*.cpp")
 
@@ -65,10 +78,10 @@ endif()
 if(WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARY} ${CURSES_LIBRARY})
 else()
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
   target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl ${CURSES_LIBRARIES})
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads REQUIRED)
-  target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 endif()
 
 if(WIN32)
@@ -78,3 +91,31 @@ if(WIN32)
                     $<TARGET_FILE_DIR:${PROJECT_NAME}>
                   )
 endif()
+
+install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT Application)
+install(FILES "${PROJECT_SOURCE_DIR}/deps/curl/library/bin/libcurl.dll" DESTINATION bin COMPONENT Application)
+
+include(InstallRequiredSystemLibraries)
+
+if(WIN32)
+  set(CPACK_GENERATOR "NSIS")
+  set(CPACK_NSIS_MODIFY_PATH ON)
+  set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
+  set(CPACK_COMPONENTS_ALL Application)
+elseif(APPLE)
+  set(CPACK_GENERATOR "DragNDrop")
+  set(CPACK_COMPONENTS_ALL Application)
+else()
+  set(CPACK_GENERATOR "DEB")
+  set(CPACK_COMPONENTS_ALL Application)
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Vaibhav Sharma")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libcurl4-openssl-dev, libncurses5-dev")
+endif()
+
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_VENDOR "Vaibhav Sharma")
+set(CPACK_PACKAGE_VERSION "0.1")
+set(CPACK_PACKAGE_VERSION_MAJOR "0")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
+
+include(CPack)

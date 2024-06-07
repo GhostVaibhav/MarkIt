@@ -40,13 +40,12 @@
 #include "globalVariable.h" // For using PantryID
 #include "structure.h"      // For using Todo structure
 #include "cli.h"            // For adding the CLI functionality
-#include "spdlog/async.h"   // For adding the logging functionality
-#include "spdlog/sinks/basic_file_sink.h"
 
+#include "toggles.h"        // For including toggles
 #include "curses.h"         // For using Curses
+#include "logger.h"         // For using the logger
 
 #include <iostream>
-#include <optional>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define SystemOpenURL(url) system("start " url);
@@ -67,8 +66,6 @@ nlohmann::json cloudSave; // Cloud save is loaded in the memory once the user si
 nlohmann::json localSave; // Local save is also loaded in the memory once the user signs in
 #endif
 using json = nlohmann::json; // Using namespace for minimizing the write effort
-
-static std::shared_ptr<spdlog::logger> logger;
 
 // ------------------------------------------------------------------------
 // --------------------CORE CLOUD SERVICE FUNCTIONS------------------------
@@ -125,7 +122,7 @@ bool getAPIKey(std::string userName)
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
         res = curl_easy_perform(curl);
         // if (res != 0) {
-            // throw curl_easy_strerror(res);
+        // throw curl_easy_strerror(res);
         // }
         // key = json::parse(result);
     }
@@ -356,13 +353,15 @@ bool pullFromCloud(WINDOW *win)
 {
     loading("Pulling from cloud");
     cloudSave = getBucketDetails(curUser);
-    if (localSave == cloudSave) {
+    if (localSave == cloudSave)
+    {
         logger->info("Local and cloud saves are same, therefore not pulling");
         logger->flush();
         return true;
     }
     json j = localSave.diff(localSave, cloudSave);
-    if (!j.is_null()) {
+    if (!j.is_null())
+    {
         logger->info("Pull patch exists: " + j.dump());
         logger->flush();
         localSave = cloudSave;
@@ -949,16 +948,18 @@ int main(int argc, char *argv[])
 
     logger = spdlog::basic_logger_mt<spdlog::async_factory>("async_file_logger", "markit_logs.txt");
     logger->info("Logger initialized");
-#ifdef CLI
+    set_title();
     if (argc > 1)
     {
         std::vector<std::string> args(0);
         for (int i = 1; i < argc; i++)
             args.push_back(argv[i]);
+#if std::strcmp(MARKIT_BUILD_TYPE, "Debug")
         if (args[0] == "--test" || args[0] == "-t" || args[0] == "test")
         {
             cli::test(args);
         }
+#endif
         if (args[0] == "--version" || args[0] == "-v" || args[0] == "version")
         {
             cli::version(args);
@@ -969,8 +970,7 @@ int main(int argc, char *argv[])
         }
         return 0;
     }
-#endif
-    set_title();
+#ifdef GUI
     initscr();
     cbreak();
     start_color();
@@ -1036,5 +1036,6 @@ int main(int argc, char *argv[])
     welcome(loggedIn);
     main_menu();
     endwin();
+#endif
     return 0;
 }

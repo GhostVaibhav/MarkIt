@@ -8,6 +8,7 @@ IF NOT "%generator%" == "" (
 )
 
 call :colorEcho 0a "[PREREQ] - Preparing to install [Curl]"
+echo.
 cd "deps/curl"
 
 @RD /S /Q ".\library"
@@ -56,6 +57,7 @@ call :colorEcho 0a "[PREREQ] - Installed [Curl, PDCurses]"
 echo.
 
 exit
+
 :colorEcho
 echo off
 <nul set /p ".=%DEL%" > "%~2"
