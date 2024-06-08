@@ -243,7 +243,8 @@ void logo(WINDOW *win, int x = 0, int y = 1) noexcept
     mvwprintw(win, x + 1, y + 33, R"(__)");
     mvwprintw(win, x + 2, y + 32, R"(/ /)");
     mvwprintw(win, x + 3, y + 31, R"(/_/)");
-    mvwprintw(win, x + 4, y + 30, R"((_))");
+    mvwprintw(win, x + 4, y + 30, R"((v))");
+    mvwprintw(win, x + 4, y + 33, (APP_VERSION).c_str());
     wattroff(win, COLOR_PAIR(1));
 }
 

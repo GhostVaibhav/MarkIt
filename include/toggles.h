@@ -32,6 +32,8 @@
 
 #define MARKIT_GUI 1
 #define MARKIT_BUILD_TYPE Debug
+#define MARKIT_MINOR_VERSION 1
+#define MARKIT_MAJOR_VERSION 0
 
 #if MARKIT_GUI == 1
 #define GUI

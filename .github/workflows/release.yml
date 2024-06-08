@@ -1,0 +1,83 @@
+name: Publish Release Artifacts
+
+on: workflow_dispatch
+
+jobs:
+  release-debian-package:
+    runs-on: ubuntu-latest
+    container: debian
+    steps:
+      - name: Updating Git
+        run: |
+          apt update
+          apt install -y git
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Getting prerequisites
+        run: |
+          apt upgrade
+          apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
+      - name: Building application
+        run: | 
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+      - name: Package application
+        run: |
+          cpack -G DEB
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: *.deb
+          path: build
+
+  release-windows-package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Building application
+        run: |
+          ./prereq.bat
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+      - name: Build NSIS
+        run: |
+          git clone https://github.com/kichik/nsis.git
+          pip install scons
+          cd nsis
+          scons NSIS_MAX_STRLEN=8192 PREFIX="C:\NSIS" install-compiler install-stubs
+          cd ..
+          $env:PATH = "C:\NSIS;$env:PATH"
+      - name: Package application
+        run: |
+          cpack
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: *.exe
+          path: build
+  release-macos-package:
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Building application
+        run: |
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+      - name: Package application
+        run: |
+          cpack
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: *.dmg
+          path: build

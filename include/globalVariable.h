@@ -30,6 +30,8 @@
 #ifndef GLOBAL_VARIABLE_H
 #define GLOBAL_VARIABLE_H
 
+#include "toggles.h"
+
 extern std::string PantryID;                                // For storing the Pantry ID unique to the user
 extern std::string curUser;                                 // For storing the current username
 extern std::string curUserHash;                             // For storing the current user password's SHA-256 hash
@@ -41,6 +43,6 @@ extern int pull;                                            // Global variable f
 #define minWidth 78                                         // Defining the minimum width of the window in pixels - DON'T CHANGE THIS!!
 #define minHeight 20                                        // Defining the minimum height of the window in pixels - DON'T CHANGE THIS!!
 #define BORDER(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)    // Defining a macro for drawing a border around a border
-#define APP_VERSION "0.1"                                   // Defining the application version
+#define APP_VERSION std::to_string(MARKIT_MAJOR_VERSION) + "." + std::to_string(MARKIT_MINOR_VERSION)   // Defining the application version
 
 #endif
