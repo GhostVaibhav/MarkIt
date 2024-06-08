@@ -34,14 +34,15 @@ jobs:
           cmake --build . --config Release
       - name: Package application
         run: |
-          cpack -G DEB
+          cd build
+          cpack
       - name: Print files
         run: |
           ls -l build
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
-          name: MarkIt-${{ github.event.inputs.majorVersion }}.${{ github.event.inputs.minorVersion }}-linux64.deb
+          name: MarkIt-${{ github.event.inputs.majorVersion }}.${{ github.event.inputs.minorVersion }}.1-Linux.deb
           path: build
 
   release-windows-package:
@@ -57,6 +58,9 @@ jobs:
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
+      - name: Install zlib
+        run: |
+          powershell -Command "(Invoke-WebRequest -Uri https://git.io/JnHTY -OutFile install_zlib.bat)"; ./install_zlib.bat; del install_zlib.bat
       - name: Build NSIS
         run: |
           git clone https://github.com/kichik/nsis.git
@@ -67,6 +71,7 @@ jobs:
           $env:PATH = "C:\NSIS;$env:PATH"
       - name: Package application
         run: |
+          cd build
           cpack
       - name: Upload release
         uses: actions/upload-artifact@v4
@@ -87,6 +92,7 @@ jobs:
           cmake --build . --config Release
       - name: Package application
         run: |
+          cd build
           cpack
       - name: Print files
         run: |

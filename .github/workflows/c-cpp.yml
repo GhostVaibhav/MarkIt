@@ -192,15 +192,6 @@ jobs:
       with:
         submodules: 'true'
         token: ${{ secrets.SUBMODULE_KEY }}
-    - name: Installing prerequisites
-      run: |
-        brew install make
-        brew install cmake
-        brew install curl
-        brew install ncurses
-        sudo xcode-select --reset
-        sudo xcodebuild -license accept
-        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
     - name: Building and compiling using CMake as Xcode Project
       run: |
         mkdir build && cd build
