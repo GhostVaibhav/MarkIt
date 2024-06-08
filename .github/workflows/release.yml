@@ -36,9 +36,6 @@ jobs:
         run: |
           cd build
           cpack
-      - name: Print files
-        run: |
-          ls -l build
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
@@ -61,6 +58,7 @@ jobs:
       - name: Install zlib
         run: |
           powershell -Command "(Invoke-WebRequest -Uri https://git.io/JnHTY -OutFile install_zlib.bat)"; ./install_zlib.bat; del install_zlib.bat
+          $env:PATH = "C:\Program Files\zlib;$env:PATH"
       - name: Build NSIS
         run: |
           git clone https://github.com/kichik/nsis.git
@@ -100,5 +98,5 @@ jobs:
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
-          name: MarkIt-${{ github.event.inputs.majorVersion }}.${{ github.event.inputs.minorVersion }}-macos-arm64.dmg
+          name: MarkIt.dmg
           path: build
