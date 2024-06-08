@@ -1,6 +1,14 @@
 name: Publish Release Artifacts
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      majorVersion:
+        description: 'Major version number'
+        required: true
+      minorVersion:
+        description: 'Minor version number'
+        required: true
 
 jobs:
   release-debian-package:
@@ -27,10 +35,13 @@ jobs:
       - name: Package application
         run: |
           cpack -G DEB
+      - name: Print files
+        run: |
+          ls -l build
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
-          name: *.deb
+          name: MarkIt-${{ github.event.inputs.majorVersion }}.${{ github.event.inputs.minorVersion }}-linux64.deb
           path: build
 
   release-windows-package:
@@ -60,9 +71,10 @@ jobs:
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
-          name: *.exe
+          name: MarkIt-${{ github.event.inputs.majorVersion }}.${{ github.event.inputs.minorVersion }}-win64.exe
           path: build
   release-macos-package:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,8 +88,11 @@ jobs:
       - name: Package application
         run: |
           cpack
+      - name: Print files
+        run: |
+          ls -l build
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
-          name: *.dmg
+          name: MarkIt-${{ github.event.inputs.majorVersion }}.${{ github.event.inputs.minorVersion }}-macos-arm64.dmg
           path: build
