@@ -22,6 +22,12 @@ else()
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  set(CMAKE_DEBUG_BUILD 1)
+else()
+  set(CMAKE_DEBUG_BUILD 0)
+endif()
+
 project ("MarkIt")
 
 configure_file(

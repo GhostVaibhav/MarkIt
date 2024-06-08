@@ -955,7 +955,7 @@ int main(int argc, char *argv[])
         std::vector<std::string> args(0);
         for (int i = 1; i < argc; i++)
             args.push_back(argv[i]);
-#if std::strcmp(MARKIT_BUILD_TYPE, "Debug")
+#ifdef DEBUG
         if (args[0] == "--test" || args[0] == "-t" || args[0] == "test")
         {
             cli::test(args);
