@@ -58,7 +58,7 @@ jobs:
       - name: Install zlib
         run: |
           powershell -Command "(Invoke-WebRequest -Uri https://git.io/JnHTY -OutFile install_zlib.bat)"; ./install_zlib.bat; del install_zlib.bat
-          $env:PATH = "C:\Program Files\zlib;$env:PATH"
+          $env:ZLIB_W32="C:\Program Files\zlib"
       - name: Build NSIS
         run: |
           git clone https://github.com/kichik/nsis.git
