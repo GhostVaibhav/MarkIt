@@ -2,46 +2,46 @@ name: C/C++ CI
 
 on:
   push:
-    branches: 
-    - master
-    - development
+    branches:
+      - master
+      - development
     paths:
-    - '**.cpp'
-    - '**.h'
-    - '**.hpp'
-    - '**.bat'
-    - '**.txt'
-    - '.github/workflows/**'
-    - '!.vscode**'
-    - '!**.md'
-    - '!LICENSE'
-    - '!CNAME'
+      - "**.cpp"
+      - "**.h"
+      - "**.hpp"
+      - "**.bat"
+      - "**.txt"
+      - ".github/workflows/**"
+      - "!.vscode**"
+      - "!**.md"
+      - "!LICENSE"
+      - "!CNAME"
   pull_request:
     branches:
-    - master
+      - master
 
 jobs:
   Ubuntu:
     runs-on: ubuntu-latest
     steps:
-    - name: Updating Git
-      run: |
-        sudo apt update
-        sudo apt -y install git
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
-        token: ${{ secrets.SUBMODULE_KEY }}
-    - name: Getting prerequisites
-      run: |
-        sudo apt upgrade
-        sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
-    - name: Building application
-      run: |
-        mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --config Release
-  
+      - name: Updating Git
+        run: |
+          sudo apt update
+          sudo apt -y install git
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Getting prerequisites
+        run: |
+          sudo apt upgrade
+          sudo apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
+      - name: Building application
+        run: |
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+
   Debian:
     runs-on: ubuntu-latest
     container: debian
@@ -52,18 +52,17 @@ jobs:
           apt install -y git
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           apt upgrade
           apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
-        run: | 
+        run: |
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
-
 
   Arch-Linux:
     runs-on: ubuntu-latest
@@ -75,14 +74,14 @@ jobs:
           pacman -S git --noconfirm
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           pacman -Syu --noconfirm
           pacman -S gcc cmake make curl ncurses --noconfirm
       - name: Building application
-        run: | 
+        run: |
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
@@ -97,18 +96,18 @@ jobs:
           dnf -y install git
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           dnf -y upgrade
           dnf -y install gcc-c++ cmake ncurses-devel libcurl-devel
       - name: Building application
-        run: | 
+        run: |
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
-  
+
   Kali-Linux:
     runs-on: ubuntu-latest
     container: kalilinux/kali-rolling
@@ -119,14 +118,14 @@ jobs:
           apt -y install git
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           apt -y upgrade
           apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
-        run: | 
+        run: |
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
@@ -141,14 +140,14 @@ jobs:
           apk add git
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           apk upgrade
           apk add g++ cmake make curl-dev ncurses-dev
       - name: Building application
-        run: | 
+        run: |
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
@@ -160,25 +159,25 @@ jobs:
         build_type: [Debug, Release, MinSizeRel]
         architecture: [Win32, x64]
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
-        token: ${{ secrets.SUBMODULE_KEY }}
-    - name: Compiling the main project for MinGW G++ compiler
-      run: |
-        ./prereq.bat "MinGW Makefiles"
-        mkdir build && cd build
-        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
-        cd .. && rm -r -force build
-    - name: Compiling the main project for MSVC compiler
-      run: |
-        ./prereq.bat "Visual Studio 17 2022"
-        mkdir build && cd build
-        cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
-        cd .. && rm -r -force build
-  
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Compiling the main project for MinGW G++ compiler
+        run: |
+          ./prereq.bat "MinGW Makefiles"
+          mkdir build && cd build
+          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake --build . --config ${{ matrix.build_type }}
+          cd .. && rm -r -force build
+      - name: Compiling the main project for MSVC compiler
+        run: |
+          ./prereq.bat "Visual Studio 17 2022"
+          mkdir build && cd build
+          cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake --build . --config ${{ matrix.build_type }}
+          cd .. && rm -r -force build
+
   MacOS:
     runs-on: macos-latest
     strategy:
@@ -188,12 +187,12 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
-        token: ${{ secrets.SUBMODULE_KEY }}
-    - name: Building and compiling using CMake as Xcode Project
-      run: |
-        mkdir build && cd build
-        cmake .. -G "Xcode" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+          token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Building and compiling using CMake as Xcode Project
+        run: |
+          mkdir build && cd build
+          cmake .. -G "Xcode" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake --build . --config ${{ matrix.build_type }}

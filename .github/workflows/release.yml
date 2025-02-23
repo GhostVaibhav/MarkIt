@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       majorVersion:
-        description: 'Major version number'
+        description: "Major version number"
         required: true
       minorVersion:
-        description: 'Minor version number'
+        description: "Minor version number"
         required: true
 
 jobs:
@@ -21,14 +21,14 @@ jobs:
           apt install -y git
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
           apt upgrade
           apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
-        run: | 
+        run: |
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Building application
         run: |
@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Building application
         run: |
