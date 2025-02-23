@@ -56,7 +56,7 @@ jobs:
           token: ${{ secrets.SUBMODULE_KEY }}
       - name: Getting prerequisites
         run: |
-          apt upgrade
+          apt upgrade -y
           apt -y install g++ cmake libcurl4-openssl-dev libncurses5-dev libncursesw5-dev
       - name: Building application
         run: |
@@ -191,6 +191,10 @@ jobs:
         with:
           submodules: "true"
           token: ${{ secrets.SUBMODULE_KEY }}
+      - name: Installing Xcode
+        run: |
+          sudo xcode-select -s $DEVELOPER_DIR
+          sudo xcode-select -r
       - name: Building and compiling using CMake as Xcode Project
         run: |
           mkdir build && cd build
