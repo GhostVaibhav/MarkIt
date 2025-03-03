@@ -50,7 +50,7 @@ void PrintCenter(const unsigned int *selected, std::vector<std::string> a, WINDO
   }
 }
 
-unsigned int MenuPanel(std::vector<std::string> a) {
+unsigned int MenuPanel(const std::vector<std::string> a) {
   WINDOW *title = newwin(10, getmaxx(stdscr) - 2, 1, 1);
   WINDOW *menu = newwin(getmaxy(stdscr) - 12, getmaxx(stdscr) - 2, 11, 1);
   unsigned int pointerIndex = 0;
