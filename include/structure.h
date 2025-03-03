@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -41,9 +41,8 @@ struct todo {
   std::string name; // Storing the name of Todo
   std::string desc; // Storing the description of Todo
   std::string time; // Automatically generating the time for a Todo
-  bool isComplete;  // Marking the Todo as "complete" or "not complete"
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(
-      todo, name, desc, time,
-      isComplete); // For serializing and deserializing JSON from Todo structure
-                   // and vice-versa
+  bool isComplete; // Marking the Todo as "complete" or "not complete"
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(todo, name, desc, time,
+                                 isComplete); // For serializing and deserializing JSON from Todo structure
+                                              // and vice-versa
 };

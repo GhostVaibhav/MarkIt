@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -32,7 +32,7 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-void _write_to_file(json, std::string);
-std::string _read_from_file(std::string);
-void _delete_file(std::string);
+void _write_to_file(const json &, const std::string &);
+std::string _read_from_file(const std::string &);
+void _delete_file(const std::string &);
 bool exist(const std::string &);

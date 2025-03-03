@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -79,149 +79,131 @@
 // | Parameters: std::string, json - Bucket name, JSON object to append |
 // ----------------------------------------------------------------------
 
-size_t write_to_string(void *ptr, size_t size, size_t count, void *stream) {
-  ((std::string *)stream)->append((char *)ptr, 0, size * count);
+size_t writeToString(void *ptr, const size_t size, const size_t count, void *stream) {
+  static_cast<std::string *>(stream)->append(static_cast<char *>(ptr), 0, size * count);
   return size * count;
 }
 
 bool getBucket(const std::string &bucketName) {
-  CURL *curl;
-  CURLcode res;
   std::string resp;
-  curl = curl_easy_init();
+  CURL *curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-    std::string url = "https://getpantry.cloud/apiv1/pantry/" + PantryID +
-                      "/basket/" + bucketName;
+    const std::string url = "https://getpantry.cloud/apiv1/pantry/" + pantryId + "/basket/" + bucketName;
     curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-    struct curl_slist *headers = NULL;
+    curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    const char *data = "";
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+    const auto data = "";
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeToString);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-    res = curl_easy_perform(curl);
-    if (res != 0)
+    if (const CURLcode res = curl_easy_perform(curl); res != 0)
       throw curl_easy_strerror(res);
   }
   curl_easy_cleanup(curl);
-  if (resp.find("Could not get basket") != resp.npos)
+  if (resp.find("Could not get basket") != std::string::npos)
     return false;
-  else
-    return true;
+  return true;
 }
 
 int createBucket(const std::string &bucketName) {
   std::string resp;
-  CURL *curl;
-  CURLcode res;
-  curl = curl_easy_init();
+  CURLcode res = {};
+  CURL *curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-    std::string url = "https://getpantry.cloud/apiv1/pantry/" + PantryID +
-                      "/basket/" + bucketName;
+    const std::string url = "https://getpantry.cloud/apiv1/pantry/" + pantryId + "/basket/" + bucketName;
     curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-    struct curl_slist *headers = NULL;
+    curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    const char *data = "";
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+    const auto data = "";
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeToString);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     res = curl_easy_perform(curl);
   }
   curl_easy_cleanup(curl);
-  return (int)res;
+  return res;
 }
 
 bool replaceBucket(const std::string &bucketName, const json &bucket) {
   if (!getBucket(bucketName))
     return false;
-  CURL *curl;
-  CURLcode res;
-  curl = curl_easy_init();
+  CURL *curl = curl_easy_init();
   std::string resp;
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-    std::string url = "https://getpantry.cloud/apiv1/pantry/" + PantryID +
-                      "/basket/" + bucketName;
+    const std::string url = "https://getpantry.cloud/apiv1/pantry/" + pantryId + "/basket/" + bucketName;
     curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-    struct curl_slist *headers = NULL;
+    curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    std::string update = bucket.dump();
+    const std::string update = bucket.dump();
     const char *data = update.c_str();
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeToString);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-    res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
   }
   curl_easy_cleanup(curl);
   return true;
 }
 
 bool deleteBucket(const std::string &bucketName) {
-  CURL *curl;
-  CURLcode res;
   std::string resp;
-  curl = curl_easy_init();
+  CURL *curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-    std::string url = "https://getpantry.cloud/apiv1/pantry/" + PantryID +
-                      "/basket/" + bucketName;
+    const std::string url = "https://getpantry.cloud/apiv1/pantry/" + pantryId + "/basket/" + bucketName;
     curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-    struct curl_slist *headers = NULL;
+    curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    const char *data = "";
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+    const auto data = "";
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeToString);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-    res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
   }
   curl_easy_cleanup(curl);
   if (resp.find("Could not delete") != std::string::npos)
     return false;
-  else
-    return true;
+  return true;
 }
 
 json getBucketDetails(const std::string &bucketName) {
-  CURL *curl;
-  CURLcode res;
-  curl = curl_easy_init();
+  CURL *curl = curl_easy_init();
   json temp;
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-    std::string url = "https://getpantry.cloud/apiv1/pantry/" + PantryID +
-                      "/basket/" + bucketName;
+    const std::string url = "https://getpantry.cloud/apiv1/pantry/" + pantryId + "/basket/" + bucketName;
     curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-    struct curl_slist *headers = NULL;
+    curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    const char *data = "";
+    const auto data = "";
     std::string result;
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeToString);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-    res = curl_easy_perform(curl);
-    if (res != 0)
+    if (const CURLcode res = curl_easy_perform(curl); res != 0)
       throw curl_easy_strerror(res);
     temp = json::parse(result);
   }
@@ -230,31 +212,27 @@ json getBucketDetails(const std::string &bucketName) {
 }
 
 bool appendBucket(const std::string &bucketName, const json &patch) {
-  CURL *curl;
-  CURLcode res;
-  curl = curl_easy_init();
+  CURL *curl = curl_easy_init();
   std::string resp;
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-    std::string url = "https://getpantry.cloud/apiv1/pantry/" + PantryID +
-                      "/basket/" + bucketName;
+    const std::string url = "https://getpantry.cloud/apiv1/pantry/" + pantryId + "/basket/" + bucketName;
     curl_easy_setopt(curl, CURLOPT_URL, (url.c_str()));
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-    struct curl_slist *headers = NULL;
+    curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    std::string update = patch.dump();
+    const std::string update = patch.dump();
     const char *data = update.c_str();
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeToString);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-    res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
   }
   curl_easy_cleanup(curl);
-  if (resp.find("does not exist") != resp.npos)
+  if (resp.find("does not exist") != std::string::npos)
     return false;
-  else
-    return true;
+  return true;
 }

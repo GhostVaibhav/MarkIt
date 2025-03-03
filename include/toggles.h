@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -30,14 +30,9 @@
 #ifndef TOGGLES_H
 #define TOGGLES_H
 
-#define MARKIT_GUI 1
 #define MARKIT_BUILD_TYPE 1
 #define MARKIT_MINOR_VERSION 1
 #define MARKIT_MAJOR_VERSION 0
-
-#if MARKIT_GUI == 1
-#define GUI
-#endif
 
 #if MARKIT_BUILD_TYPE == 1
 #define DEBUG

@@ -10,12 +10,6 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	message(FATAL_ERROR “${BoldRed}In-source build detected!${ColourReset}”)
 endif()
 
-if(DEFINED CMAKE_BUILD_GUI)
-  set(CMAKE_BUILD_GUI ${CMAKE_BUILD_GUI})
-else()
-  set(CMAKE_BUILD_GUI 1)
-endif()
-
 if(DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 else()
@@ -35,7 +29,12 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/include/toggles.h"
 )
 
-file(GLOB srcs "${PROJECT_SOURCE_DIR}/src/*.cpp" "${PROJECT_SOURCE_DIR}/src/utils/*.cpp")
+file(GLOB srcs
+          "${PROJECT_SOURCE_DIR}/src/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/utils/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/panels/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/backend/*.cpp"
+)
 
 if(WIN32)
   find_library (

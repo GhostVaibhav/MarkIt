@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -35,8 +35,8 @@
 #define CLI
 namespace cli {
 
-void test(const std::vector<std::string> &);
-void version(std::vector<std::string> &);
-void display(const std::vector<std::string> &);
+  void test(const std::vector<std::string> &);
+  void version(std::vector<std::string> &);
+  void display(const std::vector<std::string> &);
 
 } // namespace cli

@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -58,30 +58,31 @@
 // | Parameters: std::string - file name         |
 // -----------------------------------------------
 
-void _write_to_file(json temp, std::string STORAGE_FILE) {
+void _write_to_file(const json &temp, const std::string &STORAGE_FILE) {
   std::ofstream f1(STORAGE_FILE);
   f1 << temp.dump();
   f1.close();
 }
 
-std::string _read_from_file(std::string STORAGE_FILE) {
+std::string _read_from_file(const std::string &STORAGE_FILE) {
   std::ifstream f1(STORAGE_FILE.c_str());
   std::string _read_string;
-  if (!f1.is_open())
+  if (!f1.is_open()) {
     _read_string = "File does not exist";
-  else
+  } else {
     std::getline(f1, _read_string);
+  }
   f1.close();
   return _read_string;
 }
 
-void _delete_file(std::string STORAGE_FILE) {
+void _delete_file(const std::string &STORAGE_FILE) {
   std::ofstream f1;
   f1.open(STORAGE_FILE, std::ofstream::out | std::ofstream::trunc);
   f1.close();
 }
 
 bool exist(const std::string &name) {
-  struct stat buffer;
+  struct stat buffer{};
   return (stat(name.c_str(), &buffer) == 0);
 }

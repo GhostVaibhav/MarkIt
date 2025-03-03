@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -32,17 +32,13 @@
 // ------------------------------------------------------------------------
 // ---------------------------GLOBAL VARIABLES-----------------------------
 // ------------------------------------------------------------------------
-std::string curUser = ""; // For storing the current username
-std::string curUserHash =
-    ""; // For storing the current user password's SHA-256 hash
-std::string PantryID =
-    "dc8b010b-5dea-48f8-8ce9-21bf93b71aca"; // For storing the API key of the
-                                            // Pantry
-std::string storageFile =
-    "data.dat"; // File name of the local storage file - DON'T CHANGE THIS!!
-std::string stateFile =
-    "state.dat"; // File name of the local state file - DON'T CHANGE THIS!!
-std::string keyFile =
-    "key.dat"; // File name of the local key file - DON'T CHANGE THIS!!
-int push = 0;  // Global variable for keeping track of "push" requests
-int pull = 0;  // Global variable for keeping track of "pull" requests
+std::string curUser; // For storing the current username
+std::string curUserHash; // For storing the current user password's SHA-256 hash
+std::string pantryId; // For storing the API key of the Pantry
+std::string storageFile = "data.dat"; // File name of the local storage file - DON'T CHANGE THIS!!
+std::string stateFile = "state.dat"; // File name of the local state file - DON'T CHANGE THIS!!
+std::string keyFile = "key.dat"; // File name of the local key file - DON'T CHANGE THIS!!
+int push = 0; // Global variable for keeping track of "push" requests
+int pull = 0; // Global variable for keeping track of "pull" requests
+nlohmann::json cloudSave;
+nlohmann::json localSave;

@@ -6,7 +6,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2021 Vaibhav Sharma
+ *   Copyright (c) 2025 Vaibhav Sharma
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), to
@@ -33,7 +33,7 @@
 
 using json = nlohmann::json;
 
-size_t write_to_string(void *, size_t, size_t, void *);
+size_t writeToString(void *, size_t, size_t, void *);
 bool getBucket(const std::string &);
 int createBucket(const std::string &);
 bool replaceBucket(const std::string &, const json &);
