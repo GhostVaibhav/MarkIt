@@ -29,11 +29,28 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/include/toggles.h"
 )
 
+# SQLiteCpp configuration
+set(SQLITECPP_RUN_CPPLINT OFF CACHE BOOL "Run cpplint.py on sources" FORCE)
+set(SQLITECPP_RUN_CPPCHECK OFF CACHE BOOL "Run cppcheck on sources" FORCE)
+set(SQLITECPP_RUN_DOXYGEN OFF CACHE BOOL "Run Doxygen C++ documentation compiler" FORCE)
+set(SQLITECPP_BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
+set(SQLITECPP_BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
+set(SQLITECPP_INSTALL OFF CACHE BOOL "Install SQLiteCpp target" FORCE)
+set(SQLITECPP_USE_STACK_PROTECTION OFF CACHE BOOL "Use stack protection" FORCE)
+add_subdirectory(deps/SQLiteCpp)
+
 file(GLOB srcs
           "${PROJECT_SOURCE_DIR}/src/*.cpp"
-          "${PROJECT_SOURCE_DIR}/src/utils/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/models/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/config/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/files/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/db/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/managers/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/commands/*.cpp"
           "${PROJECT_SOURCE_DIR}/src/panels/*.cpp"
-          "${PROJECT_SOURCE_DIR}/src/backend/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/online/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/app/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/utils/*.cpp"
 )
 
 if(WIN32)
@@ -65,30 +82,40 @@ endif()
 
 add_executable (${PROJECT_NAME} ${srcs})
 
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    "include"
+    "include/models"
+    "include/config"
+    "include/files"
+    "include/db"
+    "include/managers"
+    "include/commands"
+    "include/panels"
+    "include/online"
+    "include/app"
+    "include/enums"
+    "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate"
+    "${CMAKE_SOURCE_DIR}/deps/json/single_include/nlohmann"
+    "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
+)
+
 if(WIN32)
-  target_include_directories(${PROJECT_NAME} PRIVATE "include"
-                            "${CMAKE_SOURCE_DIR}/deps/curl/library/include"
-                            "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate"
-                            "${CMAKE_SOURCE_DIR}/deps/json/single_include/nlohmann"
-                            "${CMAKE_SOURCE_DIR}/deps/PDCurses/library/include"
-                            "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
-                          )
+  target_include_directories(${PROJECT_NAME} PRIVATE 
+    "${CMAKE_SOURCE_DIR}/deps/curl/library/include"
+    "${CMAKE_SOURCE_DIR}/deps/PDCurses/library/include"
+  )
 else()
-  target_include_directories(${PROJECT_NAME} PRIVATE "include"
-                            "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate"
-                            "${CMAKE_SOURCE_DIR}/deps/json/single_include/nlohmann"
-                            ${CURSES_INCLUDE_DIR}
-                            "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
-                          )
+  target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${CURSES_INCLUDE_DIR}
+  )
 endif()
 
 if(WIN32)
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARY} ${CURSES_LIBRARY})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARY} ${CURSES_LIBRARY} SQLiteCpp)
 else()
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
-  target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl ${CURSES_LIBRARIES})
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads CURL::libcurl ${CURSES_LIBRARIES} SQLiteCpp)
 endif()
 
 if(WIN32)

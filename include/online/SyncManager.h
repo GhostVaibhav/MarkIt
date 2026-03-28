@@ -1,0 +1,29 @@
+#pragma once
+#include "PantryFacade.h"
+#include "SyncStatus.h"
+#include "ISyncObserver.h"
+#include "Todo.h"
+#include <vector>
+
+class SyncManager {
+public:
+    explicit SyncManager(const PantryFacade& facade);
+
+    SyncResult pull(const std::string& userId, nlohmann::json& localData);
+    SyncResult push(const std::string& userId, const nlohmann::json& localData);
+    SyncStatus refresh(const std::string& userId, const nlohmann::json& localData);
+
+    SyncResult pushData(const std::string& userId, const std::string& hash, const std::vector<Todo>& todos);
+    SyncResult pullData(const std::string& userId, std::vector<Todo>& outTodos);
+    SyncStatus refreshData(const std::string& userId, const std::string& hash, const std::vector<Todo>& todos);
+
+    SyncStatus getSyncStatus() const;
+    void addObserver(ISyncObserver* observer);
+
+private:
+    PantryFacade pantryFacade;
+    SyncStatus syncStatus;
+    std::vector<ISyncObserver*> observers;
+
+    void notifyObservers();
+};
