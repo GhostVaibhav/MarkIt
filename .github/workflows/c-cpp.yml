@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - development
+      - refactor-with-db
     paths:
       - "**.cpp"
       - "**.h"
