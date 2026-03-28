@@ -23,6 +23,8 @@ private:
     
     bool handleLogin();
     bool mainLoop();
+    bool offlineOptionHandling(int);
+    bool onlineOptionHandling(int);
     
     void syncPush();
     void syncPull();

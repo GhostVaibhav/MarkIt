@@ -1,25 +1,48 @@
 #pragma once
 #include "json.hpp"
+#include <unordered_set>
+#include <string>
 
 struct SyncStatus {
-    int pendingPushes = 0;
-    int pendingPulls = 0;
+    unsigned int pendingPushes = 0;
+    unsigned int pendingPulls = 0;
 
     bool isInSync() const { return pendingPushes == 0 && pendingPulls == 0; }
 
     static SyncStatus compute(const nlohmann::json& localData, const nlohmann::json& remoteData) {
         SyncStatus status;
-        if (!localData.contains("number") || !remoteData.contains("number")) {
-            return status;
+
+        std::unordered_set<std::string> localDataSetIds, remoteDataSetIds;
+
+        if (localData.contains("data")) {
+            for (const auto &t: localData["data"]) {
+                localDataSetIds.insert(t["id"]);
+            }
         }
-        int lNum = localData["number"];
-        int rNum = remoteData["number"];
+
+        if (remoteData.contains("data")) {
+            for (const auto &t: remoteData["data"]) {
+                remoteDataSetIds.insert(t["id"]);
+            }
+        }
+
+        unsigned int push = 0, pull = 0;
+
+        for (const auto &t: localDataSetIds) {
+            if (remoteDataSetIds.find(t) == remoteDataSetIds.end()) {
+                ++push;
+            }
+        }
+
+        for (const auto &t: remoteDataSetIds) {
+            if (localDataSetIds.find(t) == localDataSetIds.end()) {
+                ++pull;
+            }
+        }
+
+        status.pendingPulls = pull;
+        status.pendingPushes = push;
         
-        if (lNum > rNum) {
-            status.pendingPushes = lNum - rNum;
-        } else if (rNum > lNum) {
-            status.pendingPulls = rNum - lNum;
-        }
         return status;
     }
 };

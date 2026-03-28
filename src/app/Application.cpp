@@ -130,7 +130,7 @@ void Application::syncPush() {
     auto user = userManager.getCurrentUser();
     if (!user) return;
     
-    SyncResult result = syncManager->pushData(user->name, user->password, todoManager.getAllTodos());
+    SyncResult result = syncManager->pushData(user->id, user->password, todoManager.getAllTodos());
     if (result == SyncResult::Success) spdlog::info("Application: Sync push orchestration succeeded");
     else spdlog::error("Application: Sync push orchestration failed");
     ui->welcomePanel.setCode(0);
@@ -145,7 +145,7 @@ void Application::syncPull() {
     if (!user) return;
     
     std::vector<Todo> outTodos;
-    SyncResult result = syncManager->pullData(user->name, outTodos);
+    SyncResult result = syncManager->pullData(user->id, outTodos);
     
     if (result == SyncResult::Success) {
         spdlog::info("Application: Sync pull orchestration succeeded, merging {} todos", outTodos.size());
@@ -157,6 +157,96 @@ void Application::syncPull() {
             todoManager.addTodo(t);
         }
     }
+}
+
+bool Application::offlineOptionHandling(int choice) {
+    if (choice == 0) {
+        ui->addTodoPanel.promptInput();
+        std::string nameStr = ui->addTodoPanel.getEnteredName();
+        std::string descStr = ui->addTodoPanel.getEnteredDesc();
+        if (!nameStr.empty()) {
+            todoManager.addTodo(Todo::create(nameStr, descStr));
+        }
+        return true;
+    } else if (choice == 1) {
+#ifdef _WIN32
+        system("start https://getpantry.cloud");
+#elif __APPLE__
+        system("open https://getpantry.cloud");
+#else
+        system("xdg-open https://getpantry.cloud");
+#endif
+        ui->pantryConnectPanel.show();
+        ui->pantryConnectPanel.promptInput();
+        std::string key = ui->pantryConnectPanel.getEnteredKey();
+        if (!key.empty()) {
+            auto user = userManager.getCurrentUser();
+            if (user) {
+                User u = *user;
+                u.pantryId = key;
+                userManager.updateUser(u);
+                currentPantryId = key;
+                pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
+                syncManager = std::make_unique<SyncManager>(*pantryFacade);
+                pantryFacade->createBucket(user->id);
+            }
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool Application::onlineOptionHandling(int choice) {
+    if (choice == 0) {
+        ui->addTodoPanel.promptInput();
+        std::string nameStr = ui->addTodoPanel.getEnteredName();
+        std::string descStr = ui->addTodoPanel.getEnteredDesc();
+        if (!nameStr.empty()) {
+            todoManager.addTodo(Todo::create(nameStr, descStr));
+        }
+        return true;
+    } else if (choice == 1) {
+        syncPush();
+        return true;
+    } else if (choice == 2) {
+        syncPull();
+        return true;
+    } else if (choice == 3) {
+        ui->loadingPanel.setLoadingText("Refreshing data...");
+        ui->loadingPanel.show();
+        auto user = userManager.getCurrentUser();
+        if (user) {
+            syncManager->refreshData(user->id, user->password, todoManager.getAllTodos());
+        }
+        return true;
+    } else if (choice == 4) {
+#ifdef _WIN32
+        system("start https://getpantry.cloud");
+#elif __APPLE__
+        system("open https://getpantry.cloud");
+#else
+        system("xdg-open https://getpantry.cloud");
+#endif
+        ui->pantryConnectPanel.show();
+        ui->pantryConnectPanel.promptInput();
+        std::string key = ui->pantryConnectPanel.getEnteredKey();
+        if (!key.empty()) {
+            auto user = userManager.getCurrentUser();
+            if (user) {
+                User u = *user;
+                u.pantryId = key;
+                userManager.updateUser(u);
+                currentPantryId = key;
+                pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
+                syncManager = std::make_unique<SyncManager>(*pantryFacade);
+                pantryFacade->createBucket(user->id);
+            }
+        }
+        return true;
+    }
+
+    return false;
 }
 
 bool Application::mainLoop() {
@@ -194,52 +284,30 @@ bool Application::mainLoop() {
                 if (selectedTodo < 0) selectedTodo = 0;
             }
         } else if (ch == 'm' || ch == 'M') {
+            bool pantryIdPopulated = userManager.getCurrentUser()->pantryId != "";
+
             ui->menuPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
-            ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Push all changes", "3. Pull from the cloud", "4. Refresh", "5. Connect to Pantry", "6. Logout"});
+            if (pantryIdPopulated) {
+                ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Push all changes", "3. Pull from the cloud", "4. Refresh", "5. Edit Pantry link", "6. Logout"});
+            } else {
+                ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Connect to Pantry", "3. Logout"});
+            }
             ui->menuPanel.setSelectedIndex(0);
             
             int choice = ui->menuPanel.promptSelection();
-            if (choice == 0) {
-                ui->addTodoPanel.promptInput();
-                std::string nameStr = ui->addTodoPanel.getEnteredName();
-                std::string descStr = ui->addTodoPanel.getEnteredDesc();
-                if (!nameStr.empty()) {
-                    todoManager.addTodo(Todo::create(nameStr, descStr));
+
+            if (!pantryIdPopulated) {
+                if (offlineOptionHandling(choice)) {}
+                else if (choice == 2) {
+                    userManager.clearSession();
+                    return true;
                 }
-            } else if (choice == 1) {
-                syncPush();
-            } else if (choice == 2) {
-                syncPull();
-            } else if (choice == 3) {
-                auto user = userManager.getCurrentUser();
-                if (user) {
-                    syncManager->refreshData(user->name, user->password, todoManager.getAllTodos());
+            } else {
+                if (onlineOptionHandling(choice)) {}
+                else if (choice == 5) {
+                    userManager.clearSession();
+                    return true;
                 }
-            } else if (choice == 4) {
-#ifdef _WIN32
-                system("start https://getpantry.cloud");
-#elif __APPLE__
-                system("open https://getpantry.cloud");
-#else
-                system("xdg-open https://getpantry.cloud");
-#endif
-                ui->pantryConnectPanel.show();
-                ui->pantryConnectPanel.promptInput();
-                std::string key = ui->pantryConnectPanel.getEnteredKey();
-                if (!key.empty()) {
-                    auto user = userManager.getCurrentUser();
-                    if (user) {
-                        User u = *user;
-                        u.pantryId = key;
-                        userManager.updateUser(u);
-                        currentPantryId = key;
-                        pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
-                        syncManager = std::make_unique<SyncManager>(*pantryFacade);
-                    }
-                }
-            } else if (choice == 5) {
-                userManager.clearSession();
-                return true;
             }
         }
     }
