@@ -7,6 +7,7 @@ struct ColorScheme {
     int highlight = 4;
     int warning = 5;
     int normal = 6;
+    int footer = 7;
 
     void apply() const;
 };

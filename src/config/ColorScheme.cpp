@@ -13,4 +13,5 @@ void ColorScheme::apply() const {
     init_pair(highlight, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(warning, COLOR_YELLOW, COLOR_BLACK);
     init_pair(normal, COLOR_WHITE, COLOR_BLACK);
+    init_pair(footer, COLOR_BLACK, COLOR_CYAN);
 }

@@ -16,11 +16,13 @@ public:
     SyncResult pushData(const std::string& userId, const std::string& hash, const std::vector<Todo>& todos);
     SyncResult pullData(const std::string& userId, std::vector<Todo>& outTodos);
     SyncStatus refreshData(const std::string& userId, const std::string& hash, const std::vector<Todo>& todos);
+    void recomputeData(const std::vector<Todo>& todos);
 
     SyncStatus getSyncStatus() const;
     void addObserver(ISyncObserver* observer);
 
 private:
+    nlohmann::json cachedRemoteData;
     PantryFacade pantryFacade;
     SyncStatus syncStatus;
     std::vector<ISyncObserver*> observers;

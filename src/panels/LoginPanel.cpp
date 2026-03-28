@@ -31,10 +31,12 @@ void LoginPanel::recreateWindows() {
 
 void LoginPanel::render() {
     if (isLoading) {
+        clearKeyBar();
         loadingPanel.render();
         return;
     }
     
+    loadingPanel.clearKeyBar();
     recreateWindows();
     wclear(userNameWindow);
     wclear(passwordWindow);
@@ -76,6 +78,7 @@ void LoginPanel::render() {
     wrefresh(information);
     wrefresh(userNameWindow);
     wrefresh(passwordWindow);
+    refreshKeyBar({{"Enter", "Next field"}, {"^C", "Exit"}});
 }
 
 void LoginPanel::promptInput() {

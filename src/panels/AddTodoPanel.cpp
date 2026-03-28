@@ -1,13 +1,20 @@
 #include "AddTodoPanel.h"
+#include "BottomBarHelper.h"
 #include <curses.h>
 
 AddTodoPanel::AddTodoPanel() : Panel(stdscr, 0, 0) {}
+
+AddTodoPanel::~AddTodoPanel() {
+    if (bottomBar) delwin(bottomBar);
+}
 
 void AddTodoPanel::render() {}
 
 void AddTodoPanel::promptInput() {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
+    
+    bottomBar = drawBottomBar(bottomBar, {{"Enter", "Next field"}});
     
     WINDOW* addWin = newwin(10, 60, (max_y - 10) / 2, (max_x - 60) / 2);
     box(addWin, 0, 0);
@@ -28,6 +35,10 @@ void AddTodoPanel::promptInput() {
     noecho();
     curs_set(0);
     delwin(addWin);
+    if (bottomBar) {
+        delwin(bottomBar);
+        bottomBar = nullptr;
+    }
     
     name = std::string(nameBuf);
     desc = std::string(descBuf);

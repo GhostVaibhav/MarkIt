@@ -4,7 +4,7 @@
 class Panel {
 public:
     Panel(WINDOW* win, int x, int y);
-    virtual ~Panel() = default;
+    virtual ~Panel();
 
     virtual void render() = 0;
     
@@ -13,6 +13,7 @@ public:
 
 protected:
     WINDOW* win;
+    WINDOW* bottomBar = nullptr;
     int x;
     int y;
 };

@@ -1,3 +1,7 @@
 #include "Panel.h"
 
-Panel::Panel(WINDOW* w, int xCoord, int yCoord) : win(w), x(xCoord), y(yCoord) {}
+Panel::Panel(WINDOW* win, int x, int y) : win(win), x(x), y(y) {}
+
+Panel::~Panel() {
+    if (bottomBar) delwin(bottomBar);
+}

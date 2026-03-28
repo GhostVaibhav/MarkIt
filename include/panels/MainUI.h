@@ -7,6 +7,7 @@
 #include "MenuPanel.h"
 #include "AddTodoPanel.h"
 #include "PantryConnectPanel.h"
+#include "TodoDetailPanel.h"
 
 class MainUI {
 public:
@@ -20,6 +21,7 @@ public:
     MenuPanel menuPanel;
     AddTodoPanel addTodoPanel;
     PantryConnectPanel pantryConnectPanel;
+    TodoDetailPanel todoDetailPanel;
 
 private:
     WINDOW* win;

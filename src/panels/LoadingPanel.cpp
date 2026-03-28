@@ -19,4 +19,5 @@ void LoadingPanel::render() {
     
     mvwprintw(win, max_y - 2, (max_x - loadingText.size()) / 2, "%s", loadingText.c_str());
     wrefresh(win);
+    refreshKeyBar({{"---", "Please wait"}});
 }

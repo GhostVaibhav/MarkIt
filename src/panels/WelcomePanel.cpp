@@ -25,4 +25,12 @@ void WelcomePanel::render() {
         mvwprintw(win, max_y - 2, (max_x - 15 - curUser.size()) / 2, "%s", text.c_str());
     }
     wrefresh(win);
+    refreshKeyBar({{"Enter", "Continue"}, {"q/Q/^C", "Exit"}});
+}
+
+bool WelcomePanel::waitForContinue() {
+    keypad(win, TRUE);
+    int ch = wgetch(win);
+    if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) return false;
+    return true;
 }

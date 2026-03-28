@@ -28,6 +28,13 @@ std::string MainMenuPanel::convertTimeToString(int epoch) const {
     return ss.str();
 }
 
+std::string truncateString(const std::string& str, int width) {
+    if (str.length() > width && width > 3) {
+        return str.substr(0, width - 3) + "...";
+    }
+    return str;
+}
+
 void MainMenuPanel::recreateWindows() {
     int max_y, max_x;
     getmaxyx(win, max_y, max_x);
@@ -36,7 +43,7 @@ void MainMenuPanel::recreateWindows() {
     if (todoBody) delwin(todoBody);
     
     todoUserName = newwin(10, max_x - 2, 1, 1);
-    todoWindow = newwin(max_y - 12, max_x - 2, 11, 1);
+    todoWindow = newwin(max_y - 13, max_x - 2, 11, 1);
     todoBody = newwin(getmaxy(todoWindow) - 4, getmaxx(todoWindow) - 2, getmaxy(todoUserName) + 4, 2);
 }
 
@@ -79,9 +86,15 @@ void MainMenuPanel::render() {
             if (!has_colors()) wattron(todoBody, A_REVERSE);
         }
         
+        int maxNameWidth = tabDiv - 4;
+        int maxDescWidth = tabDiv - 4;
+        
+        std::string dispName = truncateString(todosList[i].name, maxNameWidth);
+        std::string dispDesc = truncateString(todosList[i].desc, maxDescWidth);
         std::string timeStr = convertTimeToString(todosList[i].time);
-        mvwprintw(todoBody, i + moveFactor, (tabDiv - (int)todosList[i].name.size()) / 2, "%s", todosList[i].name.c_str());
-        mvwprintw(todoBody, i + moveFactor, ((3 * tabDiv - (int)todosList[i].desc.size()) / 2) + 1, "%s", todosList[i].desc.c_str());
+        
+        mvwprintw(todoBody, i + moveFactor, (tabDiv - (int)dispName.size()) / 2, "%s", dispName.c_str());
+        mvwprintw(todoBody, i + moveFactor, ((3 * tabDiv - (int)dispDesc.size()) / 2) + 1, "%s", dispDesc.c_str());
         mvwprintw(todoBody, i + moveFactor, ((5 * tabDiv - (int)timeStr.size()) / 2) + 2, "%s", timeStr.c_str());
         
         if (pointerIndex == i) {
@@ -96,8 +109,15 @@ void MainMenuPanel::render() {
     statsPanel.setWindow(todoUserName);
     statsPanel.render();
     
+    refreshKeyBar({
+        {"m/M", "Menu"},
+        {"Enter", "Detail"},
+        {"d/D", "Delete"},
+        {"q/Q/^C", "Exit"},
+        {"Up/Dn", "Move"}
+    });
+
     wrefresh(win);
-    
     wrefresh(todoWindow);
     wrefresh(todoUserName);
     wrefresh(todoBody);

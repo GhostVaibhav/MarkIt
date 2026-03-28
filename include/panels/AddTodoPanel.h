@@ -5,6 +5,7 @@
 class AddTodoPanel : public Panel {
 public:
     explicit AddTodoPanel();
+    ~AddTodoPanel() override;
     
     void render() override;
     

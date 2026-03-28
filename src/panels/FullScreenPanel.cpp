@@ -1,7 +1,23 @@
 #include "FullScreenPanel.h"
 #include "AppConfig.h"
+#include "BottomBarHelper.h"
 
 FullScreenPanel::FullScreenPanel() : win(stdscr) {}
+
+FullScreenPanel::~FullScreenPanel() {
+    if (bottomBar) delwin(bottomBar);
+}
+
+void FullScreenPanel::refreshKeyBar(const std::vector<std::pair<std::string, std::string>>& keys) {
+    bottomBar = drawBottomBar(bottomBar, keys);
+}
+
+void FullScreenPanel::clearKeyBar() {
+    if (bottomBar) {
+        delwin(bottomBar);
+        bottomBar = nullptr;
+    }
+}
 
 void FullScreenPanel::show() {
     if (!checkSize()) {

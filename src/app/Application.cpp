@@ -59,6 +59,7 @@ bool Application::handleLogin() {
         ui->welcomePanel.setCode(2);
         ui->welcomePanel.setUsername(userManager.getCurrentUser()->name);
         ui->welcomePanel.show();
+        if (!ui->welcomePanel.waitForContinue()) return false;
         return true;
     }
     
@@ -118,6 +119,7 @@ bool Application::handleLogin() {
         ui->welcomePanel.setCode(found ? (int) LoginResult::ExistingUser : (int) LoginResult::NewUser);
         ui->welcomePanel.setUsername(matchedUser.name);
         ui->welcomePanel.show();
+        if (!ui->welcomePanel.waitForContinue()) return false;
         return true;
     }
 }
@@ -267,7 +269,7 @@ bool Application::mainLoop() {
         ui->mainMenuPanel.show();
         
         int ch = getch();
-        if (ch == 27 || ch == 'q') {
+        if (ch == 27 || ch == 'q' || ch == 'Q' || ch == 3) {
             return false; 
         } else if (ch == KEY_UP) {
             if (selectedTodo > 0) selectedTodo--;
@@ -275,13 +277,27 @@ bool Application::mainLoop() {
             if (selectedTodo < (int)todos.size() - 1) selectedTodo++;
         } else if (ch == '\n') {
             if (!todos.empty() && selectedTodo >= 0 && selectedTodo < (int)todos.size()) {
-                todoManager.toggleTodo(todos[selectedTodo]);
+                ui->todoDetailPanel.setTodo(todos[selectedTodo]);
+                ui->todoDetailPanel.show();
+                TodoDetailAction action = ui->todoDetailPanel.promptAction();
+                if (action == TodoDetailAction::QuitApp) {
+                    return false;
+                } else if (action == TodoDetailAction::Toggle) {
+                    todoManager.toggleTodo(todos[selectedTodo]);
+                    syncManager->recomputeData(todoManager.getAllTodos());
+                } else if (action == TodoDetailAction::Delete) {
+                    todoManager.removeTodo(todos[selectedTodo]);
+                    if (selectedTodo >= (int)todos.size() - 1) selectedTodo--;
+                    if (selectedTodo < 0) selectedTodo = 0;
+                    syncManager->recomputeData(todoManager.getAllTodos());
+                }
             }
         } else if (ch == 'd' || ch == KEY_DC || ch == KEY_BACKSPACE || ch == '\b') {
             if (!todos.empty() && selectedTodo >= 0 && selectedTodo < (int)todos.size()) {
                 todoManager.removeTodo(todos[selectedTodo]);
                 if (selectedTodo >= (int)todos.size() - 1) selectedTodo--;
                 if (selectedTodo < 0) selectedTodo = 0;
+                syncManager->recomputeData(todoManager.getAllTodos());
             }
         } else if (ch == 'm' || ch == 'M') {
             bool pantryIdPopulated = userManager.getCurrentUser()->pantryId != "";

@@ -69,6 +69,7 @@ void MenuPanel::render() {
     
     wrefresh(titleWin);
     wrefresh(menuWin);
+    refreshKeyBar({{"Up/Dn", "Move"}, {"Enter", "Select"}, {"Esc/q/^C", "Close menu"}});
 }
 
 int MenuPanel::promptSelection() {
@@ -81,7 +82,7 @@ int MenuPanel::promptSelection() {
             else pointerIndex = 0;
         } else if (ch == KEY_DOWN) {
             if (pointerIndex < options.size() - 1) pointerIndex++;
-        } else if (ch == 27 || ch == '\b' || ch == KEY_BACKSPACE) {
+        } else if (ch == 27 || ch == '\b' || ch == KEY_BACKSPACE || ch == 'q' || ch == 'Q' || ch == 3) {
             return -1;
         } else if (ch == '\n') {
             return pointerIndex;

@@ -33,6 +33,7 @@ void PantryConnectPanel::render() {
     mvwprintw(contentWin, 2, 2, "Enter Pantry API Key (or empty to cancel):");
     wrefresh(stdscr);
     wrefresh(contentWin);
+    refreshKeyBar({{"Enter", "Submit"}, {"empty", "Cancel"}, {"^C", "Exit"}});
 }
 
 void PantryConnectPanel::promptInput() {

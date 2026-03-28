@@ -27,11 +27,13 @@ SyncResult SyncManager::pull(const std::string& userId, nlohmann::json& localDat
 
     syncStatus = SyncStatus::compute(localData, remoteData);
     if (syncStatus.pendingPulls == 0) {
+        cachedRemoteData = remoteData;
         spdlog::info("SyncManager: Pull skipped (dataset already vertically synced)");
         return SyncResult::AlreadyInSync;
     }
 
     localData = remoteData;
+    cachedRemoteData = remoteData;
     syncStatus.pendingPulls = 0;
     notifyObservers();
     spdlog::info("SyncManager: Successfully merged cloud data locally");
@@ -48,11 +50,13 @@ SyncResult SyncManager::push(const std::string& userId, const nlohmann::json& lo
 
     syncStatus = SyncStatus::compute(localData, remoteData);
     if (syncStatus.pendingPushes == 0) {
+        cachedRemoteData = remoteData;
         spdlog::info("SyncManager: Push skipped (cloud already vertically synced)");
         return SyncResult::AlreadyInSync;
     }
 
     if (pantryFacade.saveBucket(userId, localData)) {
+        cachedRemoteData = localData;
         syncStatus.pendingPushes = 0;
         notifyObservers();
         spdlog::info("SyncManager: Successfully pushed local data to cloud");
@@ -66,6 +70,7 @@ SyncResult SyncManager::push(const std::string& userId, const nlohmann::json& lo
 SyncStatus SyncManager::refresh(const std::string& userId, const nlohmann::json& localData) {
     nlohmann::json remoteData = pantryFacade.loadBucket(userId);
     if (!remoteData.empty()) {
+        cachedRemoteData = remoteData;
         syncStatus = SyncStatus::compute(localData, remoteData);
         spdlog::info("SyncManager: Refreshed cloud sync status: {} pull(s), {} push(es) pending", syncStatus.pendingPulls, syncStatus.pendingPushes);
         notifyObservers();
@@ -130,4 +135,25 @@ SyncStatus SyncManager::refreshData(const std::string& userId, const std::string
         localData["data"].push_back(tJson);
     }
     return refresh(userId, localData);
+}
+
+void SyncManager::recomputeData(const std::vector<Todo>& todos) {
+    if (cachedRemoteData.empty()) return;
+    nlohmann::json localData;
+    localData["hash"] = "";
+    localData["number"] = 0;
+    localData["data"] = nlohmann::json::array();
+    
+    for (const auto& t : todos) {
+        nlohmann::json tJson;
+        tJson["id"] = t.id;
+        tJson["name"] = t.name;
+        tJson["desc"] = t.desc;
+        tJson["time"] = t.time;
+        tJson["isComplete"] = t.isComplete;
+        localData["data"].push_back(tJson);
+    }
+    
+    syncStatus = SyncStatus::compute(localData, cachedRemoteData);
+    notifyObservers();
 }
