@@ -42,7 +42,6 @@ void Application::initLogger() {
     spdlog::info("Application started");
 }
 
-
 void Application::loadState() {
     if (userManager.loadSession()) {
         auto user = userManager.getCurrentUser();

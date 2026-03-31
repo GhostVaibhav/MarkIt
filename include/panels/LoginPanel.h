@@ -13,6 +13,7 @@ public:
     void promptInput();
     std::string getEnteredUsername() const;
     std::string getEnteredPassword() const;
+    std::string captureInput(WINDOW*, bool);
     void clearUsername();
     void reset();
     

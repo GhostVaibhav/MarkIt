@@ -2,7 +2,7 @@
 #include "AppConfig.h"
 #include "BottomBarHelper.h"
 
-FullScreenPanel::FullScreenPanel() : win(stdscr) {}
+FullScreenPanel::FullScreenPanel() : win(stdscr), bottomBar(nullptr) {}
 
 FullScreenPanel::~FullScreenPanel() {
     if (bottomBar) delwin(bottomBar);
