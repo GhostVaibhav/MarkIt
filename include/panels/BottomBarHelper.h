@@ -1,9 +1,12 @@
 #pragma once
 #include <curses.h>
+
 #include <string>
 #include <vector>
 
-inline WINDOW *drawBottomBar(WINDOW *oldBar, const std::vector<std::pair<std::string, std::string>> &keys) {
+inline WINDOW *drawBottomBar(
+    WINDOW *oldBar,
+    const std::vector<std::pair<std::string, std::string>> &keys) {
   int max_y, max_x;
   getmaxyx(stdscr, max_y, max_x);
 
@@ -18,12 +21,10 @@ inline WINDOW *drawBottomBar(WINDOW *oldBar, const std::vector<std::pair<std::st
   wclear(bar);
 
   int currentX = 0;
-  for (const auto &k: keys) {
-    if (currentX >= bar_w)
-      break;
+  for (const auto &k : keys) {
+    if (currentX >= bar_w) break;
 
-    if (has_colors())
-      wattron(bar, COLOR_PAIR(6));
+    if (has_colors()) wattron(bar, COLOR_PAIR(6));
     mvwprintw(bar, 0, currentX, " %s ", k.first.c_str());
     currentX += k.first.length() + 2;
 

@@ -2,7 +2,7 @@
 #include <string>
 
 struct HttpResponse {
-    std::string body;
-    long httpCode;
-    bool success;
+  std::string body;
+  long httpCode;
+  bool success;
 };

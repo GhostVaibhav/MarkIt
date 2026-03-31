@@ -1,4 +1,5 @@
 #include "LogoPanel.h"
+
 #include "AppConfig.h"
 
 LogoPanel::LogoPanel(WINDOW* w, int x, int y) : Panel(w, x, y) {}
