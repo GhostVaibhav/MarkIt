@@ -38,6 +38,12 @@ set(SQLITECPP_BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
 set(SQLITECPP_INSTALL OFF CACHE BOOL "Install SQLiteCpp target" FORCE)
 set(SQLITECPP_USE_STACK_PROTECTION OFF CACHE BOOL "Use stack protection" FORCE)
 add_subdirectory(deps/SQLiteCpp)
+if (WIN32)
+add_subdirectory(deps/PDCurses)
+add_subdirectory(deps/curl)
+endif()
+add_subdirectory(deps/spdlog)
+add_subdirectory(deps/json)
 
 file(GLOB srcs
           "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -54,12 +60,6 @@ file(GLOB srcs
 )
 
 if(WIN32)
-  find_library (
-    CURL_LIBRARY
-    NAMES libcurl libcurl_imp
-    HINTS "${CMAKE_SOURCE_DIR}/deps/curl/library/lib"
-    REQUIRED
-  )
 else()
 	find_package(
     CURL
@@ -67,12 +67,6 @@ else()
   )
 endif()
 if(WIN32)
-  find_library (
-    CURSES_LIBRARY
-    NAMES pdcurses
-    HINTS "${CMAKE_SOURCE_DIR}/deps/PDCurses/library/lib"
-    REQUIRED
-  )
 else()
 	find_package(
     Curses
@@ -101,8 +95,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 if(WIN32)
   target_include_directories(${PROJECT_NAME} PRIVATE 
-    "${CMAKE_SOURCE_DIR}/deps/curl/library/include"
-    "${CMAKE_SOURCE_DIR}/deps/PDCurses/library/include"
+    "${CMAKE_SOURCE_DIR}/deps/curl/include"
+    "${CMAKE_SOURCE_DIR}/deps/PDCurses"
   )
 else()
   target_include_directories(${PROJECT_NAME} PRIVATE 
@@ -111,19 +105,11 @@ else()
 endif()
 
 if(WIN32)
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARY} ${CURSES_LIBRARY} SQLiteCpp)
+  target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl pdcurses SQLiteCpp)
 else()
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
   target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads CURL::libcurl ${CURSES_LIBRARIES} SQLiteCpp)
-endif()
-
-if(WIN32)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CMAKE_SOURCE_DIR}/deps/curl/library/bin"
-                    $<TARGET_FILE_DIR:${PROJECT_NAME}>
-                  )
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT Application)

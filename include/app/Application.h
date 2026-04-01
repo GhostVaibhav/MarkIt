@@ -3,11 +3,11 @@
 
 #include "AppConfig.h"
 #include "KeyFileManager.h"
-#include "MainUI.h"
 #include "PantryFacade.h"
 #include "SyncManager.h"
 #include "TodoManager.h"
 #include "UserManager.h"
+#include "MainUI.h"
 
 class Application {
  public:
