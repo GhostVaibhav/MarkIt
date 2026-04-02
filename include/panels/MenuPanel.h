@@ -12,6 +12,7 @@ class MenuPanel : public FullScreenPanel {
   explicit MenuPanel(WINDOW* win);
   ~MenuPanel();
   void render() override;
+  void resizeEvent();
   int promptSelection();
 
   void setMenuOptions(const std::vector<std::string>& options);

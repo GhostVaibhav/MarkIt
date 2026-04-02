@@ -266,8 +266,18 @@ bool Application::onlineOptionHandling(int choice) {
   return false;
 }
 
+void Application::resizeEvent() {
+  resize_term(0, 0);
+  clear();
+  ui->mainMenuPanel.render();
+  ui->menuPanel.render();
+  refresh();
+}
+
 bool Application::mainLoop() {
+  keypad(stdscr, TRUE);
   int selectedTodo = 0;
+
   while (true) {
     auto todos = todoManager.getAllTodos();
 
@@ -348,6 +358,9 @@ bool Application::mainLoop() {
           return true;
         }
       }
+    } else if (ch == KEY_RESIZE) {
+      this->resizeEvent();
+      continue;
     }
   }
   return false;

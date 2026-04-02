@@ -1,6 +1,14 @@
 #include "MenuPanel.h"
-
 #include <algorithm>
+
+// Bring in the Windows PDCurses resize trick
+void MenuPanel::resizeEvent() {
+  resize_term(0, 0);
+  clear();
+  refresh();
+  render();
+  refresh();
+}
 
 MenuPanel::MenuPanel(WINDOW* w)
     : FullScreenPanel(), logoPanel(w, 0, 0), statsPanel(w, 0, 0) {}
@@ -22,34 +30,73 @@ void MenuPanel::setCredentials(const std::string& username,
 
 void MenuPanel::recreateWindows() {
   int max_y, max_x;
-  getmaxyx(win, max_y, max_x);
-  if (titleWin) delwin(titleWin);
-  if (menuWin) delwin(menuWin);
-  titleWin = newwin(10, max_x - 2, 1, 1);
-  menuWin = newwin(max_y - 12, max_x - 2, 11, 1);
+  getmaxyx(stdscr, max_y, max_x);
+
+  // Safe dimensions to prevent negative math crash
+  int safe_w = (max_x > 2) ? max_x - 2 : 1;
+  int safe_h_title = 10;
+  int safe_h_menu = (max_y > 12) ? max_y - 12 : 1;
+
+  // Legacy Initialization & Macro Resizing (Matching LoginPanel)
+  if (!titleWin) {
+    titleWin = newwin(safe_h_title, safe_w, 1, 1);
+    menuWin = newwin(safe_h_menu, safe_w, 11, 1);
+  } else {
+    // Move to 0,0 temporarily to prevent out-of-bounds assertion during resize
+    mvwin(titleWin, 0, 0);
+    mvwin(menuWin, 0, 0);
+
+#ifdef _WIN32
+    resize_window(titleWin, safe_h_title, safe_w);
+    resize_window(menuWin, safe_h_menu, safe_w);
+#else
+    wresize(titleWin, safe_h_title, safe_w);
+    wresize(menuWin, safe_h_menu, safe_w);
+#endif
+
+    // Move back to final positions
+    mvwin(titleWin, 1, 1);
+    mvwin(menuWin, 11, 1);
+  }
 }
 
 void MenuPanel::render() {
   int max_y, max_x;
-  getmaxyx(win, max_y, max_x);
-  recreateWindows();
+  getmaxyx(stdscr, max_y, max_x);
 
-  int part = (getmaxx(titleWin) - 81) / 4;
-  int half = 1;
-  if (part <= 0) part = 1;
+  // 1. CRITICAL: Resize the parent background FIRST to prevent PDCurses crash
+  if (win && win != stdscr) {
+#ifdef _WIN32
+    resize_window(win, max_y, max_x);
+#else
+    wresize(win, max_y, max_x);
+#endif
+  }
+
+  // 2. Safely wipe the parent screen
+  wclear(win);
+  wrefresh(win);
+
+  recreateWindows();
 
   wclear(titleWin);
   wclear(menuWin);
   box(titleWin, 0, 0);
   box(menuWin, 0, 0);
 
+  int part = (getmaxx(titleWin) - 81) / 4;
+  int half = 1;
+  if (part <= 0) part = 0; // Heap protection
+
   logoPanel.setWindow(titleWin);
   logoPanel.setPosition(half, part);
   logoPanel.render();
 
-  mvwprintw(titleWin, 3, 3 * part + 25, "Username: %s", curUser.c_str());
+  int u_x = 3 * part + 25;
+  if (u_x < 0) u_x = 0;
+  mvwprintw(titleWin, 3, u_x, "Username: %s", curUser.c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    mvwprintw(titleWin, 5, 3 * part + 25, "Pantry ID: %s", pantryId.c_str());
+    mvwprintw(titleWin, 5, u_x, "Pantry ID: %s", pantryId.c_str());
   }
 
   if (!options.empty()) {
@@ -57,16 +104,25 @@ void MenuPanel::render() {
         std::max_element(options.begin(), options.end(),
                          [](const std::string& a, const std::string& b) {
                            return a.size() < b.size();
-                         })
-            ->size();
+                         })->size();
+                         
     for (int i = 0; i < (int)options.size(); i++) {
-      if (i != (int)pointerIndex) {
-        mvwprintw(menuWin, (getmaxy(menuWin) / 2) + (i - (options.size() / 2)),
-                  (getmaxx(menuWin) / 2) - maxSize, "%s", options[i].c_str());
-      } else {
+      // Calculate coordinates safely
+      int opt_y = (getmaxy(menuWin) / 2) + (i - (options.size() / 2));
+      int opt_x = (getmaxx(menuWin) / 2) - maxSize;
+
+      // CLAMP COORDINATES: Prevent MSVC Heap Corruption #936
+      if (opt_y < 0) opt_y = 0;
+      if (opt_x < 0) opt_x = 0;
+      if (opt_y >= getmaxy(menuWin)) opt_y = getmaxy(menuWin) - 1;
+
+      if (i == (int)pointerIndex) {
         wattron(menuWin, COLOR_PAIR(1));
-        mvwprintw(menuWin, (getmaxy(menuWin) / 2) + (i - (options.size() / 2)),
-                  (getmaxx(menuWin) / 2) - maxSize, "%s", options[i].c_str());
+      }
+      
+      mvwprintw(menuWin, opt_y, opt_x, "%s", options[i].c_str());
+      
+      if (i == (int)pointerIndex) {
         wattroff(menuWin, COLOR_PAIR(1));
       }
     }
@@ -75,26 +131,38 @@ void MenuPanel::render() {
   statsPanel.setWindow(win);
   statsPanel.render();
 
-  wrefresh(win);
-
   wrefresh(titleWin);
   wrefresh(menuWin);
+  
   refreshKeyBar(
       {{"Up/Dn", "Move"}, {"Enter", "Select"}, {"Esc/q/^C", "Close menu"}});
 }
 
 int MenuPanel::promptSelection() {
-  keypad(win, true);
+  keypad(stdscr, true);
+  
+  // Initial render
+  render();
+  
   while (true) {
-    render();
     int ch = getch();
+    
+    if (ch == ERR) continue;
+
+    if (ch == KEY_RESIZE) {
+      resizeEvent();
+      continue;
+    }
+
     if (ch == KEY_UP) {
       if (pointerIndex > 0)
         pointerIndex--;
       else
         pointerIndex = 0;
+      render();
     } else if (ch == KEY_DOWN) {
       if (pointerIndex < options.size() - 1) pointerIndex++;
+      render();
     } else if (ch == 27 || ch == '\b' || ch == KEY_BACKSPACE || ch == 'q' ||
                ch == 'Q' || ch == 3) {
       return -1;

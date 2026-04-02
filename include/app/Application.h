@@ -27,6 +27,7 @@ class Application {
   bool offlineOptionHandling(int);
   bool onlineOptionHandling(int);
 
+  void resizeEvent();
   void syncPush();
   void syncPull();
 

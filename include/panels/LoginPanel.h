@@ -17,6 +17,7 @@ class LoginPanel : public FullScreenPanel {
   std::string captureInput(WINDOW*, bool);
   void clearUsername();
   void reset();
+  void resizeEvent();
 
   void showLoading(const std::string& msg);
   void showError(const std::string& error);
