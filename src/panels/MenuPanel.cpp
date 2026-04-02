@@ -135,7 +135,7 @@ void MenuPanel::render() {
   wrefresh(menuWin);
   
   refreshKeyBar(
-      {{"Up/Dn", "Move"}, {"Enter", "Select"}, {"Esc/q/^C", "Close menu"}});
+      {{"Up/Dn", "Move"}, {"Enter", "Select"}, {"Esc/q", "Close menu"}, {"^C", "Exit"}});
 }
 
 int MenuPanel::promptSelection() {

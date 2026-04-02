@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <curses.h>
 
 #include "Panel.h"
 
@@ -11,6 +12,7 @@ class AddTodoPanel : public Panel {
   void render() override;
 
   void promptInput();
+  void resizeEvent();
 
   std::string getEnteredName() const;
   std::string getEnteredDesc() const;
@@ -18,4 +20,10 @@ class AddTodoPanel : public Panel {
  private:
   std::string name;
   std::string desc;
+  
+  // Added to manage state during resizes safely
+  WINDOW* addWin = nullptr; 
+  
+  void recreateWindows();
+  std::string captureInput(bool isNameField);
 };
