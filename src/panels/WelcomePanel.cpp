@@ -1,5 +1,12 @@
 #include "WelcomePanel.h"
 
+// Bring in the same Windows PDCurses resize trick used in LoginPanel
+void resize_event_welcome() {
+    resize_term(0, 0); 
+    clear();
+    refresh();
+}
+
 WelcomePanel::WelcomePanel(WINDOW* w) : FullScreenPanel(), logoPanel(w, 0, 0) {}
 
 void WelcomePanel::setUsername(const std::string& username) {
@@ -10,31 +17,76 @@ int WelcomePanel::getCode() const { return code; }
 
 void WelcomePanel::render() {
   int max_y, max_x;
-  getmaxyx(win, max_y, max_x);
+  getmaxyx(stdscr, max_y, max_x);
 
+  // 1. Resize parent to prevent PDCurses out-of-bounds assertions
+  if (win && win != stdscr) {
+#ifdef _WIN32
+    resize_window(win, max_y, max_x);
+#else
+    wresize(win, max_y, max_x);
+#endif
+  }
+
+  wclear(win);
+  wrefresh(win);
+
+  // Clamp logo dimensions safely
   int part = (max_x - 36) / 2;
+  if (part <= 0) part = 0; 
   int half = ((max_y - 4) / 2) - 1;
+  if (half <= 0) half = 0;
+  
+  clearKeyBar();
 
   logoPanel.setWindow(win);
   logoPanel.setPosition(half, part);
   logoPanel.render();
 
+  // Clamp Y-coordinate for text so it never writes at -1 on a squashed screen
+  int text_y = max_y - 2;
+  if (text_y < 0) text_y = 0;
+
   if (code == 1) {
     std::string text = "Welcome, " + curUser;
-    mvwprintw(win, max_y - 2, (max_x - 10 - curUser.size()) / 2, "%s",
-              text.c_str());
+    
+    // Perfectly center text and clamp X to prevent MSVC Heap Corruption
+    int text_x = (max_x - text.size()) / 2;
+    if (text_x < 0) text_x = 0; 
+    
+    mvwprintw(win, text_y, text_x, "%s", text.c_str());
   } else if (code == 2) {
     std::string text = "Welcome back, " + curUser;
-    mvwprintw(win, max_y - 2, (max_x - 15 - curUser.size()) / 2, "%s",
-              text.c_str());
+    
+    int text_x = (max_x - text.size()) / 2;
+    if (text_x < 0) text_x = 0;
+    
+    mvwprintw(win, text_y, text_x, "%s", text.c_str());
   }
+
   wrefresh(win);
+
   refreshKeyBar({{"Enter", "Continue"}, {"q/Q/^C", "Exit"}});
 }
 
 bool WelcomePanel::waitForContinue() {
   keypad(win, TRUE);
-  int ch = wgetch(win);
-  if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) return false;
+  int ch;
+
+  // Initial render before waiting for input
+  render();
+
+  while ((ch = wgetch(win)) != '\n') {
+    if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) return false;
+    
+    if (ch == ERR) continue;
+
+    if (ch == KEY_RESIZE) {
+      // Force the Windows console buffer to sync before rendering
+      resize_event_welcome(); 
+      render();
+    }
+  }
+
   return true;
 }

@@ -102,10 +102,6 @@ void LoginPanel::render() {
   logoPanel.setPosition(0, logo_x);
   logoPanel.render();
 
-  int info_x = (getmaxx(information) - 26) / 2;
-  if (info_x < 0) info_x = 0;
-  mvwprintw(information, 1, info_x, "Don't resize this window!");
-
   int u_x = 5;
   if (u_x >= getmaxx(userNameWindow)) u_x = getmaxx(userNameWindow) - 1;
   if (u_x < 0) u_x = 0;
