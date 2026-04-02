@@ -150,7 +150,7 @@ int MenuPanel::promptSelection() {
     if (ch == ERR) continue;
 
     if (ch == KEY_RESIZE) {
-      resizeEvent();
+      this->resizeEvent();
       continue;
     }
 
