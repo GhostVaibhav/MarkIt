@@ -14,7 +14,7 @@ class LoginPanel : public FullScreenPanel {
   void promptInput();
   std::string getEnteredUsername() const;
   std::string getEnteredPassword() const;
-  std::string captureInput(WINDOW*, bool);
+  void captureInput(WINDOW*, std::string&, bool);
   void clearUsername();
   void reset();
   void resizeEvent();

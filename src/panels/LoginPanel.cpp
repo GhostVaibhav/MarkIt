@@ -144,8 +144,7 @@ void LoginPanel::resizeEvent() {
   wrefresh(win);
 }
 
-std::string LoginPanel::captureInput(WINDOW* win, bool masked) {
-  std::string input;
+void LoginPanel::captureInput(WINDOW* win, std::string& target, bool masked) {
   int ch;
   keypad(win, TRUE);
 
@@ -158,8 +157,8 @@ std::string LoginPanel::captureInput(WINDOW* win, bool masked) {
     }
 
     if (ch == KEY_BACKSPACE || ch == 127 || ch == '\b') {
-      if (!input.empty()) {
-        input.pop_back();
+      if (!target.empty()) {
+        target.pop_back();
         int y, x;
         getyx(win, y, x);
         if (x > 0) {
@@ -168,27 +167,25 @@ std::string LoginPanel::captureInput(WINDOW* win, bool masked) {
         }
       }
     } else if (isprint(ch)) {
-      input += (char)ch;
+      target += (char)ch;
       if (!masked) waddch(win, ch);
     }
 
     wrefresh(win);
   }
-
-  return input;
 }
 
 void LoginPanel::promptInput() {
   noecho();
 
   wbkgd(userNameWindow, COLOR_PAIR(1));
-  username = captureInput(userNameWindow, false);
+  captureInput(userNameWindow, username, false);
   wbkgd(userNameWindow, COLOR_PAIR(6));
   BORDER_M(userNameWindow);
   wrefresh(userNameWindow);
 
   wbkgd(passwordWindow, COLOR_PAIR(1));
-  password = captureInput(passwordWindow, true);
+  captureInput(passwordWindow, password, true);
   wbkgd(passwordWindow, COLOR_PAIR(6));
   BORDER_M(passwordWindow);
   wrefresh(passwordWindow);
