@@ -213,6 +213,7 @@ bool Application::offlineOptionHandling(int choice) {
           std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
           pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
           syncManager = std::make_unique<SyncManager>(*pantryFacade);
+          syncManager->addObserver(this);
         }
         pantryFacade->createBucket(user->id);
         bgSyncService.stop();
@@ -277,6 +278,7 @@ bool Application::onlineOptionHandling(int choice) {
           std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
           pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
           syncManager = std::make_unique<SyncManager>(*pantryFacade);
+          syncManager->addObserver(this);
         }
         pantryFacade->createBucket(user->id);
         bgSyncService.stop();
@@ -473,6 +475,7 @@ int Application::run() {
       pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
     }
     syncManager = std::make_unique<SyncManager>(*pantryFacade);
+    syncManager->addObserver(this);
 
     // Start background sync only when connected to Pantry
     bgSyncService.stop();
@@ -493,4 +496,12 @@ int Application::run() {
     if (!mainLoop()) break;
   }
   return 0;
+}
+
+void Application::onSyncStatusChanged(const SyncStatus& status) {
+  // The background thread updates the SyncManager, which then notifies us.
+  // Since we use ungetch(KEY_RESIZE) in the background thread to wake up getch(),
+  // we don't strictly need to do anything here beside logging or internal state tracking.
+  // This is a placeholder for any reactive logic needed on the UI thread side.
+  spdlog::info("Application: Sync status observer notified");
 }

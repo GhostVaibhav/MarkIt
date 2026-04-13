@@ -9,13 +9,15 @@
 #include "TodoManager.h"
 #include "UserManager.h"
 #include "MainUI.h"
+#include "ISyncObserver.h"
 
-class Application {
+class Application : public ISyncObserver {
  public:
   Application();
   ~Application();
 
   int run();
+  void onSyncStatusChanged(const SyncStatus& status) override;
 
  private:
   void initCurses();

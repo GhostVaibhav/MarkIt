@@ -1,5 +1,5 @@
 #include "BackgroundSyncService.h"
-
+#include <curses.h>
 #include <spdlog/spdlog.h>
 
 BackgroundSyncService::BackgroundSyncService() {}
@@ -54,23 +54,40 @@ void BackgroundSyncService::worker() {
     if (!running) break;
     if (!enabled) continue;
 
-    // Check preconditions
-    std::string userId = getIdFn ? getIdFn() : "";
-    std::string userHash = getHashFn ? getHashFn() : "";
-    if (userId.empty()) continue;
-
-    // Perform the refresh under lock
+    // 1. Fetch info under lock
+    std::string userId;
+    std::string userHash;
+    std::vector<Todo> todos;
     {
       std::lock_guard<std::mutex> lk(syncMtx);
+      userId = getIdFn ? getIdFn() : "";
+      userHash = getHashFn ? getHashFn() : "";
       if (syncManager && todoManager) {
-        try {
-          auto todos = todoManager->getAllTodos();
-          syncManager->refreshData(userId, userHash, todos);
-          spdlog::info("BackgroundSyncService: refresh completed");
-        } catch (const std::exception& e) {
-          spdlog::error("BackgroundSyncService: refresh failed: {}", e.what());
-        }
+        todos = todoManager->getAllTodos();
       }
     }
+
+    if (userId.empty()) continue;
+
+    // 2. Perform IO UNLOCKED (Slow part)
+    nlohmann::json remoteData;
+    try {
+        remoteData = syncManager->getFacade().loadBucket(userId);
+    } catch (const std::exception& e) {
+        spdlog::error("BackgroundSyncService: IO failed: {}", e.what());
+        continue;
+    }
+
+    // 3. Apply update under lock (Quick part)
+    {
+      std::lock_guard<std::mutex> lk(syncMtx);
+      if (syncManager) {
+        syncManager->applyRemoteUpdate(remoteData, userId, userHash, todos);
+        spdlog::info("BackgroundSyncService: refresh completed and status updated");
+      }
+    }
+
+    // 4. Signal UI thread to redraw
+    ungetch(KEY_RESIZE);
   }
 }

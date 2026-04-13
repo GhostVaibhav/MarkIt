@@ -150,6 +150,36 @@ SyncStatus SyncManager::refreshData(const std::string& userId,
   return refresh(userId, localData);
 }
 
+void SyncManager::applyRemoteUpdate(const nlohmann::json& remoteData,
+                                     const std::string& userId,
+                                     const std::string& hash,
+                                     const std::vector<Todo>& todos) {
+  if (remoteData.empty()) return;
+
+  cachedRemoteData = remoteData;
+
+  nlohmann::json localData;
+  localData["hash"] = hash;
+  localData["number"] = 0;
+  localData["data"] = nlohmann::json::array();
+  for (const auto& t : todos) {
+    nlohmann::json tJson;
+    tJson["id"] = t.id;
+    tJson["name"] = t.name;
+    tJson["desc"] = t.desc;
+    tJson["time"] = t.time;
+    tJson["isComplete"] = t.isComplete;
+    localData["data"].push_back(tJson);
+  }
+
+  syncStatus = SyncStatus::compute(localData, remoteData);
+  spdlog::info(
+      "SyncManager: Applied remote update locally: {} pull(s), {} push(es) "
+      "pending",
+      syncStatus.pendingPulls, syncStatus.pendingPushes);
+  notifyObservers();
+}
+
 void SyncManager::recomputeData(const std::vector<Todo>& todos) {
   if (cachedRemoteData.empty()) return;
   nlohmann::json localData;
