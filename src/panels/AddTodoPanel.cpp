@@ -1,57 +1,52 @@
 #include "AddTodoPanel.h"
+#include "utils/StringUtils.h"
 #include <curses.h>
-#include "BottomBarHelper.h"
 
-// Windows PDCurses resize trick
-void AddTodoPanel::resizeEvent() {
-  resize_term(0, 0);
-  clear();
-  refresh();
-  render();
-}
-
-AddTodoPanel::AddTodoPanel() : Panel(stdscr, 0, 0), addWin(nullptr) {}
+AddTodoPanel::AddTodoPanel() 
+    : FullScreenPanel(), logoPanel(win, 0, 0), titleWin(nullptr), contentWin(nullptr) {}
 
 AddTodoPanel::~AddTodoPanel() {
-  if (bottomBar) delwin(bottomBar);
-  if (addWin) delwin(addWin);
+  if (titleWin) delwin(titleWin);
+  if (contentWin) delwin(contentWin);
+}
+
+void AddTodoPanel::setCredentials(const std::string& username, const std::string& id) {
+  curUser = username;
+  pantryId = id;
 }
 
 void AddTodoPanel::recreateWindows() {
   int max_y, max_x;
   getmaxyx(stdscr, max_y, max_x);
 
-  // Clamp the box so it never exceeds terminal dimensions
-  int w = (max_x > 62) ? 60 : ((max_x > 2) ? max_x - 2 : 1);
-  int h = (max_y > 12) ? 10 : ((max_y > 2) ? max_y - 2 : 1);
+  int safe_w = (max_x > 2) ? max_x - 2 : 1;
+  int safe_h_title = 10;
+  int safe_h_menu = (max_y > 12) ? max_y - 12 : 1;
 
-  // Safely center the box
-  int y = (max_y - h) / 2;
-  int x = (max_x - w) / 2;
-  if (y < 0) y = 0;
-  if (x < 0) x = 0;
-
-  if (!addWin) {
-    addWin = newwin(h, w, y, x);
+  if (!titleWin) {
+    titleWin = newwin(safe_h_title, safe_w, 1, 1);
+    contentWin = newwin(safe_h_menu, safe_w, 11, 1);
   } else {
-    // Park at 0,0 temporarily to prevent Windows PDCurses out-of-bounds assertion
-    mvwin(addWin, 0, 0);
+    mvwin(titleWin, 0, 0);
+    mvwin(contentWin, 0, 0);
 
 #ifdef _WIN32
-    resize_window(addWin, h, w);
+    resize_window(titleWin, safe_h_title, safe_w);
+    resize_window(contentWin, safe_h_menu, safe_w);
 #else
-    wresize(addWin, h, w);
+    wresize(titleWin, safe_h_title, safe_w);
+    wresize(contentWin, safe_h_menu, safe_w);
 #endif
 
-    // Move back to final centered position
-    mvwin(addWin, y, x);
+    mvwin(titleWin, 1, 1);
+    mvwin(contentWin, 11, 1);
   }
 }
 
 void AddTodoPanel::render() {
-  // 1. CRITICAL: Resize the parent background FIRST to prevent PDCurses crash
   int max_y, max_x;
   getmaxyx(stdscr, max_y, max_x);
+
   if (win && win != stdscr) {
 #ifdef _WIN32
     resize_window(win, max_y, max_x);
@@ -60,75 +55,101 @@ void AddTodoPanel::render() {
 #endif
   }
 
-  // Safely wipe background to clear ghosting
   wclear(win);
   wrefresh(win);
 
   recreateWindows();
 
-  wclear(addWin);
-  box(addWin, 0, 0);
+  wclear(titleWin);
+  wclear(contentWin);
 
-  // Clamp text printing so it doesn't crash on extremely squashed screens
-  if (getmaxy(addWin) > 3) {
-    mvwprintw(addWin, 2, 2, "Enter Todo Name (empty to skip):");
-    // Print whatever the user has typed so far safely
+  box(titleWin, 0, 0);
+  box(contentWin, 0, 0);
+
+  int part = (getmaxx(titleWin) - 81) / 4;
+  if (part <= 0) part = 2; // enforce minimum padding
+
+  logoPanel.setWindow(titleWin);
+  logoPanel.setPosition(1, part);
+  logoPanel.render();
+
+  int u_x = getmaxx(titleWin) - 50;
+  if (u_x < part + 45) u_x = part + 45;
+  int remainingW = getmaxx(titleWin) - u_x - 1;
+  if (remainingW < 3) remainingW = 3;
+
+  std::string dispUser = "Username: " + curUser;
+  mvwprintw(titleWin, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
+  if (!pantryId.empty() && pantryId != "None") {
+    std::string dispId = "Pantry ID: " + pantryId;
+    mvwprintw(titleWin, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
+  }
+
+  // Render input fields
+  if (getmaxy(contentWin) > 3) {
+    mvwprintw(contentWin, 2, 2, "Enter Todo Name (empty to skip):");
     int n_x = 2;
-    if (n_x < getmaxx(addWin)) mvwprintw(addWin, 3, n_x, "%s", name.c_str()); 
+    if (n_x < getmaxx(contentWin)) mvwprintw(contentWin, 3, n_x, "%s", name.c_str()); 
   }
   
-  if (getmaxy(addWin) > 6) {
-    mvwprintw(addWin, 5, 2, "Enter Todo Description:");
-    // Print whatever the user has typed so far safely
+  if (getmaxy(contentWin) > 6) {
+    mvwprintw(contentWin, 5, 2, "Enter Todo Description:");
     int d_x = 2;
-    if (d_x < getmaxx(addWin)) mvwprintw(addWin, 6, d_x, "%s", desc.c_str());
+    if (d_x < getmaxx(contentWin)) mvwprintw(contentWin, 6, d_x, "%s", desc.c_str());
   }
 
-  wrefresh(addWin);
-
-  if (bottomBar) {
-    delwin(bottomBar);
-    bottomBar = nullptr;
+  if (statsPanel) {
+    statsPanel->setWindow(win);
+    statsPanel->render();
   }
-  bottomBar = drawBottomBar(bottomBar, {{"Enter", "Next field"}, {"^C", "Exit"}});
+
+  wrefresh(titleWin);
+  wrefresh(contentWin);
+
+  refreshKeyBar({
+    {"Enter", "Next field"},
+    {"^C", "Exit"}
+  });
 }
 
 // Custom input loop replacing the blocking mvwgetnstr
 std::string AddTodoPanel::captureInput(bool isNameField) {
   std::string input = isNameField ? name : desc;
   int ch;
-  keypad(addWin, TRUE);
+  keypad(contentWin, TRUE);
 
   int start_y = isNameField ? 3 : 6;
-  if (start_y >= getmaxy(addWin)) start_y = getmaxy(addWin) - 1;
+  if (start_y >= getmaxy(contentWin)) start_y = getmaxy(contentWin) - 1;
 
   // Set initial cursor
   int start_x = 2 + input.length();
-  if (start_x >= getmaxx(addWin)) start_x = getmaxx(addWin) - 1;
+  if (start_x >= getmaxx(contentWin)) start_x = getmaxx(contentWin) - 1;
   
-  wmove(addWin, start_y, start_x);
-  wrefresh(addWin);
+  wmove(contentWin, start_y, start_x);
+  wrefresh(contentWin);
 
-  while ((ch = wgetch(addWin)) != '\n') {
+  while ((ch = wgetch(contentWin)) != '\n') {
     if (ch == ERR) continue;
 
     if (ch == KEY_RESIZE) {
-      // Sync the state before render so the text redraws correctly
       if (isNameField) name = input; 
       else desc = input;
 
-      this->resizeEvent();
+#ifdef _WIN32
+      this->handleResize();
+#else
+      wclear(win);
+      this->show();
+#endif
 
-      // Recalculate Y and X in case the screen shrunk too much
       start_y = isNameField ? 3 : 6;
-      if (start_y >= getmaxy(addWin)) start_y = getmaxy(addWin) - 1;
+      if (start_y >= getmaxy(contentWin)) start_y = getmaxy(contentWin) - 1;
 
-      // Safely clamp cursor X so it doesn't crash on the right edge
       int cur_x = 2 + input.length();
-      if (cur_x >= getmaxx(addWin)) cur_x = getmaxx(addWin) - 1;
+      if (cur_x >= getmaxx(contentWin)) cur_x = getmaxx(contentWin) - 1;
 
-      wmove(addWin, start_y, cur_x);
-      wrefresh(addWin);
+      wmove(contentWin, start_y, cur_x);
+      wrefresh(contentWin);
       continue;
     }
 
@@ -136,22 +157,21 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
       if (!input.empty()) {
         input.pop_back();
         int y, x;
-        getyx(addWin, y, x);
-        if (x > 2) { // Protect the border and margin
-          mvwaddch(addWin, y, x - 1, ' ');
-          wmove(addWin, y, x - 1);
+        getyx(contentWin, y, x);
+        if (x > 2) { 
+          mvwaddch(contentWin, y, x - 1, ' ');
+          wmove(contentWin, y, x - 1);
         }
       }
     } else if (isprint(ch)) {
       int y, x;
-      getyx(addWin, y, x);
-      // Ensure we don't type over the right border
-      if (x < getmaxx(addWin) - 2) { 
+      getyx(contentWin, y, x);
+      if (x < getmaxx(contentWin) - 2) { 
         input += (char)ch;
-        waddch(addWin, ch);
+        waddch(contentWin, ch);
       }
     }
-    wrefresh(addWin);
+    wrefresh(contentWin);
   }
   
   if (isNameField) name = input; 
@@ -169,24 +189,11 @@ void AddTodoPanel::promptInput() {
 
   render();
 
-  // Capture Name safely
   name = captureInput(true);
-
-  // Capture Description safely
   desc = captureInput(false);
 
   curs_set(0);
 
-  // Clean up floating windows
-  if (addWin) {
-    delwin(addWin);
-    addWin = nullptr;
-  }
-  if (bottomBar) {
-    delwin(bottomBar);
-    bottomBar = nullptr;
-  }
-  
   wclear(win);
   wrefresh(win);
 }

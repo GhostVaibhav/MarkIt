@@ -1,12 +1,14 @@
 #include "FullScreenPanel.h"
 
-#include "AppConfig.h"
 #include "BottomBarHelper.h"
 
-FullScreenPanel::FullScreenPanel() : win(stdscr), bottomBar(nullptr) {}
+FullScreenPanel::FullScreenPanel() : win(stdscr), bottomBar(nullptr) {
+  statsPanel = new StatsPanel(win, 0, 0);
+}
 
 FullScreenPanel::~FullScreenPanel() {
   if (bottomBar) delwin(bottomBar);
+  if (statsPanel) delete statsPanel;
 }
 
 void FullScreenPanel::refreshKeyBar(
@@ -32,15 +34,17 @@ void FullScreenPanel::show() {
 }
 
 void FullScreenPanel::handleResize() {
-  // Basic terminal resize handler
+  resize_term(0, 0);
+  clear();
+  refresh();
+  wclear(win);
   show();
 }
 
 bool FullScreenPanel::checkSize() {
   int max_y, max_x;
   getmaxyx(win, max_y, max_x);
-  AppConfig config;
-  return (max_x >= config.minWidth && max_y >= config.minHeight);
+  return (max_x >= getMinWidth() && max_y >= getMinHeight());
 }
 
 void FullScreenPanel::renderSizeWarning() {

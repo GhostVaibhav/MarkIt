@@ -2,9 +2,11 @@
 #include <string>
 #include <curses.h>
 
-#include "Panel.h"
+#include "DimensionConfig.h"
+#include "FullScreenPanel.h"
+#include "LogoPanel.h"
 
-class AddTodoPanel : public Panel {
+class AddTodoPanel : public FullScreenPanel {
  public:
   explicit AddTodoPanel();
   ~AddTodoPanel() override;
@@ -12,17 +14,25 @@ class AddTodoPanel : public Panel {
   void render() override;
 
   void promptInput();
-  void resizeEvent();
+
+  int getMinWidth() const override { return Dimensions::AddTodoMinWidth; }
+  int getMinHeight() const override { return Dimensions::AddTodoMinHeight; }
 
   std::string getEnteredName() const;
   std::string getEnteredDesc() const;
+
+  void setCredentials(const std::string& username, const std::string& id);
 
  private:
   std::string name;
   std::string desc;
   
-  // Added to manage state during resizes safely
-  WINDOW* addWin = nullptr; 
+  std::string curUser;
+  std::string pantryId;
+  
+  LogoPanel logoPanel;
+  WINDOW* titleWin = nullptr; 
+  WINDOW* contentWin = nullptr; 
   
   void recreateWindows();
   std::string captureInput(bool isNameField);

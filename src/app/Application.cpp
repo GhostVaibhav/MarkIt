@@ -19,6 +19,7 @@ Application::Application()
       todoManager(config.dbFile) {}
 
 Application::~Application() {
+  bgSyncService.stop();
   if (ui) delete ui;
   endwin();
 }
@@ -141,6 +142,7 @@ void Application::syncPush() {
   auto user = userManager.getCurrentUser();
   if (!user) return;
 
+  std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
   SyncResult result = syncManager->pushData(user->id, user->password,
                                             todoManager.getAllTodos());
   if (result == SyncResult::Success)
@@ -159,7 +161,11 @@ void Application::syncPull() {
   if (!user) return;
 
   std::vector<Todo> outTodos;
-  SyncResult result = syncManager->pullData(user->id, outTodos);
+  SyncResult result;
+  {
+    std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+    result = syncManager->pullData(user->id, outTodos);
+  }
 
   if (result == SyncResult::Success) {
     spdlog::info(
@@ -192,6 +198,7 @@ bool Application::offlineOptionHandling(int choice) {
 #else
     system("xdg-open https://getpantry.cloud");
 #endif
+    ui->pantryConnectPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
     ui->pantryConnectPanel.show();
     ui->pantryConnectPanel.promptInput();
     std::string key = ui->pantryConnectPanel.getEnteredKey();
@@ -202,9 +209,18 @@ bool Application::offlineOptionHandling(int choice) {
         u.pantryId = key;
         userManager.updateUser(u);
         currentPantryId = key;
-        pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
-        syncManager = std::make_unique<SyncManager>(*pantryFacade);
+        {
+          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+          pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
+          syncManager = std::make_unique<SyncManager>(*pantryFacade);
+        }
         pantryFacade->createBucket(user->id);
+        bgSyncService.stop();
+        bgSyncService.start(
+          syncManager.get(), &todoManager,
+          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
+          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
+        );
       }
     }
     return true;
@@ -233,11 +249,12 @@ bool Application::onlineOptionHandling(int choice) {
     ui->loadingPanel.show();
     auto user = userManager.getCurrentUser();
     if (user) {
+      std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
       syncManager->refreshData(user->id, user->password,
                                todoManager.getAllTodos());
     }
     return true;
-  } else if (choice == 4) {
+  } else if (choice == 5) {
 #ifdef _WIN32
     system("start https://getpantry.cloud");
 #elif __APPLE__
@@ -245,6 +262,7 @@ bool Application::onlineOptionHandling(int choice) {
 #else
     system("xdg-open https://getpantry.cloud");
 #endif
+    ui->pantryConnectPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
     ui->pantryConnectPanel.show();
     ui->pantryConnectPanel.promptInput();
     std::string key = ui->pantryConnectPanel.getEnteredKey();
@@ -255,9 +273,18 @@ bool Application::onlineOptionHandling(int choice) {
         u.pantryId = key;
         userManager.updateUser(u);
         currentPantryId = key;
-        pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
-        syncManager = std::make_unique<SyncManager>(*pantryFacade);
+        {
+          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+          pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
+          syncManager = std::make_unique<SyncManager>(*pantryFacade);
+        }
         pantryFacade->createBucket(user->id);
+        bgSyncService.stop();
+        bgSyncService.start(
+          syncManager.get(), &todoManager,
+          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
+          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
+        );
       }
     }
     return true;
@@ -267,16 +294,18 @@ bool Application::onlineOptionHandling(int choice) {
 }
 
 void Application::resizeEvent() {
-  resize_term(0, 0);
-  clear();
-  ui->mainMenuPanel.render();
-  ui->menuPanel.render();
-  refresh();
+#ifdef _WIN32
+  ui->mainMenuPanel.handleResize();
+#else
+  wclear(stdscr);
+  ui->mainMenuPanel.show();
+#endif
 }
 
 bool Application::mainLoop() {
   keypad(stdscr, TRUE);
   int selectedTodo = 0;
+  int scrollOffset = 0;
 
   while (true) {
     auto todos = todoManager.getAllTodos();
@@ -285,14 +314,24 @@ bool Application::mainLoop() {
     for (const auto& t : todos)
       if (t.isComplete) comp++;
 
-    SyncStatus sync = syncManager->getSyncStatus();
+    SyncStatus sync;
+    {
+      std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+      sync = syncManager->getSyncStatus();
+    }
 
     ui->mainMenuPanel.setCredentials(userManager.getCurrentUser()->name,
                                      currentPantryId);
     ui->mainMenuPanel.setTodos(todos);
     ui->mainMenuPanel.setStats(todos.size(), comp);
     ui->mainMenuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->todoDetailPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->menuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->addTodoPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
+    ui->addTodoPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->pantryConnectPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
     ui->mainMenuPanel.setSelectedIndex(selectedTodo);
+    ui->mainMenuPanel.setScroll(scrollOffset);
     ui->mainMenuPanel.show();
 
     int ch = getch();
@@ -302,22 +341,56 @@ bool Application::mainLoop() {
       if (selectedTodo > 0) selectedTodo--;
     } else if (ch == KEY_DOWN) {
       if (selectedTodo < (int)todos.size() - 1) selectedTodo++;
-    } else if (ch == '\n') {
+    }
+
+    // Keep selectedTodo visible in the scroll window
+    {
+      int visRows = ui->mainMenuPanel.getVisibleRows();
+      if (selectedTodo < scrollOffset) scrollOffset = selectedTodo;
+      if (selectedTodo >= scrollOffset + visRows) scrollOffset = selectedTodo - visRows + 1;
+      if (scrollOffset < 0) scrollOffset = 0;
+    }
+
+    if (ch == '\n') {
       if (!todos.empty() && selectedTodo >= 0 &&
           selectedTodo < (int)todos.size()) {
-        ui->todoDetailPanel.setTodo(todos[selectedTodo]);
-        ui->todoDetailPanel.show();
-        TodoDetailAction action = ui->todoDetailPanel.promptAction();
-        if (action == TodoDetailAction::QuitApp) {
-          return false;
-        } else if (action == TodoDetailAction::Toggle) {
-          todoManager.toggleTodo(todos[selectedTodo]);
-          syncManager->recomputeData(todoManager.getAllTodos());
-        } else if (action == TodoDetailAction::Delete) {
-          todoManager.removeTodo(todos[selectedTodo]);
-          if (selectedTodo >= (int)todos.size() - 1) selectedTodo--;
-          if (selectedTodo < 0) selectedTodo = 0;
-          syncManager->recomputeData(todoManager.getAllTodos());
+        ui->todoDetailPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
+        
+        bool stayInDetail = true;
+        while (stayInDetail) {
+          ui->todoDetailPanel.setTodo(todos[selectedTodo]);
+          ui->todoDetailPanel.show();
+          TodoDetailAction action = ui->todoDetailPanel.promptAction();
+          
+          if (action == TodoDetailAction::QuitApp) {
+            return false;
+          } else if (action == TodoDetailAction::Back) {
+            stayInDetail = false;
+          } else if (action == TodoDetailAction::OpenMenu) {
+            ui->menuPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
+            ui->menuPanel.setMenuOptions({"1. Toggle Todo", "2. Delete", "3. Back"});
+            ui->menuPanel.setSelectedIndex(0);
+            
+            int choice = ui->menuPanel.promptSelection();
+            if (choice == 0) { // Toggle
+              todoManager.toggleTodo(todos[selectedTodo]);
+              {
+                std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+                syncManager->recomputeData(todoManager.getAllTodos());
+              }
+              todos = todoManager.getAllTodos();
+            } else if (choice == 1) { // Delete
+              todoManager.removeTodo(todos[selectedTodo]);
+              {
+                std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+                syncManager->recomputeData(todoManager.getAllTodos());
+              }
+              todos = todoManager.getAllTodos();
+              if (selectedTodo >= (int)todos.size() - 1) selectedTodo--;
+              if (selectedTodo < 0) selectedTodo = 0;
+              stayInDetail = false;
+            }
+          }
         }
       }
     } else if (ch == 'd' || ch == KEY_DC || ch == KEY_BACKSPACE || ch == '\b') {
@@ -326,7 +399,10 @@ bool Application::mainLoop() {
         todoManager.removeTodo(todos[selectedTodo]);
         if (selectedTodo >= (int)todos.size() - 1) selectedTodo--;
         if (selectedTodo < 0) selectedTodo = 0;
-        syncManager->recomputeData(todoManager.getAllTodos());
+        {
+          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+          syncManager->recomputeData(todoManager.getAllTodos());
+        }
       }
     } else if (ch == 'm' || ch == 'M') {
       bool pantryIdPopulated = userManager.getCurrentUser()->pantryId != "";
@@ -334,9 +410,11 @@ bool Application::mainLoop() {
       ui->menuPanel.setCredentials(userManager.getCurrentUser()->name,
                                    currentPantryId);
       if (pantryIdPopulated) {
+        std::string syncLabel = bgSyncService.isEnabled()
+            ? "5. Disable auto-sync" : "5. Enable auto-sync";
         ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Push all changes",
                                       "3. Pull from the cloud", "4. Refresh",
-                                      "5. Edit Pantry link", "6. Logout"});
+                                      syncLabel, "6. Edit Pantry link", "7. Logout"});
       } else {
         ui->menuPanel.setMenuOptions(
             {"1. Add a todo", "2. Connect to Pantry", "3. Logout"});
@@ -348,12 +426,20 @@ bool Application::mainLoop() {
       if (!pantryIdPopulated) {
         if (offlineOptionHandling(choice)) {
         } else if (choice == 2) {
+          bgSyncService.stop();
           userManager.clearSession();
           return true;
         }
       } else {
         if (onlineOptionHandling(choice)) {
+        } else if (choice == 4) {
+          // Toggle auto-sync
+          bgSyncService.toggle();
         } else if (choice == 5) {
+          // Edit Pantry link (was index 4)
+          onlineOptionHandling(5);  // reuse existing pantry-edit logic at old index 4
+        } else if (choice == 6) {
+          bgSyncService.stop();
           userManager.clearSession();
           return true;
         }
@@ -373,6 +459,7 @@ int Application::run() {
   ui = new MainUI(stdscr);
 
   while (true) {
+    bgSyncService.stop();
     loadState();
     if (!userManager.getCurrentUser()) {
       if (!handleLogin()) break;
@@ -386,6 +473,22 @@ int Application::run() {
       pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
     }
     syncManager = std::make_unique<SyncManager>(*pantryFacade);
+
+    // Start background sync only when connected to Pantry
+    bgSyncService.stop();
+    if (!currentPantryId.empty()) {
+      bgSyncService.start(
+        syncManager.get(), &todoManager,
+        [this]() -> std::string {
+          auto u = userManager.getCurrentUser();
+          return u ? u->id : "";
+        },
+        [this]() -> std::string {
+          auto u = userManager.getCurrentUser();
+          return u ? u->password : "";
+        }
+      );
+    }
 
     if (!mainLoop()) break;
   }

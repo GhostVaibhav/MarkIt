@@ -1,99 +1,175 @@
 #include "TodoDetailPanel.h"
+#include "utils/StringUtils.h"
 
-TodoDetailPanel::TodoDetailPanel() : FullScreenPanel(), logoPanel(win, 0, 0) {}
+TodoDetailPanel::TodoDetailPanel() 
+    : FullScreenPanel(), 
+      logoPanel(win, 0, 0),
+      todoUserName(nullptr),
+      contentWin(nullptr) {}
+
+TodoDetailPanel::~TodoDetailPanel() {
+  if (todoUserName) delwin(todoUserName);
+  if (contentWin) delwin(contentWin);
+}
 
 void TodoDetailPanel::setTodo(const Todo& todo) { currentTodo = todo; }
 
+void TodoDetailPanel::setCredentials(const std::string& username, const std::string& id) {
+  curUser = username;
+  pantryId = id;
+}
+
+void TodoDetailPanel::recreateWindows() {
+  int max_y, max_x;
+  getmaxyx(stdscr, max_y, max_x);
+
+  int safe_w = (max_x > 2) ? max_x - 2 : 1;
+  int safe_h_win = (max_y > 13) ? max_y - 13 : 1;
+
+  if (!todoUserName) {
+    todoUserName = newwin(10, safe_w, 1, 1);
+    contentWin = newwin(safe_h_win, safe_w, 11, 1);
+  } else {
+    mvwin(todoUserName, 0, 0);
+    mvwin(contentWin, 0, 0);
+
+#ifdef _WIN32
+    resize_window(todoUserName, 10, safe_w);
+    resize_window(contentWin, safe_h_win, safe_w);
+#else
+    wresize(todoUserName, 10, safe_w);
+    wresize(contentWin, safe_h_win, safe_w);
+#endif
+
+    mvwin(todoUserName, 1, 1);
+    mvwin(contentWin, 11, 1);
+  }
+}
+
 void TodoDetailPanel::render() {
   int max_y, max_x;
-  getmaxyx(win, max_y, max_x);
+  getmaxyx(stdscr, max_y, max_x);
+
+  if (win && win != stdscr) {
+#ifdef _WIN32
+    resize_window(win, max_y, max_x);
+#else
+    wresize(win, max_y, max_x);
+#endif
+  }
 
   wclear(win);
-  box(win, 0, 0);
+  wrefresh(win);
 
-  int logoWidth = 81;
-  logoPanel.setWindow(win);
-  int logoX = (max_x - logoWidth) / 2;
-  if (logoX < 1) logoX = 1;
-  logoPanel.setPosition(2, logoX);
+  recreateWindows();
+
+  wclear(todoUserName);
+  wclear(contentWin);
+
+  box(todoUserName, 0, 0);
+  box(contentWin, 0, 0);
+
+  int part = (getmaxx(todoUserName) - 81) / 4;
+  if (part <= 0) part = 2;
+
+  // Render header
+  logoPanel.setWindow(todoUserName);
+  logoPanel.setPosition(1, part);
   logoPanel.render();
+  
+  if (statsPanel) {
+    statsPanel->setWindow(win);
+    statsPanel->render();
+  }
 
-  int yOffset = 11;
+  int u_x = getmaxx(todoUserName) - 50;
+  if (u_x < part + 45) u_x = part + 45;
+  int remainingW = getmaxx(todoUserName) - u_x - 1;
+  if (remainingW < 3) remainingW = 3;
+
+  std::string dispUser = "Username: " + curUser;
+  mvwprintw(todoUserName, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
+  if (!pantryId.empty() && pantryId != "None") {
+    std::string dispId = "Pantry ID: " + pantryId;
+    mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
+  }
+
+  // Render detail
+  int cw_max_y, cw_max_x;
+  getmaxyx(contentWin, cw_max_y, cw_max_x);
+
+  int yOffset = 2; // top margin
 
   if (currentTodo.isComplete)
-    wattron(win, COLOR_PAIR(2));
+    wattron(contentWin, COLOR_PAIR(2));
   else
-    wattron(win, COLOR_PAIR(1));
+    wattron(contentWin, COLOR_PAIR(1));
 
-  mvwprintw(win, yOffset, 5, "Status: %s",
+  mvwprintw(contentWin, yOffset, 5, "Status: %s",
             currentTodo.isComplete ? "Completed" : "Pending");
 
   if (currentTodo.isComplete)
-    wattroff(win, COLOR_PAIR(2));
+    wattroff(contentWin, COLOR_PAIR(2));
   else
-    wattroff(win, COLOR_PAIR(1));
+    wattroff(contentWin, COLOR_PAIR(1));
 
   yOffset += 2;
-  wattron(win, A_BOLD);
-  mvwprintw(win, yOffset++, 5, "Name:");
-  wattroff(win, A_BOLD);
+  wattron(contentWin, A_BOLD);
+  mvwprintw(contentWin, yOffset++, 5, "Name:");
+  wattroff(contentWin, A_BOLD);
 
   size_t nameIndex = 0;
-  while (nameIndex < currentTodo.name.size() && yOffset < max_y - 12) {
-    std::string line = currentTodo.name.substr(nameIndex, max_x - 10);
-    mvwprintw(win, yOffset++, 7, "%s", line.c_str());
-    nameIndex += max_x - 10;
+  while (nameIndex < currentTodo.name.size() && yOffset < cw_max_y - 2) {
+    std::string line = currentTodo.name.substr(nameIndex, cw_max_x - 10);
+    mvwprintw(contentWin, yOffset++, 7, "%s", line.c_str());
+    nameIndex += cw_max_x - 10;
   }
 
   yOffset++;
-  wattron(win, A_BOLD);
-  mvwprintw(win, yOffset++, 5, "Description:");
-  wattroff(win, A_BOLD);
-
-  size_t charIndex = 0;
-  while (charIndex < currentTodo.desc.size() && yOffset < max_y - 8) {
-    std::string line = currentTodo.desc.substr(charIndex, max_x - 10);
-    mvwprintw(win, yOffset++, 7, "%s", line.c_str());
-    charIndex += max_x - 10;
+  if (yOffset < cw_max_y - 2) {
+    wattron(contentWin, A_BOLD);
+    mvwprintw(contentWin, yOffset++, 5, "Description:");
+    wattroff(contentWin, A_BOLD);
   }
 
-  wrefresh(win);
-  refreshKeyBar({{"Up/Dn", "Move"},
-                 {"Enter", "Choose"},
-                 {"Esc/q/Q", "Back"},
-                 {"^C", "Exit"}});
+  size_t charIndex = 0;
+  while (charIndex < currentTodo.desc.size() && yOffset < cw_max_y - 2) {
+    std::string line = currentTodo.desc.substr(charIndex, cw_max_x - 10);
+    mvwprintw(contentWin, yOffset++, 7, "%s", line.c_str());
+    charIndex += cw_max_x - 10;
+  }
+
+  refreshKeyBar({
+    {"m/M", "Menu"},
+    {"Esc/q/Q", "Back"},
+    {"^C", "Exit"}
+  });
+
+  wrefresh(todoUserName);
+  wrefresh(contentWin);
 }
 
 TodoDetailAction TodoDetailPanel::promptAction() {
-  int max_y, max_x;
-  getmaxyx(win, max_y, max_x);
-
-  int selected = 0;
-  std::vector<std::string> options = {"1. Toggle Todo", "2. Delete", "3. Back"};
-
   keypad(win, TRUE);
   while (true) {
-    int startY = max_y - 5;
-    for (int i = 0; i < (int)options.size(); i++) {
-      if (i == selected) wattron(win, A_REVERSE);
-      mvwprintw(win, startY + i, max_x / 2 - 10, "%s", options[i].c_str());
-      if (i == selected) wattroff(win, A_REVERSE);
-    }
-    wrefresh(win);
-
     int ch = wgetch(win);
-    if (ch == KEY_UP && selected > 0)
-      selected--;
-    else if (ch == KEY_DOWN && selected < (int)options.size() - 1)
-      selected++;
-    else if (ch == 3)
+    if (ch == ERR) continue;
+    
+    if (ch == KEY_RESIZE) {
+#ifdef _WIN32
+      handleResize();
+#else
+      wclear(win);
+      show();
+#endif
+      continue;
+    }
+
+    if (ch == 3)
       return TodoDetailAction::QuitApp;
     else if (ch == 27 || ch == 'q' || ch == 'Q')
       return TodoDetailAction::Back;
-    else if (ch == '\n') {
-      if (selected == 0) return TodoDetailAction::Toggle;
-      if (selected == 1) return TodoDetailAction::Delete;
-      if (selected == 2) return TodoDetailAction::Back;
-    }
+    else if (ch == 'm' || ch == 'M')
+      return TodoDetailAction::OpenMenu;
   }
 }

@@ -1,17 +1,11 @@
 #include "MenuPanel.h"
+#include "utils/StringUtils.h"
 #include <algorithm>
 
-// Bring in the Windows PDCurses resize trick
-void MenuPanel::resizeEvent() {
-  resize_term(0, 0);
-  clear();
-  refresh();
-  render();
-  refresh();
-}
+// local resizeEvent removed
 
 MenuPanel::MenuPanel(WINDOW* w)
-    : FullScreenPanel(), logoPanel(w, 0, 0), statsPanel(w, 0, 0) {}
+    : FullScreenPanel(), logoPanel(w, 0, 0) {}
 
 MenuPanel::~MenuPanel() {
   if (titleWin) delwin(titleWin);
@@ -85,18 +79,22 @@ void MenuPanel::render() {
   box(menuWin, 0, 0);
 
   int part = (getmaxx(titleWin) - 81) / 4;
-  int half = 1;
-  if (part <= 0) part = 0; // Heap protection
+  if (part <= 0) part = 2; // enforce minimum padding
 
   logoPanel.setWindow(titleWin);
-  logoPanel.setPosition(half, part);
+  logoPanel.setPosition(1, part);
   logoPanel.render();
 
-  int u_x = 3 * part + 25;
-  if (u_x < 0) u_x = 0;
-  mvwprintw(titleWin, 3, u_x, "Username: %s", curUser.c_str());
+  int u_x = getmaxx(titleWin) - 50;
+  if (u_x < part + 45) u_x = part + 45;
+  int remainingW = getmaxx(titleWin) - u_x - 1;
+  if (remainingW < 3) remainingW = 3;
+
+  std::string dispUser = "Username: " + curUser;
+  mvwprintw(titleWin, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    mvwprintw(titleWin, 5, u_x, "Pantry ID: %s", pantryId.c_str());
+    std::string dispId = "Pantry ID: " + pantryId;
+    mvwprintw(titleWin, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
 
   if (!options.empty()) {
@@ -105,7 +103,6 @@ void MenuPanel::render() {
                          [](const std::string& a, const std::string& b) {
                            return a.size() < b.size();
                          })->size();
-                         
     for (int i = 0; i < (int)options.size(); i++) {
       // Calculate coordinates safely
       int opt_y = (getmaxy(menuWin) / 2) + (i - (options.size() / 2));
@@ -120,7 +117,9 @@ void MenuPanel::render() {
         wattron(menuWin, COLOR_PAIR(1));
       }
       
-      mvwprintw(menuWin, opt_y, opt_x, "%s", options[i].c_str());
+      int maxW = getmaxx(menuWin) - opt_x - 2;
+      if (maxW < 3) maxW = 3;
+      mvwprintw(menuWin, opt_y, opt_x, "%s", StringUtils::truncateString(options[i], maxW).c_str());
       
       if (i == (int)pointerIndex) {
         wattroff(menuWin, COLOR_PAIR(1));
@@ -128,8 +127,10 @@ void MenuPanel::render() {
     }
   }
 
-  statsPanel.setWindow(win);
-  statsPanel.render();
+  if (statsPanel) {
+    statsPanel->setWindow(win);
+    statsPanel->render();
+  }
 
   wrefresh(titleWin);
   wrefresh(menuWin);
@@ -150,7 +151,12 @@ int MenuPanel::promptSelection() {
     if (ch == ERR) continue;
 
     if (ch == KEY_RESIZE) {
-      this->resizeEvent();
+#ifdef _WIN32
+      handleResize();
+#else
+      wclear(win);
+      show();
+#endif
       continue;
     }
 

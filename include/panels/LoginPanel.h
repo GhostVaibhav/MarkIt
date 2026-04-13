@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 
+#include "DimensionConfig.h"
 #include "FullScreenPanel.h"
 #include "LoadingPanel.h"
 #include "LogoPanel.h"
@@ -17,7 +18,9 @@ class LoginPanel : public FullScreenPanel {
   void captureInput(WINDOW*, std::string&, bool);
   void clearUsername();
   void reset();
-  void resizeEvent();
+
+  int getMinWidth() const override { return Dimensions::LoginMinWidth; }
+  int getMinHeight() const override { return Dimensions::LoginMinHeight; }
 
   void showLoading(const std::string& msg);
   void showError(const std::string& error);

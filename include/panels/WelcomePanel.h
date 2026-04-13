@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 
+#include "DimensionConfig.h"
 #include "FullScreenPanel.h"
 #include "LogoPanel.h"
 
@@ -15,6 +16,9 @@ class WelcomePanel : public FullScreenPanel {
   void setCode(int code);
   void setUsername(const std::string& username);
   int getCode() const;
+
+  int getMinWidth() const override { return Dimensions::WelcomeMinWidth; }
+  int getMinHeight() const override { return Dimensions::WelcomeMinHeight; }
 
  private:
   LogoPanel logoPanel;

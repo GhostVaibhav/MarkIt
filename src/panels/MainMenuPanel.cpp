@@ -3,13 +3,13 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include "utils/StringUtils.h"
 #define BORDER_M(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)
 
 MainMenuPanel::MainMenuPanel(WINDOW* w)
     : FullScreenPanel(),
       loadingPanel(w),
       logoPanel(w, 0, 0),
-      statsPanel(w, 0, 0),
       todoUserName(nullptr), 
       todoWindow(nullptr),   
       todoBody(nullptr) {}   
@@ -30,12 +30,6 @@ void MainMenuPanel::setCredentials(const std::string& username,
   curUser = username;
   pantryId = id;
 }
-void MainMenuPanel::setStats(int total, int completed) {
-  statsPanel.setStats(total, completed);
-}
-void MainMenuPanel::setSyncStatus(int push, int pull) {
-  statsPanel.setSyncStatus(push, pull);
-}
 
 std::string MainMenuPanel::convertTimeToString(int epoch) const {
   std::time_t temp = epoch;
@@ -45,13 +39,7 @@ std::string MainMenuPanel::convertTimeToString(int epoch) const {
   return ss.str();
 }
 
-std::string truncateString(const std::string& str, int width) {
-  if (width <= 0) return ""; 
-  if (str.length() > width && width > 3) {
-    return str.substr(0, width - 3) + "...";
-  }
-  return str.length() > width ? str.substr(0, width) : str;
-}
+// Local truncateString removed in favor of utils/StringUtils.h
 
 void MainMenuPanel::recreateWindows() {
   int max_y, max_x;
@@ -118,18 +106,22 @@ void MainMenuPanel::render() {
   box(todoUserName, 0, 0);
 
   int part = (getmaxx(todoUserName) - 81) / 4;
-  int half = 1;
-  if (part <= 0) part = 0; 
+  if (part <= 0) part = 2;
 
   logoPanel.setWindow(todoUserName);
-  logoPanel.setPosition(half, part);
+  logoPanel.setPosition(1, part);
   logoPanel.render();
 
-  int u_x = 3 * part + 25;
-  if (u_x < 0) u_x = 0;
-  mvwprintw(todoUserName, 3, u_x, "Username: %s", curUser.c_str());
+  int u_x = getmaxx(todoUserName) - 50;
+  if (u_x < part + 45) u_x = part + 45;
+  int remainingW = getmaxx(todoUserName) - u_x - 1;
+  if (remainingW < 3) remainingW = 3;
+
+  std::string dispUser = "Username: " + curUser;
+  mvwprintw(todoUserName, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    mvwprintw(todoUserName, 5, u_x, "Pantry ID: %s", pantryId.c_str());
+    std::string dispId = "Pantry ID: " + pantryId;
+    mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
 
   int tabDiv = (getmaxx(todoWindow) - 2) / 3;
@@ -152,8 +144,11 @@ void MainMenuPanel::render() {
   mvwprintw(todoWindow, 1, col3, "Created Time");
   BORDER_M(todoWindow);
 
+  int visibleRows = getmaxy(todoBody);
+
   for (int i = 0; i < (int)todosList.size(); i++) {
-    if (i + moveFactor < 0 || i + moveFactor >= getmaxy(todoBody)) continue;
+    int row = i - moveFactor;
+    if (row < 0 || row >= visibleRows) continue;
 
     if (pointerIndex == i) {
       if (todosList.at(i).isComplete)
@@ -169,8 +164,8 @@ void MainMenuPanel::render() {
     if (maxNameWidth < 1) maxNameWidth = 1;
     if (maxDescWidth < 1) maxDescWidth = 1;
 
-    std::string dispName = truncateString(todosList[i].name, maxNameWidth);
-    std::string dispDesc = truncateString(todosList[i].desc, maxDescWidth);
+    std::string dispName = StringUtils::truncateString(todosList[i].name, maxNameWidth);
+    std::string dispDesc = StringUtils::truncateString(todosList[i].desc, maxDescWidth);
     std::string timeStr = convertTimeToString(todosList[i].time);
 
     // CLAMP ITEM COORDINATES
@@ -182,9 +177,9 @@ void MainMenuPanel::render() {
     if (x2 < 0) x2 = 0;
     if (x3 < 0) x3 = 0;
 
-    mvwprintw(todoBody, i + moveFactor, x1, "%s", dispName.c_str());
-    mvwprintw(todoBody, i + moveFactor, x2, "%s", dispDesc.c_str());
-    mvwprintw(todoBody, i + moveFactor, x3, "%s", timeStr.c_str());
+    mvwprintw(todoBody, row, x1, "%s", dispName.c_str());
+    mvwprintw(todoBody, row, x2, "%s", dispDesc.c_str());
+    mvwprintw(todoBody, row, x3, "%s", timeStr.c_str());
 
     if (pointerIndex == i) {
       if (todosList[i].isComplete)
@@ -197,8 +192,10 @@ void MainMenuPanel::render() {
   }
   BORDER_M(todoWindow);
 
-  statsPanel.setWindow(todoUserName);
-  statsPanel.render();
+  if (statsPanel) {
+    statsPanel->setWindow(win);
+    statsPanel->render();
+  }
 
   refreshKeyBar({{"m/M", "Menu"},
                  {"Enter", "Detail"},
@@ -209,4 +206,10 @@ void MainMenuPanel::render() {
   wrefresh(todoUserName);
   wrefresh(todoWindow);
   wrefresh(todoBody);
+}
+
+int MainMenuPanel::getVisibleRows() const {
+  if (!todoBody) return 1;
+  int rows = getmaxy(todoBody);
+  return rows > 0 ? rows : 1;
 }

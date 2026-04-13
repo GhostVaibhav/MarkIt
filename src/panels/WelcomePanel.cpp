@@ -1,12 +1,5 @@
 #include "WelcomePanel.h"
 
-// Bring in the same Windows PDCurses resize trick used in LoginPanel
-void resize_event_welcome() {
-    resize_term(0, 0); 
-    clear();
-    refresh();
-}
-
 WelcomePanel::WelcomePanel(WINDOW* w) : FullScreenPanel(), logoPanel(w, 0, 0) {}
 
 void WelcomePanel::setUsername(const std::string& username) {
@@ -82,9 +75,12 @@ bool WelcomePanel::waitForContinue() {
     if (ch == ERR) continue;
 
     if (ch == KEY_RESIZE) {
-      // Force the Windows console buffer to sync before rendering
-      resize_event_welcome(); 
-      render();
+#ifdef _WIN32
+      handleResize();
+#else
+      wclear(win);
+      show();
+#endif
     }
   }
 

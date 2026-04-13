@@ -136,13 +136,7 @@ void LoginPanel::render() {
   refreshKeyBar({{"Enter", "Next field"}, {"^C", "Exit"}});
 }
 
-void LoginPanel::resizeEvent() {
-  resize_term(0, 0);
-  clear();
-  render();
-  refresh();
-  wrefresh(win);
-}
+// local resizeEvent removed
 
 void LoginPanel::captureInput(WINDOW* win, std::string& target, bool masked) {
   int ch;
@@ -152,7 +146,12 @@ void LoginPanel::captureInput(WINDOW* win, std::string& target, bool masked) {
     if (ch == ERR) continue;
 
     if (ch == KEY_RESIZE) {
-      this->resizeEvent();
+#ifdef _WIN32
+      handleResize();
+#else
+      wclear(win);
+      show();
+#endif
       continue;
     }
 

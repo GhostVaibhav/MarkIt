@@ -2,18 +2,20 @@
 #include <string>
 #include <vector>
 
+#include "DimensionConfig.h"
 #include "FullScreenPanel.h"
 #include "LogoPanel.h"
 #include "MenuAction.h"
-#include "StatsPanel.h"
 
 class MenuPanel : public FullScreenPanel {
  public:
   explicit MenuPanel(WINDOW* win);
   ~MenuPanel();
   void render() override;
-  void resizeEvent();
   int promptSelection();
+
+  int getMinWidth() const override { return Dimensions::MenuMinWidth; }
+  int getMinHeight() const override { return Dimensions::MenuMinHeight; }
 
   void setMenuOptions(const std::vector<std::string>& options);
   void setSelectedIndex(unsigned int index);
@@ -21,7 +23,6 @@ class MenuPanel : public FullScreenPanel {
 
  private:
   LogoPanel logoPanel;
-  StatsPanel statsPanel;
   std::vector<std::string> options;
   unsigned int pointerIndex = 0;
   std::string curUser;

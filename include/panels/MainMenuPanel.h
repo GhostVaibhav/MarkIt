@@ -2,10 +2,10 @@
 #include <string>
 #include <vector>
 
+#include "DimensionConfig.h"
 #include "FullScreenPanel.h"
 #include "LoadingPanel.h"
 #include "LogoPanel.h"
-#include "StatsPanel.h"
 #include "Todo.h"
 
 class MainMenuPanel : public FullScreenPanel {
@@ -18,13 +18,14 @@ class MainMenuPanel : public FullScreenPanel {
   void setSelectedIndex(int index);
   void setScroll(int topOffset);
   void setCredentials(const std::string& username, const std::string& pantryId);
-  void setStats(int total, int completed);
-  void setSyncStatus(int pendingPush, int pendingPull);
+
+  int getMinWidth() const override { return Dimensions::MainMenuMinWidth; }
+  int getMinHeight() const override { return Dimensions::MainMenuMinHeight; }
+  int getVisibleRows() const;
 
  private:
   LoadingPanel loadingPanel;
   LogoPanel logoPanel;
-  StatsPanel statsPanel;
   std::vector<Todo> todosList;
 
   int pointerIndex = 0;

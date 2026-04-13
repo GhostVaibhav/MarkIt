@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "AppConfig.h"
+#include "BackgroundSyncService.h"
 #include "KeyFileManager.h"
 #include "PantryFacade.h"
 #include "SyncManager.h"
@@ -38,6 +39,7 @@ class Application {
 
   std::unique_ptr<PantryFacade> pantryFacade;
   std::unique_ptr<SyncManager> syncManager;
+  BackgroundSyncService bgSyncService;
 
   std::string currentPantryId;
 };
