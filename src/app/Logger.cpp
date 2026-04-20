@@ -3,6 +3,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
 #include <iostream>
+#include <utils/PathUtils.h>
 
 Logger& Logger::getInstance() {
   static Logger instance;
@@ -11,7 +12,7 @@ Logger& Logger::getInstance() {
 
 Logger::Logger() {
   try {
-    logger = spdlog::basic_logger_mt("markit", "logs/markit.log");
+    logger = spdlog::basic_logger_mt("markit", PathUtils::getExecutablePath() + "/logs/markit.log");
     spdlog::set_default_logger(logger);
     spdlog::flush_every(std::chrono::seconds(3));
   } catch (const spdlog::spdlog_ex& ex) {
