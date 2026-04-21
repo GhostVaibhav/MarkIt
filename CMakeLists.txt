@@ -37,7 +37,7 @@ set(SQLITECPP_BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
 set(SQLITECPP_BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
 set(SQLITECPP_INSTALL OFF CACHE BOOL "Install SQLiteCpp target" FORCE)
 set(SQLITECPP_USE_STACK_PROTECTION OFF CACHE BOOL "Use stack protection" FORCE)
-add_subdirectory(deps/SQLiteCpp)
+add_subdirectory(deps/SQLiteCpp SYSTEM)
 if (WIN32)
 if (NOT DEFINED MSVC AND NOT DEFINED CYGWIN)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ --static")
@@ -48,11 +48,11 @@ set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
 set(USE_WIN32_LDAP ON CACHE BOOL "" FORCE)
 set(ENABLE_THREADED_RESOLVER OFF CACHE BOOL "" FORCE)
 set(USE_LIBIDN2 OFF CACHE BOOL "" FORCE)
-add_subdirectory(deps/PDCurses)
-add_subdirectory(deps/curl)
+add_subdirectory(deps/PDCurses SYSTEM)
+add_subdirectory(deps/curl SYSTEM)
 endif()
-add_subdirectory(deps/spdlog)
-add_subdirectory(deps/json)
+add_subdirectory(deps/spdlog SYSTEM)
+add_subdirectory(deps/json SYSTEM)
 
 file(GLOB srcs
           "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -84,6 +84,11 @@ else()
 endif()
 
 add_executable (${PROJECT_NAME} ${srcs})
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall;-Wextra>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
     "include"

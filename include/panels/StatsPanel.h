@@ -6,14 +6,17 @@
 class StatsPanel : public Panel {
  public:
   StatsPanel(WINDOW* win, int x, int y);
+  ~StatsPanel();
   void render() override;
 
-  void setStats(int total, int completed);
+  void setStats(size_t total, int completed);
   void setSyncStatus(int pendingPushes, int pendingPulls);
 
  private:
-  int totalTodos = 0;
+  size_t totalTodos = 0;
   int completedTodos = 0;
   int pendingPush = 0;
   int pendingPull = 0;
+  
+  WINDOW* statsWin = nullptr;
 };

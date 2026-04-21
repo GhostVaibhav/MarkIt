@@ -22,7 +22,7 @@ class FullScreenPanel {
   virtual int getMinWidth() const { return Dimensions::DefaultMinWidth; }
   virtual int getMinHeight() const { return Dimensions::DefaultMinHeight; }
 
-  void setStats(int total, int completed) {
+  void setStats(size_t total, int completed) {
     if (statsPanel) statsPanel->setStats(total, completed);
   }
   

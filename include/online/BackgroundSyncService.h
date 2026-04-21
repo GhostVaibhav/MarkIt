@@ -56,5 +56,5 @@ class BackgroundSyncService {
   std::function<std::string()> getIdFn;
   std::function<std::string()> getHashFn;
 
-  static constexpr int POLL_INTERVAL_SECONDS = 10;
+  static constexpr int POLL_INTERVAL_SECONDS = 1;
 };

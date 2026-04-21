@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "MainMenuPanel.h"
 
 #include <ctime>
@@ -91,10 +92,6 @@ void MainMenuPanel::render() {
     wresize(win, max_y, max_x);
 #endif
   }
-
-  // 2. Safely wipe the parent screen
-  wclear(win);
-  wrefresh(win);
 
   recreateWindows();
 
@@ -197,7 +194,8 @@ void MainMenuPanel::render() {
     statsPanel->render();
   }
 
-  refreshKeyBar({{"m/M", "Menu"},
+  FullScreenPanel::refreshKeyBar(
+                {{"m/M", "Menu"},
                  {"Enter", "Detail"},
                  {"d/D", "Delete"},
                  {"q/Q/^C", "Exit"},
@@ -212,4 +210,67 @@ int MainMenuPanel::getVisibleRows() const {
   if (!todoBody) return 1;
   int rows = getmaxy(todoBody);
   return rows > 0 ? rows : 1;
+}
+
+void MainMenuPanel::renderList() {
+  if (!todoBody) return;
+
+  wclear(todoBody);
+
+  int tabDiv = (getmaxx(todoWindow) - 2) / 3;
+  if (tabDiv < 1) tabDiv = 1;
+  int visibleRows = getmaxy(todoBody);
+
+  for (int i = 0; i < (int)todosList.size(); i++) {
+    int row = i - moveFactor;
+    if (row < 0 || row >= visibleRows) continue;
+
+    if (pointerIndex == i) {
+      if (todosList.at(i).isComplete)
+        wattron(todoBody, COLOR_PAIR(2));
+      else
+        wattron(todoBody, COLOR_PAIR(1));
+
+      if (!has_colors()) wattron(todoBody, A_REVERSE);
+    }
+
+    int maxNameWidth = tabDiv - 4;
+    int maxDescWidth = tabDiv - 4;
+    if (maxNameWidth < 1) maxNameWidth = 1;
+    if (maxDescWidth < 1) maxDescWidth = 1;
+
+    std::string dispName = StringUtils::truncateString(todosList[i].name, maxNameWidth);
+    std::string dispDesc = StringUtils::truncateString(todosList[i].desc, maxDescWidth);
+    std::string timeStr = convertTimeToString(todosList[i].time);
+
+    int x1 = (tabDiv - (int)dispName.size()) / 2;
+    int x2 = ((3 * tabDiv - (int)dispDesc.size()) / 2) + 1;
+    int x3 = ((5 * tabDiv - (int)timeStr.size()) / 2) + 2;
+
+    if (x1 < 0) x1 = 0;
+    if (x2 < 0) x2 = 0;
+    if (x3 < 0) x3 = 0;
+
+    mvwprintw(todoBody, row, x1, "%s", dispName.c_str());
+    mvwprintw(todoBody, row, x2, "%s", dispDesc.c_str());
+    mvwprintw(todoBody, row, x3, "%s", timeStr.c_str());
+
+    if (pointerIndex == i) {
+      if (todosList[i].isComplete)
+        wattroff(todoBody, COLOR_PAIR(2));
+      else
+        wattroff(todoBody, COLOR_PAIR(1));
+
+      if (!has_colors()) wattroff(todoBody, A_REVERSE);
+    }
+  }
+
+  wrefresh(todoBody);
+}
+
+void MainMenuPanel::renderStats() {
+  if (statsPanel) {
+    statsPanel->setWindow(win);
+    statsPanel->render();
+  }
 }

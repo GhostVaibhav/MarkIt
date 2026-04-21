@@ -21,8 +21,7 @@ void WelcomePanel::render() {
 #endif
   }
 
-  wclear(win);
-  wrefresh(win);
+  wclear(win); // WelcomePanel actually needs this since it renders directly onto win
 
   // Clamp logo dimensions safely
   int part = (max_x - 36) / 2;
@@ -30,7 +29,7 @@ void WelcomePanel::render() {
   int half = ((max_y - 4) / 2) - 1;
   if (half <= 0) half = 0;
   
-  clearKeyBar();
+  FullScreenPanel::clearKeyBar();
 
   logoPanel.setWindow(win);
   logoPanel.setPosition(half, part);
@@ -44,14 +43,14 @@ void WelcomePanel::render() {
     std::string text = "Welcome, " + curUser;
     
     // Perfectly center text and clamp X to prevent MSVC Heap Corruption
-    int text_x = (max_x - text.size()) / 2;
+    int text_x = (max_x - (int) text.size()) / 2;
     if (text_x < 0) text_x = 0; 
     
     mvwprintw(win, text_y, text_x, "%s", text.c_str());
   } else if (code == 2) {
     std::string text = "Welcome back, " + curUser;
     
-    int text_x = (max_x - text.size()) / 2;
+    int text_x = (max_x - (int) text.size()) / 2;
     if (text_x < 0) text_x = 0;
     
     mvwprintw(win, text_y, text_x, "%s", text.c_str());
@@ -59,7 +58,7 @@ void WelcomePanel::render() {
 
   wrefresh(win);
 
-  refreshKeyBar({{"Enter", "Continue"}, {"q/Q/^C", "Exit"}});
+  FullScreenPanel::refreshKeyBar({{"Enter", "Continue"}, {"q/Q/^C", "Exit"}});
 }
 
 bool WelcomePanel::waitForContinue() {
@@ -76,10 +75,10 @@ bool WelcomePanel::waitForContinue() {
 
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32
-      handleResize();
+      FullScreenPanel::handleResize();
 #else
       wclear(win);
-      show();
+      FullScreenPanel::show();
 #endif
     }
   }

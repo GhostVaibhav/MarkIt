@@ -13,6 +13,8 @@ class MainMenuPanel : public FullScreenPanel {
   explicit MainMenuPanel(WINDOW* win);
   ~MainMenuPanel();
   void render() override;
+  void renderList();
+  void renderStats();
 
   void setTodos(const std::vector<Todo>& todos);
   void setSelectedIndex(int index);

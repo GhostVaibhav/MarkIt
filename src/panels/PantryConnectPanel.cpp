@@ -55,9 +55,6 @@ void PantryConnectPanel::render() {
 #endif
   }
 
-  wclear(win);
-  wrefresh(win);
-
   recreateWindows();
 
   wclear(titleWin);
@@ -95,7 +92,7 @@ void PantryConnectPanel::render() {
 
   wrefresh(titleWin);
   wrefresh(contentWin);
-  refreshKeyBar({{"Enter", "Submit"}, {"empty", "Cancel"}, {"^C", "Exit"}});
+  FullScreenPanel::refreshKeyBar({{"Enter", "Submit"}, {"empty", "Cancel"}, {"^C", "Exit"}});
 }
 
 void PantryConnectPanel::promptInput() {
@@ -114,12 +111,12 @@ void PantryConnectPanel::promptInput() {
 
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32
-      handleResize();
+      FullScreenPanel::handleResize();
 #else
       wclear(win);
-      show();
+      FullScreenPanel::show();
 #endif
-      wmove(contentWin, 4, 2 + apiKey.length());
+      wmove(contentWin, 4, 2 + (int) apiKey.length());
       wrefresh(contentWin);
       continue;
     }

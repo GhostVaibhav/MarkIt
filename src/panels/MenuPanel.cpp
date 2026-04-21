@@ -67,10 +67,6 @@ void MenuPanel::render() {
 #endif
   }
 
-  // 2. Safely wipe the parent screen
-  wclear(win);
-  wrefresh(win);
-
   recreateWindows();
 
   wclear(titleWin);
@@ -99,13 +95,13 @@ void MenuPanel::render() {
 
   if (!options.empty()) {
     const int maxSize =
-        std::max_element(options.begin(), options.end(),
+        (int) std::max_element(options.begin(), options.end(),
                          [](const std::string& a, const std::string& b) {
                            return a.size() < b.size();
                          })->size();
     for (int i = 0; i < (int)options.size(); i++) {
       // Calculate coordinates safely
-      int opt_y = (getmaxy(menuWin) / 2) + (i - (options.size() / 2));
+      int opt_y = (getmaxy(menuWin) / 2) + (i - (static_cast<int>(options.size()) / 2));
       int opt_x = (getmaxx(menuWin) / 2) - maxSize;
 
       // CLAMP COORDINATES: Prevent MSVC Heap Corruption #936
@@ -135,15 +131,52 @@ void MenuPanel::render() {
   wrefresh(titleWin);
   wrefresh(menuWin);
   
-  refreshKeyBar(
+  FullScreenPanel::refreshKeyBar(
       {{"Up/Dn", "Move"}, {"Enter", "Select"}, {"Esc/q", "Close menu"}, {"^C", "Exit"}});
+}
+
+void MenuPanel::renderMenuItems() {
+  if (!menuWin || options.empty()) return;
+
+  wclear(menuWin);
+  box(menuWin, 0, 0);
+
+  const int maxSize =
+      (int) std::max_element(options.begin(), options.end(),
+                       [](const std::string& a, const std::string& b) {
+                         return a.size() < b.size();
+                       })->size();
+  for (int i = 0; i < (int)options.size(); i++) {
+    // Calculate coordinates safely
+    int opt_y = (getmaxy(menuWin) / 2) + (i - (static_cast<int>(options.size()) / 2));
+    int opt_x = (getmaxx(menuWin) / 2) - maxSize;
+
+    // CLAMP COORDINATES: Prevent MSVC Heap Corruption
+    if (opt_y < 0) opt_y = 0;
+    if (opt_x < 0) opt_x = 0;
+    if (opt_y >= getmaxy(menuWin)) opt_y = getmaxy(menuWin) - 1;
+
+    if (i == (int)pointerIndex) {
+      wattron(menuWin, COLOR_PAIR(1));
+    }
+    
+    int maxW = getmaxx(menuWin) - opt_x - 2;
+    if (maxW < 3) maxW = 3;
+    mvwprintw(menuWin, opt_y, opt_x, "%s", StringUtils::truncateString(options[i], maxW).c_str());
+    
+    if (i == (int)pointerIndex) {
+      wattroff(menuWin, COLOR_PAIR(1));
+    }
+  }
+  
+  wrefresh(menuWin);
 }
 
 int MenuPanel::promptSelection() {
   keypad(stdscr, true);
   
   // Initial render
-  render();
+  FullScreenPanel::show();
   
   while (true) {
     int ch = getch();
@@ -152,28 +185,35 @@ int MenuPanel::promptSelection() {
 
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32
-      handleResize();
+      FullScreenPanel::handleResize();
 #else
       wclear(win);
-      show();
+      FullScreenPanel::show();
 #endif
       continue;
     }
 
     if (ch == KEY_UP) {
-      if (pointerIndex > 0)
-        pointerIndex--;
-      else
-        pointerIndex = 0;
-      render();
+      if ((int) options.size() > 0) {
+        if (pointerIndex > 0)
+          pointerIndex--;
+        else
+          pointerIndex = (int) options.size() - 1;
+      }
     } else if (ch == KEY_DOWN) {
-      if (pointerIndex < options.size() - 1) pointerIndex++;
-      render();
+      if ((int) options.size() > 0) {
+        if (pointerIndex < options.size() - 1)
+          pointerIndex++;
+        else
+          pointerIndex = 0;
+      }
     } else if (ch == 27 || ch == '\b' || ch == KEY_BACKSPACE || ch == 'q' ||
                ch == 'Q' || ch == 3) {
       return -1;
     } else if (ch == '\n') {
-      return pointerIndex;
+      if (options.empty()) return -1;
+      return (int) pointerIndex;
     }
+    renderMenuItems();
   }
 }

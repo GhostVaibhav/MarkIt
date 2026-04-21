@@ -1,5 +1,7 @@
 #pragma once
 #include <memory>
+#include <atomic>
+#include <condition_variable>
 
 #include "AppConfig.h"
 #include "BackgroundSyncService.h"
@@ -44,4 +46,9 @@ class Application : public ISyncObserver {
   BackgroundSyncService bgSyncService;
 
   std::string currentPantryId;
+
+  // Used by background sync to wake the main loop
+  std::mutex uiMtx;
+  std::condition_variable uiCv;
+  std::atomic<bool> syncUpdatePending{false};
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -27,5 +28,6 @@ class TodoManager {
  private:
   TodoDBManager todoDBManager;
   std::optional<User> currentUser;
+  mutable std::recursive_mutex todoMtx;
   void refreshTodos();
 };

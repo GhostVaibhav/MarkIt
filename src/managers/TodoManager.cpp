@@ -7,15 +7,21 @@
 TodoManager::TodoManager(const std::string& dbPath) : todoDBManager(dbPath) {}
 
 void TodoManager::setCurrentUser(const User& user) {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   spdlog::info("TodoManager: Bound active user '{}'", user.name);
   currentUser = user;
   refreshTodos();
 }
 
 void TodoManager::refreshTodos() {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   if (currentUser) {
-    todos = todoDBManager.getTodos(*currentUser);
-    spdlog::info("TodoManager: Refreshed {} todos from DB cache", todos.size());
+    try {
+      todos = todoDBManager.getTodos(*currentUser);
+      spdlog::info("TodoManager: Refreshed {} todos from DB cache", todos.size());
+    } catch (const std::exception& e) {
+      spdlog::error("TodoManager: Database error while refreshing todos: {}", e.what());
+    }
   } else {
     todos.clear();
     spdlog::info("TodoManager: Cleared memory cache (no bound user)");
@@ -23,6 +29,7 @@ void TodoManager::refreshTodos() {
 }
 
 bool TodoManager::addTodo(const Todo& todo) {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   if (!currentUser || !validate(todo)) return false;
   if (todoDBManager.addTodo(*currentUser, todo)) {
     todos.push_back(todo);
@@ -35,6 +42,7 @@ bool TodoManager::addTodo(const Todo& todo) {
 }
 
 bool TodoManager::removeTodo(const Todo& todo) {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   if (!currentUser) return false;
   if (todoDBManager.removeTodo(*currentUser, todo)) {
     auto it = std::remove_if(todos.begin(), todos.end(),
@@ -50,6 +58,7 @@ bool TodoManager::removeTodo(const Todo& todo) {
 }
 
 bool TodoManager::toggleTodo(const Todo& todo) {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   if (!currentUser) return false;
 
   Todo updatedTodo = todo;
@@ -70,6 +79,7 @@ bool TodoManager::toggleTodo(const Todo& todo) {
 }
 
 std::vector<Todo> TodoManager::getAllTodos() {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   refreshTodos();
   return todos;
 }
@@ -79,6 +89,7 @@ bool TodoManager::validate(const Todo& todo) const {
 }
 
 std::optional<Todo> TodoManager::findById(const std::string& id) {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   auto it = std::find_if(todos.begin(), todos.end(),
                          [&](const Todo& t) { return t.id == id; });
   if (it != todos.end()) return *it;
@@ -86,6 +97,7 @@ std::optional<Todo> TodoManager::findById(const std::string& id) {
 }
 
 std::vector<Todo> TodoManager::search(const std::string& query) {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
   std::vector<Todo> results;
   for (const auto& t : todos) {
     if (t.name.find(query) != std::string::npos ||

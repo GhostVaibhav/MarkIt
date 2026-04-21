@@ -27,9 +27,9 @@ Application::~Application() {
 void Application::initCurses() {
 #ifdef _WIN32
   ttytype[0] = 25;
-  ttytype[1] = 255;
+  ttytype[1] = static_cast<char>(255);
   ttytype[2] = 80;
-  ttytype[3] = 255;
+  ttytype[3] = static_cast<char>(255);
 #endif
   initscr();
   cbreak();
@@ -308,9 +308,20 @@ bool Application::mainLoop() {
   keypad(stdscr, TRUE);
   int selectedTodo = 0;
   int scrollOffset = 0;
+  bool needFullRender = true;
+  bool needDataRefresh = true;
+  std::vector<Todo> todos;
 
   while (true) {
-    auto todos = todoManager.getAllTodos();
+    if (needDataRefresh || syncUpdatePending) {
+      todos = todoManager.getAllTodos();
+      needDataRefresh = false;
+
+      // Bound selection after data change
+      if (selectedTodo >= (int)todos.size()) {
+        selectedTodo = todos.empty() ? 0 : (int)todos.size() - 1;
+      }
+    }
 
     int comp = 0;
     for (const auto& t : todos)
@@ -334,9 +345,41 @@ bool Application::mainLoop() {
     ui->pantryConnectPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
     ui->mainMenuPanel.setSelectedIndex(selectedTodo);
     ui->mainMenuPanel.setScroll(scrollOffset);
-    ui->mainMenuPanel.show();
 
+    if (needFullRender) {
+      ui->mainMenuPanel.show();
+      needFullRender = false;
+    }
+
+    // Non-blocking input: check for a key, if none, wait on CV
+    nodelay(stdscr, TRUE);
     int ch = getch();
+
+    if (ch == ERR) {
+      // No key pressed — check if background sync woke us
+      if (syncUpdatePending.exchange(false)) {
+        // Background sync completed — just refresh the stats counter
+        {
+          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+          sync = syncManager->getSyncStatus();
+        }
+        ui->mainMenuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+        ui->mainMenuPanel.renderStats();
+        continue;
+      }
+
+      // Sleep efficiently until either a sync update or a short timeout
+      // (short timeout so we can poll getch again for keyboard input)
+      {
+        std::unique_lock<std::mutex> lk(uiMtx);
+        uiCv.wait_for(lk, std::chrono::milliseconds(100));
+      }
+      continue;
+    }
+
+    // Restore blocking mode for sub-panel prompts
+    nodelay(stdscr, FALSE);
+
     if (ch == 27 || ch == 'q' || ch == 'Q' || ch == 3) {
       return false;
     } else if (ch == KEY_UP) {
@@ -351,6 +394,14 @@ bool Application::mainLoop() {
       if (selectedTodo < scrollOffset) scrollOffset = selectedTodo;
       if (selectedTodo >= scrollOffset + visRows) scrollOffset = selectedTodo - visRows + 1;
       if (scrollOffset < 0) scrollOffset = 0;
+    }
+
+    if (ch == KEY_UP || ch == KEY_DOWN) {
+      // Only redraw the list, not the entire screen
+      ui->mainMenuPanel.setSelectedIndex(selectedTodo);
+      ui->mainMenuPanel.setScroll(scrollOffset);
+      ui->mainMenuPanel.renderList();
+      continue;
     }
 
     if (ch == '\n') {
@@ -380,32 +431,31 @@ bool Application::mainLoop() {
                 std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
                 syncManager->recomputeData(todoManager.getAllTodos());
               }
-              todos = todoManager.getAllTodos();
+              needDataRefresh = true;
             } else if (choice == 1) { // Delete
               todoManager.removeTodo(todos[selectedTodo]);
               {
                 std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
                 syncManager->recomputeData(todoManager.getAllTodos());
               }
-              todos = todoManager.getAllTodos();
-              if (selectedTodo >= (int)todos.size() - 1) selectedTodo--;
-              if (selectedTodo < 0) selectedTodo = 0;
+              needDataRefresh = true;
               stayInDetail = false;
             }
           }
         }
+        needFullRender = true;
       }
     } else if (ch == 'd' || ch == KEY_DC || ch == KEY_BACKSPACE || ch == '\b') {
       if (!todos.empty() && selectedTodo >= 0 &&
           selectedTodo < (int)todos.size()) {
         todoManager.removeTodo(todos[selectedTodo]);
-        if (selectedTodo >= (int)todos.size() - 1) selectedTodo--;
-        if (selectedTodo < 0) selectedTodo = 0;
         {
           std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
           syncManager->recomputeData(todoManager.getAllTodos());
         }
+        needDataRefresh = true;
       }
+      needFullRender = true;
     } else if (ch == 'm' || ch == 'M') {
       bool pantryIdPopulated = userManager.getCurrentUser()->pantryId != "";
 
@@ -427,6 +477,7 @@ bool Application::mainLoop() {
 
       if (!pantryIdPopulated) {
         if (offlineOptionHandling(choice)) {
+          needDataRefresh = true;
         } else if (choice == 2) {
           bgSyncService.stop();
           userManager.clearSession();
@@ -434,20 +485,27 @@ bool Application::mainLoop() {
         }
       } else {
         if (onlineOptionHandling(choice)) {
+          needDataRefresh = true;
+        } else if (choice == 3) {
+          // Refresh
+          needDataRefresh = true;
         } else if (choice == 4) {
           // Toggle auto-sync
           bgSyncService.toggle();
         } else if (choice == 5) {
-          // Edit Pantry link (was index 4)
-          onlineOptionHandling(5);  // reuse existing pantry-edit logic at old index 4
+          // Edit Pantry link
+          onlineOptionHandling(5);
+          needDataRefresh = true;
         } else if (choice == 6) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
         }
       }
+      needFullRender = true;
     } else if (ch == KEY_RESIZE) {
       this->resizeEvent();
+      needFullRender = false; // resizeEvent already did a full render
       continue;
     }
   }
@@ -499,9 +557,8 @@ int Application::run() {
 }
 
 void Application::onSyncStatusChanged(const SyncStatus& status) {
-  // The background thread updates the SyncManager, which then notifies us.
-  // Since we use ungetch(KEY_RESIZE) in the background thread to wake up getch(),
-  // we don't strictly need to do anything here beside logging or internal state tracking.
-  // This is a placeholder for any reactive logic needed on the UI thread side.
-  spdlog::info("Application: Sync status observer notified");
+  // Set the flag and wake the main loop so it can do a partial stats refresh
+  status;
+  syncUpdatePending = true;
+  uiCv.notify_one();
 }

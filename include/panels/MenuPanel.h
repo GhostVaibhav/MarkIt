@@ -12,6 +12,7 @@ class MenuPanel : public FullScreenPanel {
   explicit MenuPanel(WINDOW* win);
   ~MenuPanel();
   void render() override;
+  void renderMenuItems();
   int promptSelection();
 
   int getMinWidth() const override { return Dimensions::MenuMinWidth; }

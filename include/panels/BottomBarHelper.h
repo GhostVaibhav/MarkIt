@@ -26,7 +26,7 @@ inline WINDOW *drawBottomBar(
 
     if (has_colors()) wattron(bar, COLOR_PAIR(6));
     mvwprintw(bar, 0, currentX, " %s ", k.first.c_str());
-    currentX += k.first.length() + 2;
+    currentX += static_cast<int>(k.first.length()) + 2;
 
     if (has_colors()) {
       wattroff(bar, COLOR_PAIR(6));
@@ -38,7 +38,7 @@ inline WINDOW *drawBottomBar(
     if (currentX < bar_w) {
       mvwprintw(bar, 0, currentX, " %s ", k.second.c_str());
     }
-    currentX += k.second.length() + 2;
+    currentX += static_cast<int>(k.second.length()) + 2;
 
     if (has_colors())
       wattroff(bar, COLOR_PAIR(7));

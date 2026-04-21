@@ -58,9 +58,6 @@ void TodoDetailPanel::render() {
 #endif
   }
 
-  wclear(win);
-  wrefresh(win);
-
   recreateWindows();
 
   wclear(todoUserName);
@@ -139,7 +136,7 @@ void TodoDetailPanel::render() {
     charIndex += cw_max_x - 10;
   }
 
-  refreshKeyBar({
+  FullScreenPanel::refreshKeyBar({
     {"m/M", "Menu"},
     {"Esc/q/Q", "Back"},
     {"^C", "Exit"}
@@ -157,10 +154,10 @@ TodoDetailAction TodoDetailPanel::promptAction() {
     
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32
-      handleResize();
+      FullScreenPanel::handleResize();
 #else
       wclear(win);
-      show();
+      FullScreenPanel::show();
 #endif
       continue;
     }

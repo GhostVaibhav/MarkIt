@@ -55,9 +55,6 @@ void AddTodoPanel::render() {
 #endif
   }
 
-  wclear(win);
-  wrefresh(win);
-
   recreateWindows();
 
   wclear(titleWin);
@@ -106,7 +103,7 @@ void AddTodoPanel::render() {
   wrefresh(titleWin);
   wrefresh(contentWin);
 
-  refreshKeyBar({
+  FullScreenPanel::refreshKeyBar({
     {"Enter", "Next field"},
     {"^C", "Exit"}
   });
@@ -122,10 +119,10 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
   if (start_y >= getmaxy(contentWin)) start_y = getmaxy(contentWin) - 1;
 
   // Set initial cursor
-  int start_x = 2 + input.length();
+  size_t start_x = 2 + input.length();
   if (start_x >= getmaxx(contentWin)) start_x = getmaxx(contentWin) - 1;
   
-  wmove(contentWin, start_y, start_x);
+  wmove(contentWin, start_y, (int) start_x);
   wrefresh(contentWin);
 
   while ((ch = wgetch(contentWin)) != '\n') {
@@ -136,19 +133,19 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
       else desc = input;
 
 #ifdef _WIN32
-      this->handleResize();
+      FullScreenPanel::handleResize();
 #else
       wclear(win);
-      this->show();
+      FullScreenPanel::show();
 #endif
 
       start_y = isNameField ? 3 : 6;
       if (start_y >= getmaxy(contentWin)) start_y = getmaxy(contentWin) - 1;
 
-      int cur_x = 2 + input.length();
+      size_t cur_x = 2 + input.length();
       if (cur_x >= getmaxx(contentWin)) cur_x = getmaxx(contentWin) - 1;
 
-      wmove(contentWin, start_y, cur_x);
+      wmove(contentWin, start_y, (int) cur_x);
       wrefresh(contentWin);
       continue;
     }
@@ -187,7 +184,7 @@ void AddTodoPanel::promptInput() {
   name = "";
   desc = "";
 
-  render();
+  FullScreenPanel::show();
 
   name = captureInput(true);
   desc = captureInput(false);

@@ -154,6 +154,7 @@ void SyncManager::applyRemoteUpdate(const nlohmann::json& remoteData,
                                      const std::string& userId,
                                      const std::string& hash,
                                      const std::vector<Todo>& todos) {
+  userId;
   if (remoteData.empty()) return;
 
   cachedRemoteData = remoteData;

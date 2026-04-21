@@ -62,7 +62,7 @@ void LoginPanel::recreateWindows() {
 
 void LoginPanel::render() {
   if (isLoading) {
-    clearKeyBar();
+    FullScreenPanel::clearKeyBar();
     loadingPanel.render();
     return;
   }
@@ -78,10 +78,7 @@ void LoginPanel::render() {
 #endif
   }
 
-  wclear(win);
-  wrefresh(win);
-
-  loadingPanel.clearKeyBar();
+  FullScreenPanel::clearKeyBar();
 
   recreateWindows();
 
@@ -121,7 +118,7 @@ void LoginPanel::render() {
 
     wattroff(passwordWindow, COLOR_PAIR(2));
   } else if (password.empty()) {
-    int pw_x = (getmaxx(passwordWindow) - pwPrompt.length()) / 2;
+    int pw_x = (getmaxx(passwordWindow) - (int) pwPrompt.length()) / 2;
     if (pw_x < 0) pw_x = 0;
 
     mvwprintw(passwordWindow, getmaxy(passwordWindow) / 2, pw_x, "%s",
@@ -133,24 +130,24 @@ void LoginPanel::render() {
   wrefresh(userNameWindow);
   wrefresh(passwordWindow);
 
-  refreshKeyBar({{"Enter", "Next field"}, {"^C", "Exit"}});
+  FullScreenPanel::refreshKeyBar({{"Enter", "Next field"}, {"^C", "Exit"}});
 }
 
 // local resizeEvent removed
 
-void LoginPanel::captureInput(WINDOW* win, std::string& target, bool masked) {
+void LoginPanel::captureInput(WINDOW* window, std::string& target, bool masked) {
   int ch;
-  keypad(win, TRUE);
+  keypad(window, TRUE);
 
-  while ((ch = wgetch(win)) != '\n') {
+  while ((ch = wgetch(window)) != '\n') {
     if (ch == ERR) continue;
 
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32
-      handleResize();
+      FullScreenPanel::handleResize();
 #else
-      wclear(win);
-      show();
+      wclear(window);
+      FullScreenPanel::show();
 #endif
       continue;
     }
@@ -159,18 +156,18 @@ void LoginPanel::captureInput(WINDOW* win, std::string& target, bool masked) {
       if (!target.empty()) {
         target.pop_back();
         int y, x;
-        getyx(win, y, x);
+        getyx(window, y, x);
         if (x > 0) {
-          mvwaddch(win, y, x - 1, ' ');
-          wmove(win, y, x - 1);
+          mvwaddch(window, y, x - 1, ' ');
+          wmove(window, y, x - 1);
         }
       }
     } else if (isprint(ch)) {
       target += (char)ch;
-      if (!masked) waddch(win, ch);
+      if (!masked) waddch(window, ch);
     }
 
-    wrefresh(win);
+    wrefresh(window);
   }
 }
 

@@ -1,5 +1,4 @@
 #include "BackgroundSyncService.h"
-#include <curses.h>
 #include <spdlog/spdlog.h>
 
 BackgroundSyncService::BackgroundSyncService() {}
@@ -33,7 +32,6 @@ void BackgroundSyncService::stop() {
 bool BackgroundSyncService::toggle() {
   enabled = !enabled;
   spdlog::info("BackgroundSyncService: auto-sync {}", enabled ? "enabled" : "disabled");
-  // Wake up the worker so it can check the new state immediately
   cv.notify_all();
   return enabled;
 }
@@ -54,7 +52,7 @@ void BackgroundSyncService::worker() {
     if (!running) break;
     if (!enabled) continue;
 
-    // 1. Fetch info under lock
+    // 1. Fetch info under lock (quick)
     std::string userId;
     std::string userHash;
     std::vector<Todo> todos;
@@ -69,7 +67,7 @@ void BackgroundSyncService::worker() {
 
     if (userId.empty()) continue;
 
-    // 2. Perform IO UNLOCKED (Slow part)
+    // 2. Perform IO UNLOCKED (slow network call)
     nlohmann::json remoteData;
     try {
         remoteData = syncManager->getFacade().loadBucket(userId);
@@ -78,16 +76,14 @@ void BackgroundSyncService::worker() {
         continue;
     }
 
-    // 3. Apply update under lock (Quick part)
+    // 3. Apply update under lock (quick) — triggers notifyObservers()
     {
       std::lock_guard<std::mutex> lk(syncMtx);
       if (syncManager) {
         syncManager->applyRemoteUpdate(remoteData, userId, userHash, todos);
-        spdlog::info("BackgroundSyncService: refresh completed and status updated");
+        spdlog::info("BackgroundSyncService: refresh completed");
       }
     }
-
-    // 4. Signal UI thread to redraw
-    ungetch(KEY_RESIZE);
+    // Observer notification (from applyRemoteUpdate) wakes the UI via CV
   }
 }
