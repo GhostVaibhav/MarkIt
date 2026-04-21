@@ -119,10 +119,10 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
   if (start_y >= getmaxy(contentWin)) start_y = getmaxy(contentWin) - 1;
 
   // Set initial cursor
-  size_t start_x = 2 + input.length();
+  int start_x = 2 + (int)input.length();
   if (start_x >= getmaxx(contentWin)) start_x = getmaxx(contentWin) - 1;
   
-  wmove(contentWin, start_y, (int) start_x);
+  wmove(contentWin, start_y, start_x);
   wrefresh(contentWin);
 
   while ((ch = wgetch(contentWin)) != '\n') {
@@ -142,10 +142,10 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
       start_y = isNameField ? 3 : 6;
       if (start_y >= getmaxy(contentWin)) start_y = getmaxy(contentWin) - 1;
 
-      size_t cur_x = 2 + input.length();
+      int cur_x = 2 + (int)input.length();
       if (cur_x >= getmaxx(contentWin)) cur_x = getmaxx(contentWin) - 1;
 
-      wmove(contentWin, start_y, (int) cur_x);
+      wmove(contentWin, start_y, cur_x);
       wrefresh(contentWin);
       continue;
     }
@@ -155,6 +155,7 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
         input.pop_back();
         int y, x;
         getyx(contentWin, y, x);
+        (void)y;
         if (x > 2) { 
           mvwaddch(contentWin, y, x - 1, ' ');
           wmove(contentWin, y, x - 1);
@@ -163,6 +164,7 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
     } else if (isprint(ch)) {
       int y, x;
       getyx(contentWin, y, x);
+      (void)y;
       if (x < getmaxx(contentWin) - 2) { 
         input += (char)ch;
         waddch(contentWin, ch);

@@ -86,7 +86,7 @@ endif()
 add_executable (${PROJECT_NAME} ${srcs})
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall;-Wextra>
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall;-Wextra;-Wno-unknown-pragmas>
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 

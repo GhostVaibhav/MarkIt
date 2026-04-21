@@ -558,7 +558,7 @@ int Application::run() {
 
 void Application::onSyncStatusChanged(const SyncStatus& status) {
   // Set the flag and wake the main loop so it can do a partial stats refresh
-  status;
+  (void)status;
   syncUpdatePending = true;
   uiCv.notify_one();
 }

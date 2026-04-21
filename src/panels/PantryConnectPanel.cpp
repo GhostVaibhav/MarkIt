@@ -126,6 +126,7 @@ void PantryConnectPanel::promptInput() {
         apiKey.pop_back();
         int y, x;
         getyx(contentWin, y, x);
+        (void)y;
         if (x > 2) {
           mvwaddch(contentWin, y, x - 1, ' ');
           wmove(contentWin, y, x - 1);
@@ -134,6 +135,7 @@ void PantryConnectPanel::promptInput() {
     } else if (isprint(ch)) {
       int y, x;
       getyx(contentWin, y, x);
+      (void)y;
       if (x < getmaxx(contentWin) - 2 && apiKey.length() < 127) {
         apiKey += (char)ch;
         waddch(contentWin, ch);

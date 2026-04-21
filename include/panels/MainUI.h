@@ -11,6 +11,9 @@
 #include "WelcomePanel.h"
 
 class MainUI {
+ private:
+  WINDOW* win;
+
  public:
   explicit MainUI(WINDOW* win);
   void render();
@@ -23,7 +26,4 @@ class MainUI {
   AddTodoPanel addTodoPanel;
   PantryConnectPanel pantryConnectPanel;
   TodoDetailPanel todoDetailPanel;
-
- private:
-  WINDOW* win;
 };

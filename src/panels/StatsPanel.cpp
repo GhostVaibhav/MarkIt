@@ -19,6 +19,7 @@ void StatsPanel::setSyncStatus(int push, int pull) {
 void StatsPanel::render() {
   int max_y, max_x;
   getmaxyx(win, max_y, max_x);
+  (void)max_y;
 
   std::string stringPush = std::to_string(pendingPush);
   std::string stringPull = std::to_string(pendingPull);
