@@ -216,6 +216,9 @@ jobs:
         run: |
           apk upgrade
           apk add g++ cmake make curl-dev curl-static ncurses-dev ncurses-static nghttp2-static brotli-static openssl-libs-static zlib-static
+      - name: Remove shared libraries to force static linking
+        run: |
+          rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so*
       - name: Building static application
         run: |
           mkdir build && cd build
@@ -253,6 +256,7 @@ jobs:
             sh -c "
               apk update && apk upgrade &&
               apk add g++ cmake make curl-dev curl-static ncurses-dev ncurses-static nghttp2-static brotli-static openssl-libs-static zlib-static &&
+              rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so* &&
               mkdir -p build && cd build &&
               cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS='-static' -DCMAKE_FIND_LIBRARY_SUFFIXES='.a' &&
               cmake --build . --config Release
