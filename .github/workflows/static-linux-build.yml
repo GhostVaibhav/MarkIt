@@ -1,0 +1,87 @@
+name: Static Linux Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - development
+    paths:
+      - "**.cpp"
+      - "**.h"
+      - "**.hpp"
+      - ".github/workflows/static-linux-build.yml"
+
+jobs:
+  build:
+    name: Static Build - ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            platform: linux/amd64
+          - arch: aarch64
+            platform: linux/arm64
+          - arch: armv7
+            platform: linux/arm/v7
+          - arch: i686
+            platform: linux/386
+          - arch: riscv64
+            platform: linux/riscv64
+          - arch: ppc64le
+            platform: linux/ppc64le
+          - arch: s390x
+            platform: linux/s390x
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+          token: ${{ secrets.SUBMODULE_KEY }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build static MarkIt for ${{ matrix.arch }}
+        run: |
+          docker run --rm --platform ${{ matrix.platform }} \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            alpine:latest \
+            sh -c '
+              apk update && apk upgrade &&
+              apk add g++ cmake make pkgconf \
+                curl-dev curl-static \
+                ncurses-dev ncurses-static \
+                nghttp2-static nghttp3-static ngtcp2-static \
+                brotli-static openssl-libs-static zlib-static \
+                libpsl-static libidn2-static libunistring-static zstd-static &&
+              rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so* &&
+              CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl) &&
+              mkdir -p build && cd build &&
+              cmake .. -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,--start-group" \
+                -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+                -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group" &&
+              cmake --build . --config Release
+            '
+
+      - name: Verify static linking
+        run: |
+          docker run --rm --platform ${{ matrix.platform }} \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            alpine:latest \
+            sh -c "ldd build/MarkIt && echo 'ERROR: Binary is dynamically linked!' && exit 1 || echo 'Binary is statically linked (ldd reports not a dynamic executable)'"
+
+      - name: Prepare artifact
+        run: |
+          cp build/MarkIt MarkIt-linux-${{ matrix.arch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarkIt-linux-${{ matrix.arch }}
+          path: MarkIt-linux-${{ matrix.arch }}
