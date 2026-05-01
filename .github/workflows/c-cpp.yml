@@ -215,14 +215,22 @@ jobs:
       - name: Getting prerequisites
         run: |
           apk upgrade
-          apk add g++ cmake make curl-dev curl-static ncurses-dev ncurses-static nghttp2-static brotli-static openssl-libs-static zlib-static
+          apk add g++ cmake make pkgconf \
+            curl-dev curl-static \
+            ncurses-dev ncurses-static \
+            nghttp2-static brotli-static openssl-libs-static zlib-static \
+            c-ares-static libpsl-static libidn2-static libunistring-static zstd-static
       - name: Remove shared libraries to force static linking
         run: |
           rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so*
       - name: Building static application
         run: |
+          CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl)
           mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-static" -DCMAKE_FIND_LIBRARY_SUFFIXES=".a"
+          cmake .. -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXE_LINKER_FLAGS="-static -Wl,--start-group" \
+            -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+            -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group"
           cmake --build . --config Release
       - name: Verify static linking
         run: |
@@ -253,14 +261,22 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             arm64v8/alpine:latest \
-            sh -c "
+            sh -c '
               apk update && apk upgrade &&
-              apk add g++ cmake make curl-dev curl-static ncurses-dev ncurses-static nghttp2-static brotli-static openssl-libs-static zlib-static &&
+              apk add g++ cmake make pkgconf \
+                curl-dev curl-static \
+                ncurses-dev ncurses-static \
+                nghttp2-static brotli-static openssl-libs-static zlib-static \
+                c-ares-static libpsl-static libidn2-static libunistring-static zstd-static &&
               rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so* &&
+              CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl) &&
               mkdir -p build && cd build &&
-              cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS='-static' -DCMAKE_FIND_LIBRARY_SUFFIXES='.a' &&
+              cmake .. -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_EXE_LINKER_FLAGS="-static -Wl,--start-group" \
+                -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+                -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group" &&
               cmake --build . --config Release
-            "
+            '
       - name: Verify static linking
         run: |
           docker run --rm --platform linux/arm64 \
