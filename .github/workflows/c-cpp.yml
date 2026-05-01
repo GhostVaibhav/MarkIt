@@ -219,7 +219,7 @@ jobs:
             curl-dev curl-static \
             ncurses-dev ncurses-static \
             nghttp2-static brotli-static openssl-libs-static zlib-static \
-            c-ares-static libpsl-static libidn2-static libunistring-static zstd-static
+            libpsl-static libidn2-static libunistring-static zstd-static
       - name: Remove shared libraries to force static linking
         run: |
           rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so*
@@ -267,7 +267,7 @@ jobs:
                 curl-dev curl-static \
                 ncurses-dev ncurses-static \
                 nghttp2-static brotli-static openssl-libs-static zlib-static \
-                c-ares-static libpsl-static libidn2-static libunistring-static zstd-static &&
+                libpsl-static libidn2-static libunistring-static zstd-static &&
               rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so* &&
               CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl) &&
               mkdir -p build && cd build &&
