@@ -229,7 +229,7 @@ jobs:
           CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl)
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_EXE_LINKER_FLAGS="-static -Wl,--start-group" \
+            -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,--start-group" \
             -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
             -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group"
           cmake --build . --config Release
@@ -274,7 +274,7 @@ jobs:
               CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl) &&
               mkdir -p build && cd build &&
               cmake .. -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_EXE_LINKER_FLAGS="-static -Wl,--start-group" \
+                -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,--start-group" \
                 -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
                 -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group" &&
               cmake --build . --config Release
