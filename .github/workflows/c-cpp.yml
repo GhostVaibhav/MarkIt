@@ -218,7 +218,8 @@ jobs:
           apk add g++ cmake make pkgconf \
             curl-dev curl-static \
             ncurses-dev ncurses-static \
-            nghttp2-static brotli-static openssl-libs-static zlib-static \
+            nghttp2-static nghttp3-static ngtcp2-static \
+            brotli-static openssl-libs-static zlib-static \
             libpsl-static libidn2-static libunistring-static zstd-static
       - name: Remove shared libraries to force static linking
         run: |
@@ -266,7 +267,8 @@ jobs:
               apk add g++ cmake make pkgconf \
                 curl-dev curl-static \
                 ncurses-dev ncurses-static \
-                nghttp2-static brotli-static openssl-libs-static zlib-static \
+                nghttp2-static nghttp3-static ngtcp2-static \
+                brotli-static openssl-libs-static zlib-static \
                 libpsl-static libidn2-static libunistring-static zstd-static &&
               rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so* &&
               CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl) &&
