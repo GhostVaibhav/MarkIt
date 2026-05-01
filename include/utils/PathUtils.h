@@ -6,7 +6,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <climits.h>
+#include <limits.h>
 #include <cstdlib>
 #include <unistd.h>
 #endif
