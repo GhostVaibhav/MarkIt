@@ -12,13 +12,11 @@ void LogoPanel::render() {
   mvwprintw(win, x + 4, y, R"(/_/  /_/)");
   wattroff(win, COLOR_PAIR(3));
   wattron(win, COLOR_PAIR(4));
-  mvwprintw(win, x + 1, y + 7, R"()");
   mvwprintw(win, x + 2, y + 10, R"(__ _)");
   mvwprintw(win, x + 3, y + 9, R"( _ `)");
   mvwprintw(win, x + 4, y + 8, R"(\_,_)");
   wattroff(win, COLOR_PAIR(4));
   wattron(win, COLOR_PAIR(4));
-  mvwprintw(win, x + 1, y + 14, R"()");
   mvwprintw(win, x + 2, y + 14, R"(____)");
   mvwprintw(win, x + 3, y + 13, R"(/ __)");
   mvwprintw(win, x + 4, y + 12, R"(/_/ )");
