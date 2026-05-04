@@ -94,11 +94,11 @@ jobs:
         run: |
           mkdir -p release
           cp build_new/MarkIt release/MarkIt-linux-${{ matrix.arch }}
-          cp build_new/updater/markit_updater release/markit_updater
+          cp build_new/markit_updater release/markit_updater
 
           mkdir -p release_old
           cp build_old/MarkIt release_old/MarkIt-linux-${{ matrix.arch }}
-          cp build_old/updater/markit_updater release_old/markit_updater
+          cp build_old/markit_updater release_old/markit_updater
 
           cp build_new/tools/markit_patcher markit_patcher
 
