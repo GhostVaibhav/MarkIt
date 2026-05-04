@@ -11,6 +11,7 @@ on:
       - "**.cpp"
       - "**.h"
       - "**.hpp"
+      - "**.txt"
       - ".github/workflows/static-linux-build.yml"
 
 jobs:
