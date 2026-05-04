@@ -119,13 +119,13 @@ jobs:
             MarkIt-linux-${{ matrix.arch }} markit_updater
 
       - name: Upload artifact for release
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: MarkIt-linux-${{ matrix.arch }}
           path: MarkIt-linux-${{ matrix.arch }}.tar.gz
+          archive: false
 
       - name: Upload artifact for patches
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: patches-linux-${{ matrix.arch }}
           path: patches-linux-${{ matrix.arch }}.tar.gz
+          archive: false
