@@ -67,12 +67,12 @@ jobs:
                 -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,--start-group" \
                 -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
                 -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group" &&
-              cmake --build . --config Release -- -j16
+              cmake --build . --config Release -- -j16 &&
 
-              cd ..
-              git config --global --add safe.directory /workspace
-              latest_tag=$(git describe --tags --abbrev=0)
-              git reset --hard $latest_tag
+              cd .. &&
+              git config --global --add safe.directory /workspace &&
+              latest_tag=$(git describe --tags --abbrev=0) &&
+              git reset --hard $latest_tag &&
 
               mkdir -p build_old && cd build_old &&
               cmake .. -DCMAKE_BUILD_TYPE=Release \
