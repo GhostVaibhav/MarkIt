@@ -1,6 +1,40 @@
 #include "Application.h"
+#include "config/AppConfig.h"
+#include "rang/rang.hpp"
+#include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+void checkUpdater() {
+    AppConfig config;
+    fs::path updaterPath = config.updaterPath;
+    fs::path updaterNewPath = updaterPath.string() + ".new";
+
+    // 1. Swap .new if it exists
+    if (fs::exists(updaterNewPath)) {
+        try {
+            if (fs::exists(updaterPath)) {
+                fs::remove(updaterPath);
+            }
+            fs::rename(updaterNewPath, updaterPath);
+        } catch (const std::exception& e) {
+            std::cerr << rang::fg::red << "Failed to swap updater binary: " << e.what() << rang::style::reset << "\n";
+        }
+    }
+
+    // 2. Verify updater exists
+    if (!fs::exists(updaterPath)) {
+        std::cerr << rang::fg::red << "\nFATAL ERROR: Updater executable not found at:\n"
+                  << updaterPath.string() << "\n\n"
+                  << "The MarkIt application must be packaged with its updater.\n"
+                  << "Please reinstall the application." << rang::style::reset << "\n";
+        exit(1);
+    }
+}
 
 int main() {
+  checkUpdater();
   Application app;
   return app.run();
 }

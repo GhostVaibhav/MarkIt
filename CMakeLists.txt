@@ -5,6 +5,7 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR} CACHE STRING "Final install locatio
 set(CMAKE ${CMAKE_COMMAND})
 set(CMAKE_MAJOR_VERSION 0)
 set(CMAKE_MINOR_VERSION 1)
+set(CMAKE_PATCH_VERSION 0)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	message(FATAL_ERROR “${BoldRed}In-source build detected!${ColourReset}”)
@@ -48,11 +49,11 @@ set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
 set(USE_WIN32_LDAP ON CACHE BOOL "" FORCE)
 set(ENABLE_THREADED_RESOLVER OFF CACHE BOOL "" FORCE)
 set(USE_LIBIDN2 OFF CACHE BOOL "" FORCE)
-add_subdirectory(deps/PDCurses SYSTEM)
-add_subdirectory(deps/curl SYSTEM)
+add_subdirectory(deps/PDCurses)
+add_subdirectory(deps/curl)
 endif()
-add_subdirectory(deps/spdlog SYSTEM)
-add_subdirectory(deps/json SYSTEM)
+add_subdirectory(deps/spdlog)
+add_subdirectory(deps/json)
 
 file(GLOB srcs
           "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -64,6 +65,7 @@ file(GLOB srcs
           "${PROJECT_SOURCE_DIR}/src/commands/*.cpp"
           "${PROJECT_SOURCE_DIR}/src/panels/*.cpp"
           "${PROJECT_SOURCE_DIR}/src/online/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/update/*.cpp"
           "${PROJECT_SOURCE_DIR}/src/app/*.cpp"
           "${PROJECT_SOURCE_DIR}/src/utils/*.cpp"
 )
@@ -100,6 +102,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     "include/commands"
     "include/panels"
     "include/online"
+    "include/update"
     "include/app"
     "include/enums"
     "${CMAKE_SOURCE_DIR}/deps/tabulate/single_include/tabulate"
@@ -127,11 +130,6 @@ else()
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT Application)
-if(WIN32)
-  install(FILES "${PROJECT_SOURCE_DIR}/deps/curl/library/bin/libcurl.dll" DESTINATION bin COMPONENT Application)
-endif()
-
-include(InstallRequiredSystemLibraries)
 
 if(WIN32)
   set(CPACK_GENERATOR "NSIS")
@@ -154,3 +152,7 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MAJOR_VERSION})
 set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MINOR_VERSION})
 
 include(CPack)
+
+# Build the external updater binary
+add_subdirectory(updater)
+add_subdirectory(tools/patcher)

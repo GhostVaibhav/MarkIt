@@ -31,6 +31,9 @@ void MainMenuPanel::setCredentials(const std::string& username,
   curUser = username;
   pantryId = id;
 }
+void MainMenuPanel::setUpdateVersion(const std::string& version) {
+  updateVersion = version;
+}
 
 std::string MainMenuPanel::convertTimeToString(int epoch) const {
   std::time_t temp = epoch;
@@ -194,12 +197,18 @@ void MainMenuPanel::render() {
     statsPanel->render();
   }
 
-  FullScreenPanel::refreshKeyBar(
-                {{"m/M", "Menu"},
-                 {"Enter", "Detail"},
-                 {"d/D", "Delete"},
-                 {"q/Q/^C", "Exit"},
-                 {"Up/Dn", "Move"}});
+  std::vector<std::pair<std::string, std::string>> keyBarItems = {
+      {"m/M", "Menu"},
+      {"Enter", "Detail"},
+      {"d/D", "Delete"},
+      {"q/Q/^C", "Exit"},
+      {"Up/Dn", "Move"}};
+
+  if (!updateVersion.empty()) {
+    keyBarItems.push_back({"u/U", "Update v" + updateVersion});
+  }
+
+  FullScreenPanel::refreshKeyBar(keyBarItems);
 
   wrefresh(todoUserName);
   wrefresh(todoWindow);

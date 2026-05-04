@@ -69,34 +69,45 @@ main() {
     download "$URL" "$TARFILE" || fail "Download failed. Check your internet connection or if the release exists for ${ARCH}."
     ok "Downloaded successfully"
 
-    # Extract binary from archive
+    # Extract binaries from archive
     info "Extracting..."
     tar xzf "$TARFILE" -C "$TMPDIR"
 
-    # Find the binary (it may be at the top level or nested)
+    # Find the main binary
     EXTRACTED="${TMPDIR}/${ASSET}"
     [ -f "$EXTRACTED" ] || EXTRACTED=$(find "$TMPDIR" -name "${ASSET}" -type f | head -1)
     [ -f "$EXTRACTED" ] || EXTRACTED=$(find "$TMPDIR" -name "MarkIt" -type f | head -1)
     [ -f "$EXTRACTED" ] || fail "Could not find MarkIt binary inside the downloaded archive."
-    ok "Extracted binary"
+
+    # Find the updater binary
+    UPDATER=$(find "$TMPDIR" -name "markit_updater" -type f | head -1)
+
+    ok "Extracted binaries"
 
     # Make executable
     chmod +x "$EXTRACTED"
+    [ -f "$UPDATER" ] && chmod +x "$UPDATER"
 
     # Install — try /usr/local/bin first, fall back to ~/.local/bin
     if [ -w "$INSTALL_DIR" ]; then
         mv "$EXTRACTED" "${INSTALL_DIR}/${BINARY_NAME}"
+        [ -f "$UPDATER" ] && mv "$UPDATER" "${INSTALL_DIR}/markit_updater"
         ok "Installed to ${INSTALL_DIR}/${BINARY_NAME}"
     elif command -v sudo >/dev/null 2>&1; then
         info "Requesting sudo to install to ${INSTALL_DIR}..."
         sudo mv "$EXTRACTED" "${INSTALL_DIR}/${BINARY_NAME}"
         sudo chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
+        if [ -f "$UPDATER" ]; then
+            sudo mv "$UPDATER" "${INSTALL_DIR}/markit_updater"
+            sudo chmod +x "${INSTALL_DIR}/markit_updater"
+        fi
         ok "Installed to ${INSTALL_DIR}/${BINARY_NAME}"
     else
         # Fallback to ~/.local/bin
         INSTALL_DIR="${HOME}/.local/bin"
         mkdir -p "$INSTALL_DIR"
         mv "$EXTRACTED" "${INSTALL_DIR}/${BINARY_NAME}"
+        [ -f "$UPDATER" ] && mv "$UPDATER" "${INSTALL_DIR}/markit_updater"
         ok "Installed to ${INSTALL_DIR}/${BINARY_NAME}"
 
         # Check if ~/.local/bin is in PATH

@@ -1,5 +1,8 @@
 #include "Application.h"
 
+#include <cstdlib>
+#include <filesystem>
+
 #include <curses.h>
 
 #include <stdexcept>
@@ -12,6 +15,7 @@
 // Expose internal ttytype to match old PDCurses resize behavior if defined
 #ifdef _WIN32
 // PDCurses curses.h already exposes ttytype
+#include <process.h>
 #endif
 
 Application::Application()
@@ -19,6 +23,7 @@ Application::Application()
       todoManager(config.dbFile) {}
 
 Application::~Application() {
+  updateService.stop();
   bgSyncService.stop();
   if (ui) delete ui;
   endwin();
@@ -346,6 +351,13 @@ bool Application::mainLoop() {
     ui->mainMenuPanel.setSelectedIndex(selectedTodo);
     ui->mainMenuPanel.setScroll(scrollOffset);
 
+    // Pass update info to key bar
+    if (updateService.isUpdateReady()) {
+      ui->mainMenuPanel.setUpdateVersion(updateService.getUpdateInfo().latestVersion);
+    } else {
+      ui->mainMenuPanel.setUpdateVersion("");
+    }
+
     if (needFullRender) {
       ui->mainMenuPanel.show();
       needFullRender = false;
@@ -365,6 +377,16 @@ bool Application::mainLoop() {
         }
         ui->mainMenuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
         ui->mainMenuPanel.renderStats();
+        continue;
+      }
+
+      // Check if update service sent a notification
+      if (updateNotificationPending.exchange(false)) {
+        if (updateService.isUpdateReady()) {
+          // Show notification bar — handled in the key bar
+          // The user will see "u/U: Update" in the footer
+          needFullRender = true;
+        }
         continue;
       }
 
@@ -456,6 +478,12 @@ bool Application::mainLoop() {
         needDataRefresh = true;
       }
       needFullRender = true;
+    } else if (ch == 'u' || ch == 'U') {
+      // Apply staged update
+      if (updateService.isUpdateReady()) {
+        launchUpdaterAndExit();
+        return false;  // Won't reach here — launchUpdaterAndExit exits
+      }
     } else if (ch == 'm' || ch == 'M') {
       bool pantryIdPopulated = userManager.getCurrentUser()->pantryId != "";
 
@@ -466,10 +494,12 @@ bool Application::mainLoop() {
             ? "5. Disable auto-sync" : "5. Enable auto-sync";
         ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Push all changes",
                                       "3. Pull from the cloud", "4. Refresh",
-                                      syncLabel, "6. Edit Pantry link", "7. Logout"});
+                                      syncLabel, "6. Edit Pantry link",
+                                      "7. Check for updates", "8. Logout"});
       } else {
         ui->menuPanel.setMenuOptions(
-            {"1. Add a todo", "2. Connect to Pantry", "3. Logout"});
+            {"1. Add a todo", "2. Connect to Pantry",
+             "3. Check for updates", "4. Logout"});
       }
       ui->menuPanel.setSelectedIndex(0);
 
@@ -479,6 +509,11 @@ bool Application::mainLoop() {
         if (offlineOptionHandling(choice)) {
           needDataRefresh = true;
         } else if (choice == 2) {
+          // Check for updates
+          ui->loadingPanel.setLoadingText("Checking for updates...");
+          ui->loadingPanel.show();
+          updateService.triggerCheck();
+        } else if (choice == 3) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
@@ -497,6 +532,11 @@ bool Application::mainLoop() {
           onlineOptionHandling(5);
           needDataRefresh = true;
         } else if (choice == 6) {
+          // Check for updates
+          ui->loadingPanel.setLoadingText("Checking for updates...");
+          ui->loadingPanel.show();
+          updateService.triggerCheck();
+        } else if (choice == 7) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
@@ -517,6 +557,10 @@ int Application::run() {
   initCurses();
 
   ui = new MainUI(stdscr);
+
+  // Start background update service
+  updateService.addObserver(this);
+  updateService.start(config.version);
 
   while (true) {
     bgSyncService.stop();
@@ -561,4 +605,63 @@ void Application::onSyncStatusChanged(const SyncStatus& status) {
   (void)status;
   syncUpdatePending = true;
   uiCv.notify_one();
+}
+
+void Application::onUpdateStatusChanged(UpdateStatus status,
+                                        const std::string& version) {
+  (void)version;
+  if (status == UpdateStatus::Ready) {
+    updateNotificationPending = true;
+    uiCv.notify_one();
+  }
+}
+
+void Application::launchUpdaterAndExit() {
+  std::string stagedPath = updateService.getStagedBinaryPath();
+  if (stagedPath.empty()) {
+    spdlog::error("Application: No staged binary found for update");
+    return;
+  }
+
+  // Resolve current executable path
+  std::string currentExe;
+#ifdef _WIN32
+  wchar_t path[8192] = {0};
+  GetModuleFileNameW(NULL, path, 8192);
+  currentExe = std::filesystem::path(path).u8string();
+#else
+  char result[8192];
+  ssize_t count = readlink("/proc/self/exe", result, 8192);
+  currentExe = std::string(result, (count > 0) ? count : 0);
+#endif
+
+  std::string updaterPath = config.updaterPath;
+
+  spdlog::info("Application: Launching updater: {} --binary {} --staged {}",
+               updaterPath, currentExe, stagedPath);
+
+  // Shutdown cleanly
+  updateService.stop();
+  bgSyncService.stop();
+  if (ui) { delete ui; ui = nullptr; }
+  endwin();
+
+#ifdef _WIN32
+  // On Windows, spawn the updater asynchronously so this process can exit and unlock the binary
+  _spawnl(_P_NOWAIT, updaterPath.c_str(), "markit_updater",
+          "--binary", currentExe.c_str(),
+          "--staged", stagedPath.c_str(),
+          "--relaunch", NULL);
+  _exit(0);
+#else
+  // On Unix, exec replaces this process with the updater
+  execl(updaterPath.c_str(), updaterPath.c_str(),
+        "--binary", currentExe.c_str(),
+        "--staged", stagedPath.c_str(),
+        "--relaunch", nullptr);
+
+  // If exec fails, log and exit
+  spdlog::error("Application: execl failed for updater");
+  _exit(1);
+#endif
 }

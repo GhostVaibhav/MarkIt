@@ -45,7 +45,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      - name: Build static MarkIt for ${{ matrix.arch }}
+      - name: Build static MarkIt for ${{ matrix.arch }} for the latest version and the last version
         run: |
           docker run --rm --platform ${{ matrix.platform }} \
             -v ${{ github.workspace }}:/workspace \
@@ -61,7 +61,17 @@ jobs:
                 libpsl-static libidn2-static libunistring-static zstd-static &&
               rm -f /usr/lib/libcurl.so* /usr/lib/libncurses*.so* /usr/lib/libform*.so* /usr/lib/libpanel*.so* /usr/lib/libmenu*.so* &&
               CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl) &&
-              mkdir -p build && cd build &&
+              mkdir -p build_new && cd build_new &&
+              cmake .. -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,--start-group" \
+                -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+                -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group" &&
+              cmake --build . --config Release
+
+              latest_tag=$(git describe --tags --abbrev=0)
+              git reset --hard $latest_tag
+              cd ..
+              mkdir -p build_old && cd build_old &&
               cmake .. -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,--start-group" \
                 -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
@@ -75,14 +85,40 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             alpine:latest \
-            sh -c "ldd build/MarkIt && echo 'ERROR: Binary is dynamically linked!' && exit 1 || echo 'Binary is statically linked (ldd reports not a dynamic executable)'"
+            sh -c "ldd build_new/MarkIt && echo 'ERROR: Binary is dynamically linked!' && exit 1 || echo 'Binary is statically linked (ldd reports not a dynamic executable)'"
 
       - name: Prepare artifact
         run: |
-          cp build/MarkIt MarkIt-linux-${{ matrix.arch }}
+          mkdir -p release
+          cp build_new/MarkIt release/MarkIt-linux-${{ matrix.arch }}
+          cp build_new/updater/markit_updater release/markit_updater
 
-      - name: Upload artifact
+          mkdir -p release_old
+          cp build_old/MarkIt release_old/MarkIt-linux-${{ matrix.arch }}
+          cp build_old/updater/markit_updater release_old/markit_updater
+
+          cp build_new/tools/markit_patcher markit_patcher
+
+          mkdir -p patch_output
+          mkdir -p staging
+          ./markit_patcher "./build_old" "./build_new" "./patch_output"
+          cd patch_output
+          tar -czvf ../staging/patches-linux-${{ matrix.arch }}.tar.gz -C . instructions.json patches.bin
+          cd ..
+          cp ./staging/patches-linux-${{ matrix.arch }}.tar.gz ./patches-linux-${{ matrix.arch }}.tar.gz
+
+          cd release
+          tar czf ../MarkIt-linux-${{ matrix.arch }}.tar.gz \
+            MarkIt-linux-${{ matrix.arch }} markit_updater
+
+      - name: Upload artifact for release
         uses: actions/upload-artifact@v4
         with:
           name: MarkIt-linux-${{ matrix.arch }}
-          path: MarkIt-linux-${{ matrix.arch }}
+          path: MarkIt-linux-${{ matrix.arch }}.tar.gz
+
+      - name: Upload artifact for patches
+        uses: actions/upload-artifact@v4
+        with:
+          name: patches-linux-${{ matrix.arch }}
+          path: patches-linux-${{ matrix.arch }}.tar.gz

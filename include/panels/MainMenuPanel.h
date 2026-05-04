@@ -20,6 +20,7 @@ class MainMenuPanel : public FullScreenPanel {
   void setSelectedIndex(int index);
   void setScroll(int topOffset);
   void setCredentials(const std::string& username, const std::string& pantryId);
+  void setUpdateVersion(const std::string& version);
 
   int getMinWidth() const override { return Dimensions::MainMenuMinWidth; }
   int getMinHeight() const override { return Dimensions::MainMenuMinHeight; }
@@ -34,6 +35,7 @@ class MainMenuPanel : public FullScreenPanel {
   int moveFactor = 0;  // scroll offset
   std::string curUser;
   std::string pantryId;
+  std::string updateVersion;  // Non-empty when update is ready
 
   std::string convertTimeToString(int epoch) const;
 

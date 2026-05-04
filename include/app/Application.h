@@ -5,6 +5,7 @@
 
 #include "AppConfig.h"
 #include "BackgroundSyncService.h"
+#include "BackgroundUpdateService.h"
 #include "KeyFileManager.h"
 #include "PantryFacade.h"
 #include "SyncManager.h"
@@ -12,14 +13,17 @@
 #include "UserManager.h"
 #include "MainUI.h"
 #include "ISyncObserver.h"
+#include "IUpdateObserver.h"
 
-class Application : public ISyncObserver {
+class Application : public ISyncObserver, public IUpdateObserver {
  public:
   Application();
   ~Application();
 
   int run();
   void onSyncStatusChanged(const SyncStatus& status) override;
+  void onUpdateStatusChanged(UpdateStatus status,
+                             const std::string& version) override;
 
  private:
   void initCurses();
@@ -36,6 +40,12 @@ class Application : public ISyncObserver {
   void syncPush();
   void syncPull();
 
+  /**
+   * Ends curses, launches the external updater process, and exits.
+   * The updater replaces the binary and relaunches MarkIt.
+   */
+  void launchUpdaterAndExit();
+
   AppConfig config;
   UserManager userManager;
   TodoManager todoManager;
@@ -44,6 +54,7 @@ class Application : public ISyncObserver {
   std::unique_ptr<PantryFacade> pantryFacade;
   std::unique_ptr<SyncManager> syncManager;
   BackgroundSyncService bgSyncService;
+  BackgroundUpdateService updateService;
 
   std::string currentPantryId;
 
@@ -51,4 +62,6 @@ class Application : public ISyncObserver {
   std::mutex uiMtx;
   std::condition_variable uiCv;
   std::atomic<bool> syncUpdatePending{false};
+  std::atomic<bool> updateNotificationPending{false};
 };
+
