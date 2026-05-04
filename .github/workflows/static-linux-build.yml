@@ -108,7 +108,7 @@ jobs:
 
           mkdir -p patch_output
           mkdir -p staging
-          ./markit_patcher "./build_old" "./build_new" "./patch_output"
+          ./markit_patcher "./release_old" "./release" "./patch_output"
           cd patch_output
           tar -czvf ../staging/patches-linux-${{ matrix.arch }}.tar.gz -C . instructions.json patches.bin
           cd ..
