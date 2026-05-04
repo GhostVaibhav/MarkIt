@@ -53,7 +53,7 @@ jobs:
             alpine:latest \
             sh -c '
               apk update && apk upgrade &&
-              apk add g++ cmake make pkgconf \
+              apk add git g++ cmake make pkgconf \
                 curl-dev curl-static \
                 ncurses-dev ncurses-static \
                 nghttp2-static nghttp3-static ngtcp2-static \
