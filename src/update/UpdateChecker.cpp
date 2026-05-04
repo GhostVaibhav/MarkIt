@@ -113,49 +113,83 @@ UpdateInfo UpdateChecker::checkForUpdate(
     std::string expectedPatchAsset = std::string(UpdateConfig::kPatchPrefix) + arch + std::string(UpdateConfig::kAssetSuffix);
 
     bool usePatch = false;
+    bool directPatch = false;
     if (currentIndex != -1) {
+        spdlog::info("Current Index != -1");
         if (UpdateConfig::kEnforcePatchLimit && currentIndex > 8) {
             usePatch = false;
             spdlog::info("UpdateChecker: Exceeded patch limit ({} > 8), falling back to full download", currentIndex);
         } else {
             usePatch = true;
+            spdlog::info("Scanning for patches");
             // Verify all intermediate releases have the patch asset
             for (int i = currentIndex - 1; i >= 0; --i) {
-            bool foundPatch = false;
-            if (stableReleases[i].contains("assets") && stableReleases[i]["assets"].is_array()) {
-                for (const auto& asset : stableReleases[i]["assets"]) {
-                    if (asset.value("name", "") == expectedPatchAsset) {
-                        foundPatch = true;
-                        break;
+                bool foundPatch = false;
+                if (stableReleases[i].contains("assets") && stableReleases[i]["assets"].is_array()) {
+                    for (const auto& asset : stableReleases[i]["assets"]) {
+                        if (asset.value("name", "") == expectedPatchAsset) {
+                            foundPatch = true;
+                            break;
+                        }
                     }
                 }
+                if (!foundPatch) {
+                    spdlog::warn("UpdateChecker: Missing patch asset in release {}", stableReleases[i].value("tag_name", ""));
+                    usePatch = false;
+                    break;
+                }
             }
-            if (!foundPatch) {
-                spdlog::warn("UpdateChecker: Missing patch asset in release {}", stableReleases[i].value("tag_name", ""));
-                usePatch = false;
-                break;
-            }
+        }
+    } else {
+        spdlog::info("Current version {} not found in releases. Checking if latest release {} has a direct patch.", currentVersion, remoteVersion);
+        if (stableReleases[0].contains("assets") && stableReleases[0]["assets"].is_array()) {
+            for (const auto& asset : stableReleases[0]["assets"]) {
+                if (asset.value("name", "") == expectedPatchAsset) {
+                    spdlog::info("Found direct patch in latest release.");
+                    directPatch = true;
+                    usePatch = true;
+                    break;
+                }
             }
         }
     }
 
     if (usePatch) {
+        spdlog::info("Using patch chain for update");
         info.isFullUpdate = false;
         info.updateAvailable = true;
-        // The array is sorted newest first. 
-        // We want to apply patches from oldest to newest! So loop from current-1 down to 0
-        for (int i = currentIndex - 1; i >= 0; --i) {
-            for (const auto& asset : stableReleases[i]["assets"]) {
+        
+        if (directPatch) {
+            for (const auto& asset : stableReleases[0]["assets"]) {
                 if (asset.value("name", "") == expectedPatchAsset) {
                     UpdateAsset ua;
-                    int patchSeq = currentIndex - i;
-                    ua.assetName = asset.value("name", "") + "_seq" + std::to_string(patchSeq) + ".tar.gz"; // Uniquify the patch filename
+                    ua.assetName = asset.value("name", "") + "_seq1.tar.gz";
                     ua.downloadUrl = asset.value("browser_download_url", "");
                     std::string digest = asset.value("digest", "");
                     if (digest.find("sha256:") == 0) ua.expectedHash = digest.substr(7);
                     else ua.expectedHash = digest;
                     info.assetsToDownload.push_back(ua);
                     break;
+                }
+            }
+        } else {
+            // The array is sorted newest first. 
+            // We want to apply patches from oldest to newest! So loop from current-1 down to 0
+            for (int i = currentIndex - 1; i >= 0; --i) {
+                if (stableReleases[i].contains("assets") && stableReleases[i]["assets"].is_array()) {
+                    for (const auto& asset : stableReleases[i]["assets"]) {
+                        if (asset.value("name", "") == expectedPatchAsset) {
+                            UpdateAsset ua;
+                            int patchSeq = currentIndex - i;
+                            ua.assetName = asset.value("name", "") + "_seq" + std::to_string(patchSeq) + ".tar.gz"; // Uniquify the patch filename
+                            ua.downloadUrl = asset.value("browser_download_url", "");
+                            std::string digest = asset.value("digest", "");
+                            if (digest.find("sha256:") == 0) ua.expectedHash = digest.substr(7);
+                            else ua.expectedHash = digest;
+                            info.assetsToDownload.push_back(ua);
+                            break;
+                        }
+                    }
                 }
             }
         }
