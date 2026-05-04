@@ -69,11 +69,11 @@ jobs:
                 -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS} -Wl,--end-group" &&
               cmake --build . --config Release -- -j16 &&
 
-              cd .. &&
               git config --global --add safe.directory /workspace &&
               latest_tag=$(git describe --tags --abbrev=0) &&
               git reset --hard $latest_tag &&
 
+              cd .. &&
               mkdir -p build_old && cd build_old &&
               cmake .. -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,--start-group" \
@@ -92,6 +92,9 @@ jobs:
 
       - name: Prepare artifact
         run: |
+          ls -l build_new
+          ls -l build_old
+
           mkdir -p release
           cp build_new/MarkIt release/MarkIt-linux-${{ matrix.arch }}
           cp build_new/markit_updater release/markit_updater
