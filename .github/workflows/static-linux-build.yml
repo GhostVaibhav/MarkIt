@@ -97,11 +97,11 @@ jobs:
           ls -l build_old
 
           mkdir -p release
-          cp build_new/MarkIt release/MarkIt-linux-${{ matrix.arch }}
+          cp build_new/MarkIt release/markit
           cp build_new/markit_updater release/markit_updater
 
           mkdir -p release_old
-          cp build_old/MarkIt release_old/MarkIt-linux-${{ matrix.arch }}
+          cp build_old/MarkIt release_old/markit
           cp build_old/markit_updater release_old/markit_updater
 
           cp build_new/tools/markit_patcher markit_patcher
@@ -116,7 +116,7 @@ jobs:
 
           cd release
           tar czf ../MarkIt-linux-${{ matrix.arch }}.tar.gz \
-            MarkIt-linux-${{ matrix.arch }} markit_updater
+            markit markit_updater
 
       - name: Upload artifact for release
         uses: actions/upload-artifact@v7
