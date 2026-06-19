@@ -82,7 +82,6 @@ SyncStatus SyncManager::refresh(const std::string& userId,
         syncStatus.pendingPulls, syncStatus.pendingPushes);
     notifyObservers();
   } else {
-    spdlog::warn("remoteData: {}", remoteData.dump());
     spdlog::warn("SyncManager: Cloud refresh failed (network or bucket empty)");
   }
   return syncStatus;

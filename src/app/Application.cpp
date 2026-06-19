@@ -154,7 +154,6 @@ void Application::syncPush() {
     spdlog::info("Application: Sync push orchestration succeeded");
   else
     spdlog::error("Application: Sync push orchestration failed");
-  ui->welcomePanel.setCode(0);
 }
 
 void Application::syncPull() {
@@ -527,10 +526,6 @@ bool Application::mainLoop() {
         } else if (choice == 4) {
           // Toggle auto-sync
           bgSyncService.toggle();
-        } else if (choice == 5) {
-          // Edit Pantry link
-          onlineOptionHandling(5);
-          needDataRefresh = true;
         } else if (choice == 6) {
           // Check for updates
           ui->loadingPanel.setLoadingText("Checking for updates...");
@@ -580,7 +575,6 @@ int Application::run() {
     syncManager->addObserver(this);
 
     // Start background sync only when connected to Pantry
-    bgSyncService.stop();
     if (!currentPantryId.empty()) {
       bgSyncService.start(
         syncManager.get(), &todoManager,

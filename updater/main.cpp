@@ -18,6 +18,8 @@
 #include <thread>
 #include <vector>
 #include <fstream>
+#include <array>
+#include <queue>
 #include "rang/rang.hpp"
 #include "json.hpp"
 #include "picosha2.h"
@@ -29,6 +31,207 @@
 #endif
 
 namespace fs = std::filesystem;
+
+namespace {
+
+uint64_t readU64LE(const std::vector<uint8_t>& data, size_t offset) {
+  uint64_t v = 0;
+  for (int i = 0; i < 8; ++i) {
+    v |= static_cast<uint64_t>(data[offset + static_cast<size_t>(i)]) << (i * 8);
+  }
+  return v;
+}
+
+struct DecodeNode {
+  int left = -1;
+  int right = -1;
+  int symbol = -1;
+};
+
+std::vector<uint8_t> decodeHuffmanPayload(const std::vector<uint8_t>& payload,
+                                          const std::array<uint8_t, 256>& lengths,
+                                          size_t expectedSize) {
+  struct SymbolLen { int sym; uint8_t len; };
+  std::vector<SymbolLen> syms;
+  for (int s = 0; s < 256; ++s) {
+    if (lengths[static_cast<size_t>(s)] > 0) syms.push_back({s, lengths[static_cast<size_t>(s)]});
+  }
+  if (syms.empty()) return {};
+
+  std::sort(syms.begin(), syms.end(), [](const SymbolLen& a, const SymbolLen& b) {
+    if (a.len != b.len) return a.len < b.len;
+    return a.sym < b.sym;
+  });
+
+  std::array<uint32_t, 256> codes{};
+  uint32_t code = 0;
+  uint8_t prevLen = syms[0].len;
+  for (const auto& s : syms) {
+    if (s.len > prevLen) {
+      code <<= (s.len - prevLen);
+      prevLen = s.len;
+    }
+    codes[static_cast<size_t>(s.sym)] = code;
+    ++code;
+  }
+
+  std::vector<DecodeNode> trie(1);
+  for (const auto& s : syms) {
+    int node = 0;
+    for (int bit = static_cast<int>(s.len) - 1; bit >= 0; --bit) {
+      const int b = static_cast<int>((codes[static_cast<size_t>(s.sym)] >> bit) & 1u);
+      int& next = (b == 0) ? trie[static_cast<size_t>(node)].left : trie[static_cast<size_t>(node)].right;
+      if (next < 0) {
+        next = static_cast<int>(trie.size());
+        trie.push_back(DecodeNode{});
+      }
+      node = next;
+    }
+    trie[static_cast<size_t>(node)].symbol = s.sym;
+  }
+
+  std::vector<uint8_t> out;
+  out.reserve(expectedSize);
+  int node = 0;
+  for (uint8_t byte : payload) {
+    for (int bit = 7; bit >= 0; --bit) {
+      const int b = static_cast<int>((byte >> bit) & 1u);
+      node = (b == 0) ? trie[static_cast<size_t>(node)].left : trie[static_cast<size_t>(node)].right;
+      if (node < 0) throw std::runtime_error("Invalid Huffman stream.");
+      if (trie[static_cast<size_t>(node)].symbol >= 0) {
+        out.push_back(static_cast<uint8_t>(trie[static_cast<size_t>(node)].symbol));
+        node = 0;
+        if (out.size() == expectedSize) return out;
+      }
+    }
+  }
+  if (out.size() != expectedSize) throw std::runtime_error("Huffman decoded size mismatch.");
+  return out;
+}
+
+std::vector<uint8_t> decodeRlePayload(const std::vector<uint8_t>& payload, size_t expectedSize) {
+  std::vector<uint8_t> out;
+  out.reserve(expectedSize);
+  size_t i = 0;
+  while (i < payload.size()) {
+    const uint8_t tag = payload[i++];
+    if ((tag & 0x80u) != 0) {
+      const size_t runLen = static_cast<size_t>((tag & 0x7Fu) + 3);
+      if (i >= payload.size()) throw std::runtime_error("Invalid RLE stream.");
+      const uint8_t value = payload[i++];
+      out.insert(out.end(), runLen, value);
+    } else {
+      const size_t litLen = static_cast<size_t>(tag + 1);
+      if (i + litLen > payload.size()) throw std::runtime_error("Invalid RLE stream.");
+      out.insert(out.end(), payload.begin() + static_cast<std::ptrdiff_t>(i),
+                 payload.begin() + static_cast<std::ptrdiff_t>(i + litLen));
+      i += litLen;
+    }
+    if (out.size() > expectedSize) throw std::runtime_error("RLE decoded size overflow.");
+  }
+  if (out.size() != expectedSize) throw std::runtime_error("RLE decoded size mismatch.");
+  return out;
+}
+
+uint32_t readU32LE(const std::vector<uint8_t>& data, size_t offset) {
+  uint32_t v = 0;
+  for (int i = 0; i < 4; ++i) {
+    v |= static_cast<uint32_t>(data[offset + static_cast<size_t>(i)]) << (i * 8);
+  }
+  return v;
+}
+
+std::vector<uint8_t> decodeLzPayload(const std::vector<uint8_t>& payload, size_t expectedSize) {
+  std::vector<uint8_t> out;
+  out.reserve(expectedSize);
+  size_t i = 0;
+  while (i < payload.size()) {
+    const uint8_t tag = payload[i++];
+    if ((tag & 0x80u) == 0) {
+      const size_t litLen = static_cast<size_t>(tag + 1);
+      if (i + litLen > payload.size()) throw std::runtime_error("Invalid LZ literal run.");
+      out.insert(out.end(),
+                 payload.begin() + static_cast<std::ptrdiff_t>(i),
+                 payload.begin() + static_cast<std::ptrdiff_t>(i + litLen));
+      i += litLen;
+    } else {
+      const size_t matchLen = static_cast<size_t>((tag & 0x7Fu) + 3);
+      if (i + 4 > payload.size()) throw std::runtime_error("Invalid LZ backref header.");
+      const uint32_t dist = readU32LE(payload, i);
+      i += 4;
+      if (dist == 0 || dist > out.size()) throw std::runtime_error("Invalid LZ backref distance.");
+      const size_t start = out.size() - dist;
+      for (size_t k = 0; k < matchLen; ++k) {
+        out.push_back(out[start + k]);
+      }
+    }
+    if (out.size() > expectedSize) throw std::runtime_error("LZ decoded size overflow.");
+  }
+  if (out.size() != expectedSize) throw std::runtime_error("LZ decoded size mismatch.");
+  return out;
+}
+
+std::vector<uint8_t> loadPatchBlob(const fs::path& patchPath) {
+  std::ifstream f(patchPath, std::ios::binary);
+  if (!f) throw std::runtime_error("Failed to open patches.bin");
+  std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+
+  if (fileData.size() < 4) return fileData;
+  if (!(fileData[0] == 'M' && fileData[1] == 'K' && fileData[2] == 'P' && fileData[3] == '1')) {
+    return fileData; // legacy raw blob
+  }
+  if (fileData.size() < 4 + 1 + 3 + 8 + 8) throw std::runtime_error("Corrupt compressed patch header.");
+
+  const uint8_t method = fileData[4];
+  if (method != 1 && method != 2 && method != 3 && method != 4) {
+    throw std::runtime_error("Unsupported patch compression method.");
+  }
+
+  const uint64_t rawSize64 = readU64LE(fileData, 8);
+  const uint64_t payloadSize64 = readU64LE(fileData, 16);
+  const size_t rawSize = static_cast<size_t>(rawSize64);
+  const size_t payloadSize = static_cast<size_t>(payloadSize64);
+
+  if (method == 1) {
+    const size_t lengthsOff = 24;
+    const size_t payloadOff = lengthsOff + 256;
+    if (payloadOff + payloadSize > fileData.size()) throw std::runtime_error("Corrupt compressed payload.");
+    std::array<uint8_t, 256> lengths{};
+    for (size_t i = 0; i < 256; ++i) lengths[i] = fileData[lengthsOff + i];
+    std::vector<uint8_t> payload(fileData.begin() + static_cast<std::ptrdiff_t>(payloadOff),
+                                 fileData.begin() + static_cast<std::ptrdiff_t>(payloadOff + payloadSize));
+    std::vector<uint8_t> raw = decodeHuffmanPayload(payload, lengths, rawSize);
+    return raw;
+  }
+
+  if (method == 4) {
+    const size_t lzSizeOff = 24;
+    const size_t lengthsOff = lzSizeOff + 8;
+    const size_t payloadOff = lengthsOff + 256;
+    if (payloadOff + payloadSize > fileData.size()) throw std::runtime_error("Corrupt compressed payload.");
+    const uint64_t lzSize64 = readU64LE(fileData, lzSizeOff);
+    const size_t lzSize = static_cast<size_t>(lzSize64);
+
+    std::array<uint8_t, 256> lengths{};
+    for (size_t i = 0; i < 256; ++i) lengths[i] = fileData[lengthsOff + i];
+    std::vector<uint8_t> payload(fileData.begin() + static_cast<std::ptrdiff_t>(payloadOff),
+                                 fileData.begin() + static_cast<std::ptrdiff_t>(payloadOff + payloadSize));
+    std::vector<uint8_t> lzDecoded = decodeHuffmanPayload(payload, lengths, lzSize);
+    return decodeLzPayload(lzDecoded, rawSize);
+  }
+
+  // method == 2 (RLE)
+  const size_t genericPayloadOff = 24;
+  if (genericPayloadOff + payloadSize > fileData.size()) throw std::runtime_error("Corrupt compressed payload.");
+  std::vector<uint8_t> payload(fileData.begin() + static_cast<std::ptrdiff_t>(genericPayloadOff),
+                               fileData.begin() + static_cast<std::ptrdiff_t>(genericPayloadOff + payloadSize));
+  if (method == 2) {
+    return decodeRlePayload(payload, rawSize);
+  }
+  return decodeLzPayload(payload, rawSize);
+}
+
+} // namespace
 
 // ─── Terminal UI Helpers ────────────────────────────────────────────
 
@@ -208,21 +411,37 @@ int main(int argc, char* argv[]) {
           return 1;
       }
 
-      fs::path instructionsPath = tempExtractDir / "instructions.json";
+      fs::path instructionsPath = tempExtractDir / "instructions.bin";
       fs::path patchesBinPath = tempExtractDir / "patches.bin";
 
       if (fs::exists(instructionsPath) && fs::exists(patchesBinPath)) {
-          // It's a patch update
           try {
-              std::ifstream i(instructionsPath);
-              nlohmann::json j; i >> j;
-              std::ifstream binData(patchesBinPath, std::ios::binary);
+              std::ifstream i(instructionsPath, std::ios::binary);
+              nlohmann::json j = nlohmann::json::from_msgpack(i);
+              std::vector<uint8_t> patchBlob = loadPatchBlob(patchesBinPath);
 
-              for (const auto& fileDef : j["files"]) {
-                  std::string expectedHash = fileDef.value("hash", "");
-                  std::string relPathStr = fileDef["path"];
-                  fs::path relPath = fs::path(relPathStr);
+              int fileCount = 0;
+              const auto& files = j["files"];
+              size_t totalFiles = files.size();
+
+              for (const auto& fileDef : files) {
+                  if (!fileDef.is_array() || fileDef.size() < 3) continue;
                   
+                  std::string relPathStr = fileDef[0];
+                  std::string expectedHash = fileDef[1];
+                  
+                  fileCount++;
+                  if (fileCount % 10 == 0 || fileCount == totalFiles) {
+                      int loopPercent = 30 + static_cast<int>((static_cast<float>(fileCount) / totalFiles) * 15.0f);
+                      clearScreen();
+                      printHeader();
+                      printStep("Patching files (" + std::to_string(fileCount) + "/" + std::to_string(totalFiles) + ")...", StepStatus::InProgress);
+                      printProgress(loopPercent);
+                      std::cout << "    Processing: " << relPathStr << "\n";
+                      printWarning();
+                  }
+
+                  fs::path relPath = fs::path(relPathStr);
                   fs::path currentState = activeStateDir / relPath;
                   if (!fs::exists(currentState)) {
                       currentState = installDir / relPath;
@@ -234,55 +453,66 @@ int main(int argc, char* argv[]) {
                       originalData.assign((std::istreambuf_iterator<char>(origFile)), std::istreambuf_iterator<char>());
                   }
 
-                  for (const auto& op : fileDef["operations"]) {
-                      std::string opType = op["op"];
-                      if (opType == "+") {
-                          size_t from = op["from_bytes"];
-                          size_t to = op["to_bytes"];
-                          size_t size = to - from;
-                          binData.seekg(from);
-                          originalData.resize(size);
-                          binData.read(reinterpret_cast<char*>(originalData.data()), size);
-                      } else if (opType == "-") {
+                  const auto& ops = fileDef[2];
+                  if (!ops.is_array()) continue;
+
+                  for (const auto& op : ops) {
+                      if (!op.is_array() || op.empty()) continue;
+                      int opType = op[0];
+                      if (opType == 1) { // "+"
+                          if (op.size() < 3) continue;
+                          size_t from = op[1];
+                          size_t to = op[2];
+                          if (to <= patchBlob.size()) {
+                              originalData.assign(patchBlob.begin() + static_cast<std::ptrdiff_t>(from),
+                                                 patchBlob.begin() + static_cast<std::ptrdiff_t>(to));
+                          }
+                      } else if (opType == 2) { // "-"
                           originalData.clear();
-                      } else if (opType == "*-") {
-                          size_t start = op["start_bytes"];
-                          size_t end = op["end_bytes"];
+                      } else if (opType == 4) { // "*-"
+                          if (op.size() < 3) continue;
+                          size_t start = op[1];
+                          size_t end = op[2];
                           if (start <= end && end <= originalData.size()) {
                               originalData.erase(originalData.begin() + start, originalData.begin() + end);
                           }
-                      } else if (opType == "*+") {
-                          size_t start = op["start_bytes"];
-                          size_t from = op["from_bytes"];
-                          size_t to = op["to_bytes"];
-                          size_t size = to - from;
-                          std::vector<uint8_t> chunk(size);
-                          binData.seekg(from);
-                          binData.read(reinterpret_cast<char*>(chunk.data()), size);
-                          if (start <= originalData.size()) {
+                      } else if (opType == 3) { // "*+"
+                          if (op.size() < 4) continue;
+                          size_t start = op[1];
+                          size_t from = op[2];
+                          size_t to = op[3];
+                          if (to <= patchBlob.size() && start <= originalData.size()) {
+                              std::vector<uint8_t> chunk(
+                                  patchBlob.begin() + static_cast<std::ptrdiff_t>(from),
+                                  patchBlob.begin() + static_cast<std::ptrdiff_t>(to));
                               originalData.insert(originalData.begin() + start, chunk.begin(), chunk.end());
                           }
                       }
                   }
                   
-                  std::vector<unsigned char> hash(picosha2::k_digest_size);
-                  picosha2::hash256(originalData.begin(), originalData.end(), hash.begin(), hash.end());
-                  std::string computedHash = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
-                  
-                  if (!expectedHash.empty() && computedHash != expectedHash) {
-                      throw std::runtime_error("Patch verification failed! Hash mismatch for " + relPathStr);
+                  if (!expectedHash.empty()) {
+                      std::vector<unsigned char> hash(picosha2::k_digest_size);
+                      picosha2::hash256(originalData.begin(), originalData.end(), hash.begin(), hash.end());
+                      std::string computedHash = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
+                      
+                      if (computedHash != expectedHash) {
+                          throw std::runtime_error("Hash mismatch for " + relPathStr + "\nExpected: " + expectedHash + "\nActual:   " + computedHash);
+                      }
                   }
 
                   fs::path tempNewFile = tempExtractDir / "patched_intermediate.tmp";
                   std::ofstream outFile(tempNewFile, std::ios::binary);
-                  outFile.write(reinterpret_cast<const char*>(originalData.data()), originalData.size());
+                  outFile.write(reinterpret_cast<const char*>(originalData.data()), static_cast<std::streamsize>(originalData.size()));
                   outFile.close();
 
-                  fs::create_directories((activeStateDir / relPath).parent_path());
-                  fs::copy_file(tempNewFile, activeStateDir / relPath, fs::copy_options::overwrite_existing);
+                  fs::path destActive = activeStateDir / relPath;
+                  fs::create_directories(destActive.parent_path());
+                  fs::copy_file(tempNewFile, destActive, fs::copy_options::overwrite_existing);
               }
           } catch (const std::exception& e) {
               showFinalScreen("Updating...", StepStatus::Failed, 30, std::string("Patch failed: ") + e.what());
+              std::cout << "Press Enter to exit...";
+              std::cin.get();
               return 1;
           }
       } else {
