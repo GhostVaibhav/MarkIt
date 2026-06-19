@@ -62,3 +62,8 @@ markit_add_test(test_user_manager      test_user_manager.cpp)
 markit_add_test(test_commands          test_commands.cpp)
 markit_add_test(test_state_file        test_state_file.cpp)
 markit_add_test(test_file_manager      test_file_manager.cpp)
+
+# ─────────────────────────────────────────────────────────────────
+# Patcher / Updater integration tests (separate subdirectory)
+# ─────────────────────────────────────────────────────────────────
+add_subdirectory(patcher_updater)

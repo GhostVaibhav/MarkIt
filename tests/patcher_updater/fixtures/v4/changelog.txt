@@ -1,0 +1,49 @@
+MARKIT RELEASE NOTES
+====================
+
+This document records all public releases of MarkIt.
+
+v1.0 — Initial Release (2025-10-01)
+=====================================
+First public release of MarkIt.
+  - Core todo management (add, remove, toggle)
+  - SQLite persistence
+  - Terminal UI via ncurses/PDCurses
+  - Dark theme
+
+v2.0 — Sync Release (2026-01-15)
+==================================
+Major release introducing cloud synchronisation.
+  - Cloud sync via Pantry API
+  - Background sync service
+  - Banner asset added to distribution
+  - config: sync_interval field
+  - config: new_feature flag
+  - Binary: network module enabled
+
+v3.0 — Offline Release (2026-03-01)
+=====================================
+Focused on offline reliability.
+  - Offline-first mode
+  - Banner removed; replaced by in-app header
+  - Logo streamlined
+  - Binary: offline module, -O3 optimisation
+  - Improved conflict resolution
+
+v4.0 — Platform Release (2026-06-01)
+======================================
+Cross-platform expansion and plugin system.
+  - Linux and macOS support added
+  - Plugin architecture introduced
+  - Theme engine added
+  - config: plugin_dir, theme_dir fields
+  - config: language=auto detection
+  - config: max_items raised to 500
+  - Binary: clang build, PGO enabled
+  - Significant performance improvements
+  - Memory footprint reduced by 30%
+
+UPCOMING
+========
+v5.0 will focus on collaboration features.
+Stay tuned at https://github.com/GhostVaibhav/MarkIt

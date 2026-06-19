@@ -8,3 +8,6 @@ build_*/
 out/
 .idea/
 include/toggles.h
+
+# Always track test fixtures regardless of other rules
+!tests/

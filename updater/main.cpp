@@ -291,6 +291,8 @@ void printWarning() {
   std::cout << "\n  " << rang::style::dim << "(Do not close this window)" << rang::style::reset << "\n";
 }
 
+bool g_fastMode = false;
+
 void animatedRender(const std::string& step, int fromPercent, int toPercent,
                     int durationMs = 500) {
   int steps = toPercent - fromPercent;
@@ -302,7 +304,9 @@ void animatedRender(const std::string& step, int fromPercent, int toPercent,
     printStep(step, StepStatus::InProgress);
     printProgress(p);
     printWarning();
-    std::this_thread::sleep_for(std::chrono::milliseconds(sleepPerStep));
+    if (!g_fastMode) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(sleepPerStep));
+    }
   }
 }
 
@@ -337,6 +341,8 @@ Args parseArgs(int argc, char* argv[]) {
       args.stagedPath = argv[++i];
     } else if (std::strcmp(argv[i], "--relaunch") == 0) {
       args.relaunch = true;
+    } else if (std::strcmp(argv[i], "--fast") == 0) {
+      g_fastMode = true;
     }
   }
   return args;
@@ -352,7 +358,9 @@ int main(int argc, char* argv[]) {
   }
 
   // Brief wait for the parent process to fully exit
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  if (!g_fastMode) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  }
 
   // ── Step 1: Preparing ──
   animatedRender("Preparing update...", 0, 10, 400);
@@ -512,7 +520,7 @@ int main(int argc, char* argv[]) {
           } catch (const std::exception& e) {
               showFinalScreen("Updating...", StepStatus::Failed, 30, std::string("Patch failed: ") + e.what());
               std::cout << "Press Enter to exit...";
-              std::cin.get();
+              if (!g_fastMode) std::cin.get();
               return 1;
           }
       } else {
@@ -576,10 +584,14 @@ int main(int argc, char* argv[]) {
   showFinalScreen("Update complete!", StepStatus::Success, 100,
                   "Restarting MarkIt...");
 
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  if (!g_fastMode) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
 
   // ── Relaunch ──
   if (args.relaunch) {
+    if (!g_fastMode) std::this_thread::sleep_for(std::chrono::milliseconds(800));
+    std::cout << "\n  Restarting MarkIt...\n\n";
 #ifdef _WIN32
     std::string cmd = "\"" + args.binaryPath + "\"";
     system(cmd.c_str());

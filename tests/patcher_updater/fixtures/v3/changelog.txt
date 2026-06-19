@@ -1,0 +1,17 @@
+CHANGELOG
+=========
+
+v2.0 (2026-01-15)
+------------------
+- Added cloud sync via Pantry API
+- Added banner asset
+- Updated logo
+- Config: added sync_interval, new_feature
+- Binary: enabled network module
+
+v3.0 (2026-03-01)
+------------------
+- Removed banner (replaced by in-app header)
+- Smaller logo footprint
+- Added offline mode support
+- Binary: enabled offline module, O3 opt

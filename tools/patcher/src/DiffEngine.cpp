@@ -774,21 +774,22 @@ bool DiffEngine::generatePatches() {
     for (const auto& entry : fs::recursive_directory_iterator(newDir_)) {
         if (!entry.is_regular_file()) continue;
         
+        fs::path entryPath = entry.path();
         waitForSpace();
-        futures.push_back(std::async(std::launch::async, [this, &instructions, &instructionsMutex, entry]() {
-            fs::path relPath = fs::relative(entry.path(), newDir_);
+        futures.push_back(std::async(std::launch::async, [this, &instructions, &instructionsMutex, entryPath]() {
+            fs::path relPath = fs::relative(entryPath, newDir_);
             fs::path oldPath = fs::path(oldDir_) / relPath;
             
             nlohmann::json fileJson = nlohmann::json::array();
             fileJson.push_back(relPath.generic_string());
-            fileJson.push_back(hashFile(entry.path()));
+            fileJson.push_back(hashFile(entryPath));
             nlohmann::json opsJson = nlohmann::json::array();
 
             std::vector<PatchOperation> fileOps;
             if (!fs::exists(oldPath)) {
-                fileOps = handleNewFile(entry.path(), relPath.generic_string());
+                fileOps = handleNewFile(entryPath, relPath.generic_string());
             } else {
-                fileOps = processFile(oldPath, entry.path(), relPath.generic_string());
+                fileOps = processFile(oldPath, entryPath, relPath.generic_string());
             }
 
             if (!fileOps.empty()) {
@@ -810,7 +811,8 @@ bool DiffEngine::generatePatches() {
     for (const auto& entry : fs::recursive_directory_iterator(oldDir_)) {
         if (!entry.is_regular_file()) continue;
         
-        fs::path relPath = fs::relative(entry.path(), oldDir_);
+        fs::path entryPath = entry.path();
+        fs::path relPath = fs::relative(entryPath, oldDir_);
         fs::path newPath = fs::path(newDir_) / relPath;
         
         if (!fs::exists(newPath)) {
@@ -842,6 +844,7 @@ bool DiffEngine::generatePatches() {
     for (auto& f : futures) {
         if (f.valid()) f.get();
     }
+
 
     // Write out patches.bin
     fs::path binPath = fs::path(outDir_) / "patches.bin";

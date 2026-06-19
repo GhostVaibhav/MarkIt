@@ -1,0 +1,10 @@
+CHANGELOG
+=========
+
+v2.0 (2026-01-15)
+------------------
+- Added cloud sync via Pantry API
+- Added banner asset
+- Updated logo
+- Config: added sync_interval, new_feature
+- Binary: enabled network module
