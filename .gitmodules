@@ -18,3 +18,8 @@
 [submodule "deps/SQLiteCpp"]
 	path = deps/SQLiteCpp
 	url = https://github.com/SRombauts/SQLiteCpp.git
+[submodule "deps/googletest"]
+	path = deps/googletest
+	url = https://github.com/google/googletest.git
+	branch = v1.17.x
+

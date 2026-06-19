@@ -3,6 +3,7 @@
 *.json
 builds/
 build/
+build_*/
 .cache/
 out/
 .idea/

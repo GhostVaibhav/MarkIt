@@ -156,3 +156,16 @@ include(CPack)
 # Build the external updater binary
 add_subdirectory(updater)
 add_subdirectory(tools/patcher)
+
+# ────────────────────────────────────────────────────────────
+# Test suite  (opt-in: cmake -DBUILD_TESTS=ON ..)
+# ────────────────────────────────────────────────────────────
+option(BUILD_TESTS "Build the GoogleTest test suite" OFF)
+if(BUILD_TESTS)
+  enable_testing()
+  # Disable GoogleTest's own install targets and CTest integration noise
+  set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  add_subdirectory(deps/googletest SYSTEM)
+  add_subdirectory(tests)
+endif()
