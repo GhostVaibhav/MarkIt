@@ -110,7 +110,7 @@ jobs:
           mkdir -p staging
           ./markit_patcher "./release_old" "./release" "./patch_output"
           cd patch_output
-          tar -czvf ../staging/patches-linux-${{ matrix.arch }}.tar.gz -C . instructions.json patches.bin
+          tar -czvf ../staging/patches-linux-${{ matrix.arch }}.tar.gz -C . instructions.bin patches.bin
           cd ..
           cp ./staging/patches-linux-${{ matrix.arch }}.tar.gz ./patches-linux-${{ matrix.arch }}.tar.gz
 

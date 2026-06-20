@@ -173,7 +173,7 @@ jobs:
       - name: Compiling the main project for MSVC compiler
         run: |
           mkdir build && cd build
-          cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake .. -G "Visual Studio 18 2026" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           cmake --build . --config ${{ matrix.build_type }}
           cd .. && rm -r -force build
 
