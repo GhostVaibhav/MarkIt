@@ -452,7 +452,9 @@ bool Application::mainLoop() {
                 std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
                 syncManager->recomputeData(todoManager.getAllTodos());
               }
-              needDataRefresh = true;
+              // Immediately re-fetch so TodoDetailPanel sees the updated state
+              todos = todoManager.getAllTodos();
+              needDataRefresh = false;
             } else if (choice == 1) { // Delete
               todoManager.removeTodo(todos[selectedTodo]);
               {
