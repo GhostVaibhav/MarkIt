@@ -70,29 +70,35 @@ std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const
 
   // Name section
   lines.push_back("\x02Name:");           // \x02 marker = bold label
-  {
-    size_t pos = 0;
-    const std::string& s = currentTodo.name;
-    while (pos < s.size()) {
-      lines.push_back("  " + s.substr(pos, lineWidth - 2));
-      pos += lineWidth - 2;
+  auto splitAndWrap = [&](const std::string& s) {
+    if (s.empty()) {
+      lines.push_back("");
+      return;
     }
-    if (s.empty()) lines.push_back("");
-  }
+    size_t start = 0;
+    while (start < s.size()) {
+      size_t len = 0;
+      while (start + len < s.size() && len < (size_t)(lineWidth - 2) && s[start + len] != '\n') {
+        len++;
+      }
+      lines.push_back("  " + s.substr(start, len));
+      start += len;
+      if (start < s.size() && s[start] == '\n') {
+        start++;
+        if (start == s.size()) {
+          lines.push_back("");
+        }
+      }
+    }
+  };
+
+  splitAndWrap(currentTodo.name);
 
   lines.push_back("");  // blank spacer
 
   // Description section
   lines.push_back("\x02Description:");   // \x02 marker = bold label
-  {
-    size_t pos = 0;
-    const std::string& s = currentTodo.desc;
-    while (pos < s.size()) {
-      lines.push_back("  " + s.substr(pos, lineWidth - 2));
-      pos += lineWidth - 2;
-    }
-    if (s.empty()) lines.push_back("");
-  }
+  splitAndWrap(currentTodo.desc);
 
   return lines;
 }

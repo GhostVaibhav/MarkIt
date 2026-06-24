@@ -164,8 +164,15 @@ void MainMenuPanel::render() {
     if (maxNameWidth < 1) maxNameWidth = 1;
     if (maxDescWidth < 1) maxDescWidth = 1;
 
-    std::string dispName = StringUtils::truncateString(todosList[i].name, maxNameWidth);
-    std::string dispDesc = StringUtils::truncateString(todosList[i].desc, maxDescWidth);
+    std::string cleanName = todosList[i].name;
+    std::replace(cleanName.begin(), cleanName.end(), '\n', ' ');
+    std::replace(cleanName.begin(), cleanName.end(), '\r', ' ');
+    std::string cleanDesc = todosList[i].desc;
+    std::replace(cleanDesc.begin(), cleanDesc.end(), '\n', ' ');
+    std::replace(cleanDesc.begin(), cleanDesc.end(), '\r', ' ');
+
+    std::string dispName = StringUtils::truncateString(cleanName, maxNameWidth);
+    std::string dispDesc = StringUtils::truncateString(cleanDesc, maxDescWidth);
     std::string timeStr = convertTimeToString(todosList[i].time);
 
     // CLAMP ITEM COORDINATES
@@ -270,8 +277,15 @@ void MainMenuPanel::renderList() {
     if (maxNameWidth < 1) maxNameWidth = 1;
     if (maxDescWidth < 1) maxDescWidth = 1;
 
-    std::string dispName = StringUtils::truncateString(todosList[i].name, maxNameWidth);
-    std::string dispDesc = StringUtils::truncateString(todosList[i].desc, maxDescWidth);
+    std::string cleanName = todosList[i].name;
+    std::replace(cleanName.begin(), cleanName.end(), '\n', ' ');
+    std::replace(cleanName.begin(), cleanName.end(), '\r', ' ');
+    std::string cleanDesc = todosList[i].desc;
+    std::replace(cleanDesc.begin(), cleanDesc.end(), '\n', ' ');
+    std::replace(cleanDesc.begin(), cleanDesc.end(), '\r', ' ');
+
+    std::string dispName = StringUtils::truncateString(cleanName, maxNameWidth);
+    std::string dispDesc = StringUtils::truncateString(cleanDesc, maxDescWidth);
     std::string timeStr = convertTimeToString(todosList[i].time);
 
     int x1 = (tabDiv - (int)dispName.size()) / 2;

@@ -54,27 +54,47 @@ void AddTodoPanel::recreateWindows() {
 
 // ─── Static helpers ───────────────────────────────────────────────────────────
 
-// Total rows a string occupies given fieldWidth (minimum 1).
-static int rowsForString(const std::string& s, int fieldWidth) {
-  if (fieldWidth <= 0) return 1;
-  int rows = (int)s.size() / fieldWidth;
-  if ((int)s.size() % fieldWidth != 0 || s.empty()) rows++;
+struct VisualRow {
+  int charStart;
+  int charEnd;
+  std::string text;
+};
+
+static std::vector<VisualRow> buildVisualRows(const std::string& s, int fieldWidth) {
+  std::vector<VisualRow> rows;
+  if (fieldWidth <= 0) return rows;
+  if (s.empty()) {
+    rows.push_back({0, 0, ""});
+    return rows;
+  }
+  int start = 0;
+  int n = (int)s.size();
+  while (start < n) {
+    int len = 0;
+    while (start + len < n && len < fieldWidth && s[start + len] != '\n') {
+      len++;
+    }
+    rows.push_back({start, start + len, s.substr(start, len)});
+    start += len;
+    if (start < n && s[start] == '\n') {
+      start++;
+      if (start == n) {
+        rows.push_back({start, start, ""});
+      }
+    }
+  }
   return rows;
 }
 
 // Render a (possibly multi-line) string from scrollOff rows into the window.
-// Pads each row to fieldWidth with spaces to clear stale characters.
 static void renderWrappedScrolled(WINDOW* win, int startRow, int col,
-                                   const std::string& s, int fieldWidth,
+                                   const std::vector<VisualRow>& rows, int fieldWidth,
                                    int scrollOff, int maxRow) {
   int row = startRow;
-  for (int r = scrollOff; row < maxRow; ++r, ++row) {
-    int charStart = r * fieldWidth;
-    if (charStart > (int)s.size()) break;
-    std::string slice = s.substr(charStart, fieldWidth);
+  for (int r = scrollOff; r < (int)rows.size() && row < maxRow; ++r, ++row) {
+    std::string slice = rows[r].text;
     slice.resize(fieldWidth, ' ');   // pad to clear stale chars
     mvwprintw(win, row, col, "%s", slice.c_str());
-    if (charStart + fieldWidth >= (int)s.size()) { ++row; break; }
   }
   // clear remaining rows in the slot
   while (row < maxRow) {
@@ -84,20 +104,15 @@ static void renderWrappedScrolled(WINDOW* win, int startRow, int col,
 }
 
 // Apply A_REVERSE selection highlight on a visible field slot.
-//   startRow:  first screen row of the slot
-//   scrollOff: rows hidden above the viewport
-//   selMin/Max: selection bounds in char indices
-//   slotRows:   number of visible rows in the slot
 static void applySelHighlight(WINDOW* win, int startRow, int scrollOff,
                                int selMin, int selMax,
-                               int fieldWidth, int col, int slotRows,
+                               const std::vector<VisualRow>& rows, int fieldWidth, int col, int slotRows,
                                int contentBottom) {
-  if (selMin >= selMax || fieldWidth <= 0) return;
-  for (int r = 0; r < slotRows && (startRow + r) < contentBottom; ++r) {
-    int rowCharStart = (scrollOff + r) * fieldWidth;
-    int rowCharEnd   = rowCharStart + fieldWidth;
-    int hlStart = std::max(selMin, rowCharStart) - rowCharStart;
-    int hlEnd   = std::min(selMax, rowCharEnd)   - rowCharStart;
+  if (selMin >= selMax || rows.empty()) return;
+  for (int r = 0; r < slotRows && (startRow + r) < contentBottom && (scrollOff + r) < (int)rows.size(); ++r) {
+    const auto& vr = rows[scrollOff + r];
+    int hlStart = std::max(selMin, vr.charStart) - vr.charStart;
+    int hlEnd   = std::min(selMax, vr.charEnd)   - vr.charStart;
     if (hlStart < hlEnd) {
       mvwchgat(win, startRow + r, col + hlStart,
                hlEnd - hlStart, A_REVERSE, 0, nullptr);
@@ -164,9 +179,12 @@ void AddTodoPanel::render() {
   int descAvailRows = contentBottom - descStartRow;
   if (descAvailRows < 1) descAvailRows = 1;
 
+  std::vector<VisualRow> nameRows = buildVisualRows(name, fieldWidth);
+  std::vector<VisualRow> descRows = buildVisualRows(desc, fieldWidth);
+
   if (activeField_ == 0) {
-    effNameScroll = std::max(0, rowsForString(name, fieldWidth) - kNameSlotRows);
-    effDescScroll = std::max(0, rowsForString(desc, fieldWidth) - descAvailRows);
+    effNameScroll = std::max(0, (int)nameRows.size() - kNameSlotRows);
+    effDescScroll = std::max(0, (int)descRows.size() - descAvailRows);
   } else {
     effNameScroll = nameScroll_;
     effDescScroll = descScroll_;
@@ -175,7 +193,7 @@ void AddTodoPanel::render() {
   if (ch > 3) {
     // ── Name ────────────────────────────────────────────────────────────────
     mvwprintw(contentWin, 2, col, "Enter Todo Name (empty to skip):");
-    renderWrappedScrolled(contentWin, 3, col, name, fieldWidth,
+    renderWrappedScrolled(contentWin, 3, col, nameRows, fieldWidth,
                           effNameScroll, 3 + kNameSlotRows);
 
     // Selection highlight for name
@@ -183,13 +201,13 @@ void AddTodoPanel::render() {
       int sMin = std::min(cursor_, anchor_);
       int sMax = std::max(cursor_, anchor_);
       applySelHighlight(contentWin, 3, effNameScroll, sMin, sMax,
-                        fieldWidth, col, kNameSlotRows, contentBottom);
+                        nameRows, fieldWidth, col, kNameSlotRows, contentBottom);
     }
 
     // ── Desc ────────────────────────────────────────────────────────────────
     if (descLabelRow < contentBottom) {
       mvwprintw(contentWin, descLabelRow, col, "Enter Todo Description:");
-      renderWrappedScrolled(contentWin, descStartRow, col, desc, fieldWidth,
+      renderWrappedScrolled(contentWin, descStartRow, col, descRows, fieldWidth,
                             effDescScroll, contentBottom);
 
       // Selection highlight for desc
@@ -197,7 +215,7 @@ void AddTodoPanel::render() {
         int sMin = std::min(cursor_, anchor_);
         int sMax = std::max(cursor_, anchor_);
         applySelHighlight(contentWin, descStartRow, effDescScroll, sMin, sMax,
-                          fieldWidth, col, descAvailRows, contentBottom);
+                          descRows, fieldWidth, col, descAvailRows, contentBottom);
       }
     }
   }
@@ -267,10 +285,26 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
     anchor_ = -1;
   };
 
+  auto getCursorPos = [&](int& cRow, int& cCol) {
+    std::vector<VisualRow> rows = buildVisualRows(str, getFieldWidth());
+    cRow = 0;
+    cCol = 0;
+    for (int i = 0; i < (int)rows.size(); ++i) {
+      if (cursor_ >= rows[i].charStart && cursor_ <= rows[i].charEnd) {
+        cRow = i;
+        cCol = cursor_ - rows[i].charStart;
+        if (cursor_ == rows[i].charEnd && i + 1 < (int)rows.size() && rows[i+1].charStart == cursor_) {
+          continue; // Wrapped exactly, prefer next line
+        }
+        break;
+      }
+    }
+  };
+
   // Adjust scroll so cursor_ stays visible in the viewport
   auto updateScroll = [&]() {
-    int fw = getFieldWidth();
-    int curRow = cursor_ / fw;
+    int curRow = 0, curCol = 0;
+    getCursorPos(curRow, curCol);
     if (isNameField) {
       if (curRow < nameScroll_)
         nameScroll_ = curRow;
@@ -289,17 +323,17 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
 
   // Screen coordinates of the caret
   auto screenCursor = [&](int& cy, int& cx) {
-    int fw  = getFieldWidth();
+    int curRow = 0, curCol = 0;
+    getCursorPos(curRow, curCol);
     int col = 2;
-    int curRow = cursor_ / fw;
     if (isNameField) {
       cy = 3 + (curRow - nameScroll_);
-      cx = col + cursor_ % fw;
+      cx = col + curCol;
     } else {
       int descLabelRow = 3 + kNameSlotRows + kDescLabelGap;
       int descStartRow = descLabelRow + 1;
       cy = descStartRow + (curRow - descScroll_);
-      cx = col + cursor_ % fw;
+      cx = col + curCol;
     }
     int maxY = getmaxy(contentWin) - 1;
     int maxX = getmaxx(contentWin) - 1;
@@ -501,6 +535,31 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
     // ── Ctrl+W: REMOVED — use Ctrl+Backspace instead ─────────────────────────
     // (ch == 23 intentionally not handled here)
 
+    // ── Up / Down arrow: vertical cursor movement ─────────────────────────────
+    } else if (ch == KEY_UP || ch == KEY_DOWN) {
+      if (!shiftHeld) anchor_ = -1;
+      int curRow = 0, curCol = 0;
+      getCursorPos(curRow, curCol);
+      std::vector<VisualRow> rows = buildVisualRows(str, getFieldWidth());
+      int oldCursor = cursor_;
+      
+      if (ch == KEY_UP) {
+        if (curRow > 0) {
+          cursor_ = std::min(rows[curRow - 1].charStart + curCol, rows[curRow - 1].charEnd);
+        } else {
+          cursor_ = 0;
+        }
+      } else if (ch == KEY_DOWN) {
+        if (curRow < (int)rows.size() - 1) {
+          cursor_ = std::min(rows[curRow + 1].charStart + curCol, rows[curRow + 1].charEnd);
+        } else {
+          cursor_ = (int)str.size();
+        }
+      }
+
+      if (shiftHeld && anchor_ < 0) anchor_ = oldCursor;
+      if (cursor_ == anchor_) anchor_ = -1;
+
     // ── Delete key: delete next char ─────────────────────────────────────────
     } else if (ch == KEY_DC) {
       if (hasSelection()) {
@@ -520,7 +579,13 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
 
     // ── Enter / carriage-return: commit field (raw mode delivers \r not \n) ──
     } else if (ch == '\n' || ch == '\r' || ch == KEY_ENTER) {
-      break;
+      if (!isNameField && shiftHeld) {
+        if (hasSelection()) deleteSelection();
+        str.insert(cursor_, 1, '\n');
+        ++cursor_;
+      } else {
+        break;
+      }
 
     // ── Escape: cancel input entirely ─────────────────────────────────────────
     } else if (ch == 27) {
