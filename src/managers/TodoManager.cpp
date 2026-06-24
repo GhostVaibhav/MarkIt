@@ -78,6 +78,23 @@ bool TodoManager::toggleTodo(const Todo& todo) {
   return false;
 }
 
+bool TodoManager::updateTodo(const Todo& todo) {
+  std::lock_guard<std::recursive_mutex> lock(todoMtx);
+  if (!currentUser || !validate(todo)) return false;
+
+  if (todoDBManager.updateTodo(*currentUser, todo)) {
+    auto it = std::find_if(todos.begin(), todos.end(),
+                           [&](const Todo& t) { return t.id == todo.id; });
+    if (it != todos.end()) {
+      *it = todo;
+      spdlog::info("TodoManager: Updated todo in cache: '{}'", todo.id);
+    }
+    return true;
+  }
+  spdlog::warn("TodoManager: Failed to DB update todo: '{}'", todo.id);
+  return false;
+}
+
 std::vector<Todo> TodoManager::getAllTodos() {
   std::lock_guard<std::recursive_mutex> lock(todoMtx);
   refreshTodos();

@@ -17,6 +17,7 @@ class TodoManager {
   bool addTodo(const Todo& todo);
   bool removeTodo(const Todo& todo);
   bool toggleTodo(const Todo& todo);
+  bool updateTodo(const Todo& todo);
   std::vector<Todo> getAllTodos();
 
   bool validate(const Todo& todo) const;

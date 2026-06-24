@@ -440,6 +440,20 @@ bool Application::mainLoop() {
             return false;
           } else if (action == TodoDetailAction::Back) {
             stayInDetail = false;
+          } else if (action == TodoDetailAction::EditTodo) {
+            Todo& current = todos[selectedTodo];
+            ui->addTodoPanel.promptInput(current.name, current.desc);
+            std::string newName = ui->addTodoPanel.getEnteredName();
+            std::string newDesc = ui->addTodoPanel.getEnteredDesc();
+            if (!newName.empty() && (newName != current.name || newDesc != current.desc)) {
+              current.name = newName;
+              current.desc = newDesc;
+              todoManager.updateTodo(current);
+              {
+                std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+                syncManager->recomputeData(todoManager.getAllTodos());
+              }
+            }
           } else if (action == TodoDetailAction::OpenMenu) {
             ui->menuPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
             ui->menuPanel.setMenuOptions({"1. Toggle Todo", "2. Delete", "3. Back"});

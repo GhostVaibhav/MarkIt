@@ -621,13 +621,15 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
 
 // ─── promptInput() ────────────────────────────────────────────────────────────
 
-void AddTodoPanel::promptInput() {
+void AddTodoPanel::promptInput(const std::string& initName, const std::string& initDesc) {
   noecho();
   curs_set(1);
 
-  name = "";
-  desc = "";
-
+  name = initName;
+  desc = initDesc;
+  activeField_ = 0;
+  nameScroll_ = 0;
+  descScroll_ = 0;
   FullScreenPanel::show();
 
   std::string n = captureInput(true);
@@ -635,6 +637,7 @@ void AddTodoPanel::promptInput() {
     name = "";
     desc = "";
   } else {
+    name = n;
     std::string d = captureInput(false);
     if (d == "\x1b") {
       name = "";

@@ -99,3 +99,25 @@ bool TodoDBManager::toggleTodo(const User& user, const Todo& todo) {
     return false;
   }
 }
+
+bool TodoDBManager::updateTodo(const User& user, const Todo& todo) {
+  try {
+    if (user.id.empty()) return false;
+    ensureTableExists(user);
+    std::string sql =
+        "UPDATE records_" + user.id + " SET name = ?, \"desc\" = ?, isComplete = ? WHERE id = ?";
+    SQLite::Statement query(db, sql);
+    query.bind(1, todo.name);
+    query.bind(2, todo.desc);
+    query.bind(3, todo.isComplete ? 1 : 0);
+    query.bind(4, todo.id);
+    query.exec();
+    spdlog::info("TodoDBManager: Updated todo {} for user {}", todo.id,
+                 user.id);
+    return true;
+  } catch (const std::exception& e) {
+    spdlog::error("TodoDBManager: Failed to update todo for user {}: {}",
+                  user.id, e.what());
+    return false;
+  }
+}

@@ -218,6 +218,7 @@ void TodoDetailPanel::render() {
 
   FullScreenPanel::refreshKeyBar({
     {"m/M",     "Menu"},
+    {"e/E",     "Edit"},
     {"Esc/q/Q", "Back"},
     {"Up/Dn",   "Scroll"},
     {"^C",      "Exit"}
@@ -275,5 +276,7 @@ TodoDetailAction TodoDetailPanel::promptAction() {
       return TodoDetailAction::Back;
     else if (ch == 'm' || ch == 'M')
       return TodoDetailAction::OpenMenu;
+    else if (ch == 'e' || ch == 'E')
+      return TodoDetailAction::EditTodo;
   }
 }

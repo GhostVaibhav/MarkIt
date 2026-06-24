@@ -12,7 +12,7 @@ class AddTodoPanel : public FullScreenPanel {
   ~AddTodoPanel() override;
 
   void render() override;
-  void promptInput();
+  void promptInput(const std::string& initName = "", const std::string& initDesc = "");
 
   int getMinWidth() const override { return Dimensions::AddTodoMinWidth; }
   int getMinHeight() const override { return Dimensions::AddTodoMinHeight; }

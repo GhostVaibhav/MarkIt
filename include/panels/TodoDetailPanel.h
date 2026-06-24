@@ -9,7 +9,7 @@
 #include "LogoPanel.h"
 #include "Todo.h"
 
-enum class TodoDetailAction { Toggle, Delete, Back, QuitApp, OpenMenu };
+enum class TodoDetailAction { Toggle, Delete, Back, QuitApp, OpenMenu, EditTodo };
 
 class TodoDetailPanel : public FullScreenPanel {
  public:
