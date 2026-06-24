@@ -1,5 +1,9 @@
 #include "TodoDetailPanel.h"
 #include "utils/StringUtils.h"
+#include <algorithm>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 TodoDetailPanel::TodoDetailPanel() 
     : FullScreenPanel(), 
@@ -12,7 +16,10 @@ TodoDetailPanel::~TodoDetailPanel() {
   if (contentWin) delwin(contentWin);
 }
 
-void TodoDetailPanel::setTodo(const Todo& todo) { currentTodo = todo; }
+void TodoDetailPanel::setTodo(const Todo& todo) {
+  currentTodo = todo;
+  scrollOffset = 0;   // reset scroll whenever a new todo is shown
+}
 
 void TodoDetailPanel::setCredentials(const std::string& username, const std::string& id) {
   curUser = username;
@@ -46,6 +53,52 @@ void TodoDetailPanel::recreateWindows() {
   }
 }
 
+// ─── buildContentLines() ──────────────────────────────────────────────────────
+// Returns every logical display line for the current todo, in order.
+// This is used both by render() (to display) and by promptAction() (to clamp scroll).
+std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const {
+  if (lineWidth < 1) lineWidth = 1;
+
+  std::vector<std::string> lines;
+
+  // Status line
+  std::string statusLine = "Status: ";
+  statusLine += currentTodo.isComplete ? "Completed" : "Pending";
+  lines.push_back("\x01" + statusLine);   // \x01 marker = colour-coded status line
+
+  lines.push_back("");  // blank spacer
+
+  // Name section
+  lines.push_back("\x02Name:");           // \x02 marker = bold label
+  {
+    size_t pos = 0;
+    const std::string& s = currentTodo.name;
+    while (pos < s.size()) {
+      lines.push_back("  " + s.substr(pos, lineWidth - 2));
+      pos += lineWidth - 2;
+    }
+    if (s.empty()) lines.push_back("");
+  }
+
+  lines.push_back("");  // blank spacer
+
+  // Description section
+  lines.push_back("\x02Description:");   // \x02 marker = bold label
+  {
+    size_t pos = 0;
+    const std::string& s = currentTodo.desc;
+    while (pos < s.size()) {
+      lines.push_back("  " + s.substr(pos, lineWidth - 2));
+      pos += lineWidth - 2;
+    }
+    if (s.empty()) lines.push_back("");
+  }
+
+  return lines;
+}
+
+// ─── render() ─────────────────────────────────────────────────────────────────
+
 void TodoDetailPanel::render() {
   int max_y, max_x;
   getmaxyx(stdscr, max_y, max_x);
@@ -66,10 +119,10 @@ void TodoDetailPanel::render() {
   box(todoUserName, 0, 0);
   box(contentWin, 0, 0);
 
+  // ── Header ──
   int part = (getmaxx(todoUserName) - 81) / 4;
   if (part <= 0) part = 2;
 
-  // Render header
   logoPanel.setWindow(todoUserName);
   logoPanel.setPosition(1, part);
   logoPanel.render();
@@ -91,60 +144,84 @@ void TodoDetailPanel::render() {
     mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
 
-  // Render detail
+  // ── Content with scrolling ──
   int cw_max_y, cw_max_x;
   getmaxyx(contentWin, cw_max_y, cw_max_x);
 
-  int yOffset = 2; // top margin
+  // Usable area: rows 1..cw_max_y-2  (inside the box border)
+  int visibleRows = cw_max_y - 2;
+  int lineWidth   = (cw_max_x > 8) ? cw_max_x - 8 : 1;
+  int col         = 5;
 
-  if (currentTodo.isComplete)
-    wattron(contentWin, COLOR_PAIR(2));
-  else
-    wattron(contentWin, COLOR_PAIR(1));
+  auto allLines = buildContentLines(lineWidth);
+  int totalLines = (int)allLines.size();
 
-  mvwprintw(contentWin, yOffset, 5, "Status: %s",
-            currentTodo.isComplete ? "Completed" : "Pending");
+  // Clamp scrollOffset
+  int maxScroll = std::max(0, totalLines - visibleRows);
+  if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+  if (scrollOffset < 0)         scrollOffset = 0;
 
-  if (currentTodo.isComplete)
-    wattroff(contentWin, COLOR_PAIR(2));
-  else
-    wattroff(contentWin, COLOR_PAIR(1));
+  // Show scrollbar inside the border if needed
+  if (totalLines > visibleRows) {
+    int pillSize = std::max(1, (visibleRows * visibleRows) / totalLines);
+    int maxPillStart = visibleRows - pillSize;
+    int pillStart = 1 + (maxScroll > 0 ? (scrollOffset * maxPillStart) / maxScroll : 0);
+    int pillEnd = pillStart + pillSize - 1;
 
-  yOffset += 2;
-  wattron(contentWin, A_BOLD);
-  mvwprintw(contentWin, yOffset++, 5, "Name:");
-  wattroff(contentWin, A_BOLD);
-
-  size_t nameIndex = 0;
-  while (nameIndex < currentTodo.name.size() && yOffset < cw_max_y - 2) {
-    std::string line = currentTodo.name.substr(nameIndex, cw_max_x - 10);
-    mvwprintw(contentWin, yOffset++, 7, "%s", line.c_str());
-    nameIndex += cw_max_x - 10;
+    for (int r = 1; r <= visibleRows; ++r) {
+      if (r >= pillStart && r <= pillEnd) {
+        wattron(contentWin, A_REVERSE);
+        mvwprintw(contentWin, r, cw_max_x - 2, " ");
+        wattroff(contentWin, A_REVERSE);
+      } else {
+        mvwaddch(contentWin, r, cw_max_x - 2, ACS_VLINE);
+      }
+    }
   }
 
-  yOffset++;
-  if (yOffset < cw_max_y - 2) {
-    wattron(contentWin, A_BOLD);
-    mvwprintw(contentWin, yOffset++, 5, "Description:");
-    wattroff(contentWin, A_BOLD);
-  }
+  // Render visible slice
+  for (int i = 0; i < visibleRows && (scrollOffset + i) < totalLines; ++i) {
+    int row = i + 1;   // row 0 and cw_max_y-1 are the box border
+    const std::string& raw = allLines[scrollOffset + i];
 
-  size_t charIndex = 0;
-  while (charIndex < currentTodo.desc.size() && yOffset < cw_max_y - 2) {
-    std::string line = currentTodo.desc.substr(charIndex, cw_max_x - 10);
-    mvwprintw(contentWin, yOffset++, 7, "%s", line.c_str());
-    charIndex += cw_max_x - 10;
+    if (!raw.empty() && raw[0] == '\x01') {
+      // Status line — coloured
+      std::string text = raw.substr(1);
+      if (currentTodo.isComplete)
+        wattron(contentWin, COLOR_PAIR(2));
+      else
+        wattron(contentWin, COLOR_PAIR(1));
+
+      mvwprintw(contentWin, row, col, "%s", text.c_str());
+
+      if (currentTodo.isComplete)
+        wattroff(contentWin, COLOR_PAIR(2));
+      else
+        wattroff(contentWin, COLOR_PAIR(1));
+
+    } else if (!raw.empty() && raw[0] == '\x02') {
+      // Bold label
+      wattron(contentWin, A_BOLD);
+      mvwprintw(contentWin, row, col, "%s", raw.substr(1).c_str());
+      wattroff(contentWin, A_BOLD);
+
+    } else {
+      mvwprintw(contentWin, row, col, "%s", raw.c_str());
+    }
   }
 
   FullScreenPanel::refreshKeyBar({
-    {"m/M", "Menu"},
+    {"m/M",     "Menu"},
     {"Esc/q/Q", "Back"},
-    {"^C", "Exit"}
+    {"Up/Dn",   "Scroll"},
+    {"^C",      "Exit"}
   });
 
   wrefresh(todoUserName);
   wrefresh(contentWin);
 }
+
+// ─── promptAction() ───────────────────────────────────────────────────────────
 
 TodoDetailAction TodoDetailPanel::promptAction() {
   keypad(win, TRUE);
@@ -159,6 +236,30 @@ TodoDetailAction TodoDetailPanel::promptAction() {
       wclear(win);
       FullScreenPanel::show();
 #endif
+      continue;
+    }
+
+    if (ch == KEY_UP) {
+      if (scrollOffset > 0) {
+        --scrollOffset;
+        render();
+      }
+      continue;
+    }
+
+    if (ch == KEY_DOWN) {
+      // Compute max scroll on the fly
+      int cw_max_y, cw_max_x;
+      getmaxyx(contentWin, cw_max_y, cw_max_x);
+      int lineWidth   = (cw_max_x > 8) ? cw_max_x - 8 : 1;
+      int visibleRows = cw_max_y - 2;
+      int totalLines  = (int)buildContentLines(lineWidth).size();
+      int maxScroll   = std::max(0, totalLines - visibleRows);
+
+      if (scrollOffset < maxScroll) {
+        ++scrollOffset;
+        render();
+      }
       continue;
     }
 

@@ -190,6 +190,28 @@ void MainMenuPanel::render() {
       if (!has_colors()) wattroff(todoBody, A_REVERSE);
     }
   }
+
+  // Draw scrollbar on todoBody
+  int totalLines = (int)todosList.size();
+  int maxScroll = std::max(0, totalLines - visibleRows);
+  if (totalLines > visibleRows) {
+    int pillSize = std::max(1, (visibleRows * visibleRows) / totalLines);
+    int maxPillStart = visibleRows - pillSize;
+    int pillStart = (maxScroll > 0 ? (moveFactor * maxPillStart) / maxScroll : 0);
+    int pillEnd = pillStart + pillSize - 1;
+    int rightCol = getmaxx(todoBody) - 1;
+
+    for (int r = 0; r < visibleRows; ++r) {
+      if (r >= pillStart && r <= pillEnd) {
+        wattron(todoBody, A_REVERSE);
+        mvwprintw(todoBody, r, rightCol, " ");
+        wattroff(todoBody, A_REVERSE);
+      } else {
+        mvwaddch(todoBody, r, rightCol, ACS_VLINE);
+      }
+    }
+  }
+
   BORDER_M(todoWindow);
 
   if (statsPanel) {
@@ -271,6 +293,27 @@ void MainMenuPanel::renderList() {
         wattroff(todoBody, COLOR_PAIR(1));
 
       if (!has_colors()) wattroff(todoBody, A_REVERSE);
+    }
+  }
+
+  // Draw scrollbar on todoBody
+  int totalLines = (int)todosList.size();
+  int maxScroll = std::max(0, totalLines - visibleRows);
+  if (totalLines > visibleRows) {
+    int pillSize = std::max(1, (visibleRows * visibleRows) / totalLines);
+    int maxPillStart = visibleRows - pillSize;
+    int pillStart = (maxScroll > 0 ? (moveFactor * maxPillStart) / maxScroll : 0);
+    int pillEnd = pillStart + pillSize - 1;
+    int rightCol = getmaxx(todoBody) - 1;
+
+    for (int r = 0; r < visibleRows; ++r) {
+      if (r >= pillStart && r <= pillEnd) {
+        wattron(todoBody, A_REVERSE);
+        mvwprintw(todoBody, r, rightCol, " ");
+        wattroff(todoBody, A_REVERSE);
+      } else {
+        mvwaddch(todoBody, r, rightCol, ACS_VLINE);
+      }
     }
   }
 

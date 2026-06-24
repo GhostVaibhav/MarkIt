@@ -12,7 +12,6 @@ class AddTodoPanel : public FullScreenPanel {
   ~AddTodoPanel() override;
 
   void render() override;
-
   void promptInput();
 
   int getMinWidth() const override { return Dimensions::AddTodoMinWidth; }
@@ -26,14 +25,22 @@ class AddTodoPanel : public FullScreenPanel {
  private:
   std::string name;
   std::string desc;
-  
+
   std::string curUser;
   std::string pantryId;
-  
+
   LogoPanel logoPanel;
-  WINDOW* titleWin = nullptr; 
-  WINDOW* contentWin = nullptr; 
-  
+  WINDOW* titleWin  = nullptr;
+  WINDOW* contentWin = nullptr;
+
+  // ── Live editing state (valid during captureInput) ─────────────────────────
+  int cursor_      = 0;   // caret position in active field string (char index)
+  int anchor_      = -1;  // selection anchor; -1 = no selection
+  int activeField_ = 0;   // 0 = idle, 1 = name, 2 = desc
+  int nameScroll_  = 0;   // rows hidden above name viewport
+  int descScroll_  = 0;   // rows hidden above desc viewport
+  static std::string clipboard_;  // in-process clipboard shared across instances
+
   void recreateWindows();
   std::string captureInput(bool isNameField);
 };

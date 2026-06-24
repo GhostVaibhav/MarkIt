@@ -33,4 +33,9 @@ class TodoDetailPanel : public FullScreenPanel {
   
   WINDOW* todoUserName;
   WINDOW* contentWin;
+
+  int scrollOffset = 0;   // lines scrolled down in the content window
+
+  // Build all virtual content lines for the current todo (for scroll calculations)
+  std::vector<std::string> buildContentLines(int lineWidth) const;
 };
