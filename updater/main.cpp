@@ -439,7 +439,7 @@ int main(int argc, char* argv[]) {
                   std::string expectedHash = fileDef[1];
                   
                   fileCount++;
-                  if (fileCount % 10 == 0 || fileCount == totalFiles) {
+                  if (fileCount % 10 == 0 || fileCount == (int)totalFiles) {
                       int loopPercent = 30 + static_cast<int>((static_cast<float>(fileCount) / totalFiles) * 15.0f);
                       clearScreen();
                       printHeader();

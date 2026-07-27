@@ -14,6 +14,7 @@
 #include <fstream>
 
 bool UpdateDownloader::download(const std::vector<UpdateAsset>& assets, bool isFullUpdate) {
+  (void)isFullUpdate;
   try {
     std::string stagingDir = UpdateConfig::getStagingDir();
     
