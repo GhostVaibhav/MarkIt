@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <mutex>
+#include <functional>
 
 #include "ISyncObserver.h"
 #include "PantryFacade.h"
@@ -25,6 +26,9 @@ class SyncManager {
                          const std::string& hash, const std::vector<Todo>& todos);
   void recomputeData(const std::vector<Todo>& todos);
 
+  void setRemoteCache(const std::string& cacheData);
+  void setCacheCallback(std::function<void(const std::string&, const std::string&)> saveCb);
+
   SyncStatus getSyncStatus() const;
   const PantryFacade& getFacade() const { return pantryFacade; }
   void addObserver(ISyncObserver* observer);
@@ -35,6 +39,7 @@ class SyncManager {
   SyncStatus syncStatus;
   mutable std::mutex statusMtx;
   std::vector<ISyncObserver*> observers;
+  std::function<void(const std::string&, const std::string&)> saveCacheCallback;
 
   void notifyObservers();
 };

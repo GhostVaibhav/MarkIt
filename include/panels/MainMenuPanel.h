@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "DimensionConfig.h"
@@ -22,6 +23,8 @@ class MainMenuPanel : public FullScreenPanel {
   void setScroll(int topOffset);
   void setCredentials(const std::string& username, const std::string& pantryId);
   void setUpdateVersion(const std::string& version);
+  void setSyncStateData(const std::unordered_set<std::string>& newIds,
+                        const std::unordered_set<std::string>& modifiedIds);
 
   int getMinWidth() const override { return Dimensions::MainMenuMinWidth; }
   int getMinHeight() const override { return Dimensions::MainMenuMinHeight; }
@@ -37,6 +40,9 @@ class MainMenuPanel : public FullScreenPanel {
   std::string curUser;
   std::string pantryId;
   std::string updateVersion;  // Non-empty when update is ready
+
+  std::unordered_set<std::string> syncNewIds;
+  std::unordered_set<std::string> syncModifiedIds;
 
   std::string convertTimeToString(int epoch) const;
 

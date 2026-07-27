@@ -12,6 +12,8 @@
 #include "Logger.h"
 #include "LoginResult.h"
 #include "picosha2.h"
+#include "files/FileManager.h"
+#include "utils/PathUtils.h"
 
 // Expose internal ttytype to match old PDCurses resize behavior if defined
 #ifdef _WIN32
@@ -335,6 +337,7 @@ bool Application::mainLoop() {
 
     ui->mainMenuPanel.setCredentials(userManager.getCurrentUser()->name,
                                      currentPantryId);
+    ui->mainMenuPanel.setSyncStateData(sync.newLocalIds, sync.modifiedLocalIds);
     ui->mainMenuPanel.setTodos(todos);
     ui->mainMenuPanel.setStats(todos.size(), comp);
     ui->mainMenuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
@@ -508,6 +511,7 @@ bool Application::mainLoop() {
           std::string descStr = ui->addTodoPanel.getEnteredDesc();
           if (!nameStr.empty()) {
             todoManager.addTodo(Todo::create(nameStr, descStr));
+            syncManager->recomputeData(todoManager.getAllTodos());
           }
           needDataRefresh = true;
         } else if (choiceStr.find("Connect to Pantry") != std::string::npos) {
@@ -529,6 +533,7 @@ bool Application::mainLoop() {
           std::string descStr = ui->addTodoPanel.getEnteredDesc();
           if (!nameStr.empty()) {
             todoManager.addTodo(Todo::create(nameStr, descStr));
+            syncManager->recomputeData(todoManager.getAllTodos());
           }
           needDataRefresh = true;
         } else if (choiceStr.find("Push all changes") != std::string::npos) {
@@ -590,6 +595,32 @@ int Application::run() {
     }
     syncManager = std::make_unique<SyncManager>(*pantryFacade);
     syncManager->addObserver(this);
+    
+    // Wire the callback to persist the cache to our SQLite DB
+    syncManager->setCacheCallback([this](const std::string& uid, const std::string& data) {
+      userManager.saveRemoteCache(uid, data);
+    });
+
+    // Load offline cache and immediately populate diff state
+    std::string dbCache = userManager.getRemoteCache(userManager.getCurrentUser()->id);
+    
+    // Seamless migration from legacy JSON file to SQLite DB
+    if (dbCache.empty()) {
+      std::string legacyPath = PathUtils::getDataPath() + "/" + userManager.getCurrentUser()->id + "_remote.json";
+      FileManager fm(legacyPath);
+      auto legacyContent = fm.readFile();
+      if (legacyContent && !legacyContent->empty()) {
+        dbCache = *legacyContent;
+        userManager.saveRemoteCache(userManager.getCurrentUser()->id, dbCache);
+        fm.deleteFile();
+        spdlog::info("Application: Successfully migrated legacy remote cache to SQLite for user '{}'", userManager.getCurrentUser()->name);
+      }
+    }
+
+    if (!dbCache.empty()) {
+      syncManager->setRemoteCache(dbCache);
+    }
+    syncManager->recomputeData(todoManager.getAllTodos());
 
     // Start background sync only when connected to Pantry
     if (!currentPantryId.empty()) {
@@ -687,6 +718,7 @@ void Application::pumpBackgroundEvents(FullScreenPanel* activePanel) {
 
   if (syncUpdatePending.exchange(false)) {
     SyncStatus sync = syncManager->getSyncStatus();
+    ui->mainMenuPanel.setSyncStateData(sync.newLocalIds, sync.modifiedLocalIds);
     ui->mainMenuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
     ui->todoDetailPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
     ui->menuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
@@ -712,8 +744,12 @@ void Application::pumpBackgroundEvents(FullScreenPanel* activePanel) {
     ui->pantryConnectPanel.setManualSyncState(manualSyncRunning, manualSyncType, static_cast<int>(manualSyncResult.load()), manualSyncResultPending, manualSyncFrame);
 
     if (activePanel) {
+      if (activePanel == &ui->mainMenuPanel) {
+        ui->mainMenuPanel.renderList();
+      }
       activePanel->renderSyncStateOnly();
     } else {
+      ui->mainMenuPanel.renderList();
       ui->mainMenuPanel.renderSyncStateOnly();
     }
   }

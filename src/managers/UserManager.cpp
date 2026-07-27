@@ -84,3 +84,11 @@ bool UserManager::clearSession() {
   currentUser = std::nullopt;
   return stateFileManager.deleteFile();
 }
+
+void UserManager::saveRemoteCache(const std::string& userId, const std::string& cacheData) {
+  userDBManager.saveRemoteCache(userId, cacheData);
+}
+
+std::string UserManager::getRemoteCache(const std::string& userId) {
+  return userDBManager.getRemoteCache(userId);
+}

@@ -6,6 +6,8 @@ UserDBManager::UserDBManager(const std::string& dbPath) : DBManager(dbPath) {
   db.exec(
       "CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT, "
       "password TEXT, pantryId TEXT)");
+  db.exec(
+      "CREATE TABLE IF NOT EXISTS remote_cache (userId TEXT PRIMARY KEY, data TEXT)");
 }
 
 std::vector<User> UserDBManager::getUsers() {
@@ -88,4 +90,29 @@ bool UserDBManager::existUser(const User& user) {
   spdlog::info("UserDBManager: Checked existence for user {}, result: {}",
                user.name, exists);
   return exists;
+}
+
+void UserDBManager::saveRemoteCache(const std::string& userId, const std::string& cacheData) {
+  try {
+    SQLite::Statement query(db, "INSERT OR REPLACE INTO remote_cache (userId, data) VALUES (?, ?)");
+    query.bind(1, userId);
+    query.bind(2, cacheData);
+    query.exec();
+    spdlog::info("UserDBManager: Successfully saved remote cache for user {}", userId);
+  } catch (const std::exception& e) {
+    spdlog::error("UserDBManager: Error saving remote cache for user {}: {}", userId, e.what());
+  }
+}
+
+std::string UserDBManager::getRemoteCache(const std::string& userId) {
+  try {
+    SQLite::Statement query(db, "SELECT data FROM remote_cache WHERE userId = ?");
+    query.bind(1, userId);
+    if (query.executeStep()) {
+      return query.getColumn(0).getString();
+    }
+  } catch (const std::exception& e) {
+    spdlog::error("UserDBManager: Error fetching remote cache for user {}: {}", userId, e.what());
+  }
+  return "";
 }

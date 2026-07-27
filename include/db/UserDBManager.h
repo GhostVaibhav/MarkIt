@@ -13,4 +13,7 @@ class UserDBManager : public DBManager {
   bool removeUser(const User& user);
   bool updateUser(const User& user);
   bool existUser(const User& user);
+
+  void saveRemoteCache(const std::string& userId, const std::string& cacheData);
+  std::string getRemoteCache(const std::string& userId);
 };

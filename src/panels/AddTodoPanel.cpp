@@ -108,6 +108,7 @@ static void applySelHighlight(WINDOW* win, int startRow, int scrollOff,
                                int selMin, int selMax,
                                const std::vector<VisualRow>& rows, int fieldWidth, int col, int slotRows,
                                int contentBottom) {
+  (void)fieldWidth;
   if (selMin >= selMax || rows.empty()) return;
   for (int r = 0; r < slotRows && (startRow + r) < contentBottom && (scrollOff + r) < (int)rows.size(); ++r) {
     const auto& vr = rows[scrollOff + r];
@@ -398,14 +399,26 @@ std::string AddTodoPanel::captureInput(bool isNameField, std::function<void()> o
     bool shiftHeld  = rawShiftHeld || isShiftKey;
 
     // Ctrl+Left / Ctrl+Shift+Left: word jump or word select
+#ifdef CTL_LEFT
     bool isCtrlLeft  = (ch == CTL_LEFT)  || ((ch == KEY_LEFT || ch == KEY_SLEFT) && ctrlHeld);
-    
+#else
+    bool isCtrlLeft  = ((ch == KEY_LEFT || ch == KEY_SLEFT) && ctrlHeld);
+#endif
+
     // Ctrl+Right / Ctrl+Shift+Right
+#ifdef CTL_RIGHT
     bool isCtrlRight = (ch == CTL_RIGHT) || ((ch == KEY_RIGHT || ch == KEY_SRIGHT) && ctrlHeld);
+#else
+    bool isCtrlRight = ((ch == KEY_RIGHT || ch == KEY_SRIGHT) && ctrlHeld);
+#endif
 
     // Ctrl+Backspace: delete previous word
+#ifdef CTL_BKSP
     bool isCtrlBksp  = (ch == CTL_BKSP) ||
                        ((ch == KEY_BACKSPACE || ch == 127 || ch == '\b') && ctrlHeld);
+#else
+    bool isCtrlBksp  = ((ch == KEY_BACKSPACE || ch == 127 || ch == '\b') && ctrlHeld);
+#endif
 
     // Terminal resize
     if (ch == KEY_RESIZE) {

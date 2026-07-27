@@ -15,6 +15,9 @@ class UserManager {
   bool removeUser(const User& user);
   bool updateUser(const User& user);
   std::vector<User> getAllUsers();
+  
+  void saveRemoteCache(const std::string& userId, const std::string& cacheData);
+  std::string getRemoteCache(const std::string& userId);
 
   void setCurrentUser(const User& user);
   std::optional<User> getCurrentUser() const;

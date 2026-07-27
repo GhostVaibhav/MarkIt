@@ -35,6 +35,12 @@ void MainMenuPanel::setUpdateVersion(const std::string& version) {
   updateVersion = version;
 }
 
+void MainMenuPanel::setSyncStateData(const std::unordered_set<std::string>& newIds,
+                                     const std::unordered_set<std::string>& modifiedIds) {
+  syncNewIds = newIds;
+  syncModifiedIds = modifiedIds;
+}
+
 std::string MainMenuPanel::convertTimeToString(int epoch) const {
   std::time_t temp = epoch;
   std::tm* t = std::localtime(&temp);
@@ -127,20 +133,29 @@ void MainMenuPanel::render() {
     mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
 
-  int tabDiv = (getmaxx(todoWindow) - 2) / 3;
+  bool hasPantry = !pantryId.empty() && pantryId != "None";
+  int symWidth = hasPantry ? 5 : 0;
+  int remainingWidthList = getmaxx(todoWindow) - 2 - symWidth;
+  int tabDiv = remainingWidthList / 3;
   if (tabDiv < 1) tabDiv = 1;
 
-  mvwvline(todoWindow, 1, tabDiv, 0, 1);
-  mvwvline(todoWindow, 1, 2 * tabDiv, 0, 1);
+  if (hasPantry) {
+    mvwvline(todoWindow, 1, symWidth, 0, 1);
+  }
+  mvwvline(todoWindow, 1, symWidth + tabDiv, 0, 1);
+  mvwvline(todoWindow, 1, symWidth + 2 * tabDiv, 0, 1);
   mvwhline(todoWindow, 2, 1, 0, getmaxx(todoWindow) - 2);
 
   // CLAMP HEADER COORDINATES
-  int col1 = (tabDiv - 4) / 2;
-  int col2 = ((3 * tabDiv - 12) / 2) + 1;
-  int col3 = ((5 * tabDiv - 13) / 2) + 2;
-  if (col1 < 0) col1 = 0;
-  if (col2 < 0) col2 = 0;
-  if (col3 < 0) col3 = 0;
+  if (hasPantry) {
+    mvwprintw(todoWindow, 1, 2, "St");
+  }
+  int col1 = symWidth + (tabDiv - 4) / 2;
+  int col2 = symWidth + tabDiv + (tabDiv - 11) / 2;
+  int col3 = symWidth + 2 * tabDiv + (tabDiv - 12) / 2;
+  if (col1 < symWidth + 1) col1 = symWidth + 1;
+  if (col2 < symWidth + tabDiv + 1) col2 = symWidth + tabDiv + 1;
+  if (col3 < symWidth + 2 * tabDiv + 1) col3 = symWidth + 2 * tabDiv + 1;
 
   mvwprintw(todoWindow, 1, col1, "Name");
   mvwprintw(todoWindow, 1, col2, "Description");
@@ -148,6 +163,12 @@ void MainMenuPanel::render() {
   BORDER_M(todoWindow);
 
   int visibleRows = getmaxy(todoBody);
+
+  if (hasPantry) {
+    mvwvline(todoBody, 0, symWidth - 1, 0, visibleRows);
+  }
+  mvwvline(todoBody, 0, symWidth + tabDiv - 1, 0, visibleRows);
+  mvwvline(todoBody, 0, symWidth + 2 * tabDiv - 1, 0, visibleRows);
 
   for (int i = 0; i < (int)todosList.size(); i++) {
     int row = i - moveFactor;
@@ -174,22 +195,34 @@ void MainMenuPanel::render() {
     std::replace(cleanDesc.begin(), cleanDesc.end(), '\n', ' ');
     std::replace(cleanDesc.begin(), cleanDesc.end(), '\r', ' ');
 
+    std::string prefix = "";
+    if (hasPantry) {
+      if (syncNewIds.count(todosList[i].id)) {
+        prefix = "+";
+      } else if (syncModifiedIds.count(todosList[i].id)) {
+        prefix = "*";
+      }
+    }
+
     std::string dispName = StringUtils::truncateString(cleanName, maxNameWidth);
     std::string dispDesc = StringUtils::truncateString(cleanDesc, maxDescWidth);
     std::string timeStr = convertTimeToString(todosList[i].time);
 
     // CLAMP ITEM COORDINATES
-    int x1 = (tabDiv - (int)dispName.size()) / 2;
-    int x2 = ((3 * tabDiv - (int)dispDesc.size()) / 2) + 1;
-    int x3 = ((5 * tabDiv - (int)timeStr.size()) / 2) + 2;
+    int x1 = symWidth + (tabDiv - (int)dispName.size()) / 2;
+    int x2 = symWidth + tabDiv + (tabDiv - (int)dispDesc.size()) / 2 + 1;
+    int x3 = symWidth + 2 * tabDiv + (tabDiv - (int)timeStr.size()) / 2 + 2;
 
-    if (x1 < 0) x1 = 0;
-    if (x2 < 0) x2 = 0;
-    if (x3 < 0) x3 = 0;
+    if (x1 < symWidth + 1) x1 = symWidth + 1;
+    if (x2 < symWidth + tabDiv + 1) x2 = symWidth + tabDiv + 1;
+    if (x3 < symWidth + 2 * tabDiv + 1) x3 = symWidth + 2 * tabDiv + 1;
 
-    mvwprintw(todoBody, row, x1, "%s", dispName.c_str());
-    mvwprintw(todoBody, row, x2, "%s", dispDesc.c_str());
-    mvwprintw(todoBody, row, x3, "%s", timeStr.c_str());
+    if (hasPantry) {
+      mvwprintw(todoBody, row, 1, "%s", prefix.c_str());
+    }
+    mvwprintw(todoBody, row, x1 - 1, "%s", dispName.c_str());
+    mvwprintw(todoBody, row, x2 - 1, "%s", dispDesc.c_str());
+    mvwprintw(todoBody, row, x3 - 1, "%s", timeStr.c_str());
 
     if (pointerIndex == i) {
       if (todosList[i].isComplete)
@@ -266,9 +299,18 @@ void MainMenuPanel::renderList() {
 
   wclear(todoBody);
 
-  int tabDiv = (getmaxx(todoWindow) - 2) / 3;
+  bool hasPantry = !pantryId.empty() && pantryId != "None";
+  int symWidth = hasPantry ? 5 : 0;
+  int remainingW = getmaxx(todoWindow) - 2 - symWidth;
+  int tabDiv = remainingW / 3;
   if (tabDiv < 1) tabDiv = 1;
   int visibleRows = getmaxy(todoBody);
+
+  if (hasPantry) {
+    mvwvline(todoBody, 0, symWidth - 1, 0, visibleRows);
+  }
+  mvwvline(todoBody, 0, symWidth + tabDiv - 1, 0, visibleRows);
+  mvwvline(todoBody, 0, symWidth + 2 * tabDiv - 1, 0, visibleRows);
 
   for (int i = 0; i < (int)todosList.size(); i++) {
     int row = i - moveFactor;
@@ -295,21 +337,34 @@ void MainMenuPanel::renderList() {
     std::replace(cleanDesc.begin(), cleanDesc.end(), '\n', ' ');
     std::replace(cleanDesc.begin(), cleanDesc.end(), '\r', ' ');
 
+    std::string prefix = "";
+    if (hasPantry) {
+      if (syncNewIds.count(todosList[i].id)) {
+        prefix = "+";
+      } else if (syncModifiedIds.count(todosList[i].id)) {
+        prefix = "*";
+      }
+    }
+
     std::string dispName = StringUtils::truncateString(cleanName, maxNameWidth);
     std::string dispDesc = StringUtils::truncateString(cleanDesc, maxDescWidth);
     std::string timeStr = convertTimeToString(todosList[i].time);
 
-    int x1 = (tabDiv - (int)dispName.size()) / 2;
-    int x2 = ((3 * tabDiv - (int)dispDesc.size()) / 2) + 1;
-    int x3 = ((5 * tabDiv - (int)timeStr.size()) / 2) + 2;
+    // CLAMP ITEM COORDINATES
+    int x1 = symWidth + (tabDiv - (int)dispName.size()) / 2;
+    int x2 = symWidth + tabDiv + (tabDiv - (int)dispDesc.size()) / 2 + 1;
+    int x3 = symWidth + 2 * tabDiv + (tabDiv - (int)timeStr.size()) / 2 + 2;
 
-    if (x1 < 0) x1 = 0;
-    if (x2 < 0) x2 = 0;
-    if (x3 < 0) x3 = 0;
+    if (x1 < symWidth + 1) x1 = symWidth + 1;
+    if (x2 < symWidth + tabDiv + 1) x2 = symWidth + tabDiv + 1;
+    if (x3 < symWidth + 2 * tabDiv + 1) x3 = symWidth + 2 * tabDiv + 1;
 
-    mvwprintw(todoBody, row, x1, "%s", dispName.c_str());
-    mvwprintw(todoBody, row, x2, "%s", dispDesc.c_str());
-    mvwprintw(todoBody, row, x3, "%s", timeStr.c_str());
+    if (hasPantry) {
+      mvwprintw(todoBody, row, 1, "%s", prefix.c_str());
+    }
+    mvwprintw(todoBody, row, x1 - 1, "%s", dispName.c_str());
+    mvwprintw(todoBody, row, x2 - 1, "%s", dispDesc.c_str());
+    mvwprintw(todoBody, row, x3 - 1, "%s", timeStr.c_str());
 
     if (pointerIndex == i) {
       if (todosList[i].isComplete)

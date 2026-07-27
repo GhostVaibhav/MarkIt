@@ -67,7 +67,11 @@ SyncResult SyncManager::pull(const std::string& userId,
     }
 
     cachedRemoteData = remoteData;
-    syncStatus.pendingPulls = 0;
+    syncStatus = SyncStatus::compute(localData, cachedRemoteData);
+  }
+  if (saveCacheCallback) {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    saveCacheCallback(userId, cachedRemoteData.dump());
   }
   notifyObservers();
   spdlog::info("SyncManager: Successfully merged cloud data locally");
@@ -105,8 +109,14 @@ SyncResult SyncManager::push(const std::string& userId,
       if (syncStatus.pendingPushes == 0) {
         cachedRemoteData = remoteData;
         spdlog::info("SyncManager: Push skipped (cloud already vertically synced)");
-        return SyncResult::AlreadyInSync;
       }
+    }
+    if (saveCacheCallback) {
+      std::lock_guard<std::mutex> lock(statusMtx);
+      saveCacheCallback(userId, cachedRemoteData.dump());
+    }
+    if (syncStatus.pendingPushes == 0) {
+      return SyncResult::AlreadyInSync;
     }
   }
 
@@ -114,7 +124,11 @@ SyncResult SyncManager::push(const std::string& userId,
     {
       std::lock_guard<std::mutex> lock(statusMtx);
       cachedRemoteData = localData;
-      syncStatus.pendingPushes = 0;
+      syncStatus = SyncStatus::compute(localData, cachedRemoteData);
+    }
+    if (saveCacheCallback) {
+      std::lock_guard<std::mutex> lock(statusMtx);
+      saveCacheCallback(userId, cachedRemoteData.dump());
     }
     notifyObservers();
     spdlog::info("SyncManager: Successfully pushed local data to cloud");
@@ -135,6 +149,10 @@ SyncStatus SyncManager::refresh(const std::string& userId,
       cachedRemoteData = fetched.data;
       syncStatus = SyncStatus::compute(localData, fetched.data);
       statusCpy = syncStatus;
+    }
+    if (saveCacheCallback) {
+      std::lock_guard<std::mutex> lock(statusMtx);
+      saveCacheCallback(userId, cachedRemoteData.dump());
     }
     spdlog::info(
         "SyncManager: Refreshed cloud sync status: {} pull(s), {} push(es) "
@@ -233,6 +251,10 @@ void SyncManager::applyRemoteUpdate(const nlohmann::json& remoteData,
     std::lock_guard<std::mutex> lock(statusMtx);
     cachedRemoteData = remoteData;
   }
+  if (saveCacheCallback) {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    saveCacheCallback(userId, cachedRemoteData.dump());
+  }
 
   nlohmann::json localData;
   localData["hash"] = hash;
@@ -286,4 +308,19 @@ void SyncManager::recomputeData(const std::vector<Todo>& todos) {
     syncStatus = SyncStatus::compute(localData, cachedRemoteData);
   }
   notifyObservers();
+}
+
+void SyncManager::setRemoteCache(const std::string& cacheData) {
+  if (cacheData.empty()) return;
+  try {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    cachedRemoteData = nlohmann::json::parse(cacheData);
+    spdlog::info("SyncManager: Loaded offline remote cache from DB");
+  } catch (const std::exception& e) {
+    spdlog::error("SyncManager: Failed to parse DB remote cache: {}", e.what());
+  }
+}
+
+void SyncManager::setCacheCallback(std::function<void(const std::string&, const std::string&)> saveCb) {
+  saveCacheCallback = std::move(saveCb);
 }
