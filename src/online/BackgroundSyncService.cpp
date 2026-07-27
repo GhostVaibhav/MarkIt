@@ -1,5 +1,6 @@
 #include "BackgroundSyncService.h"
 #include <spdlog/spdlog.h>
+#include "config/UpdateConfig.h"
 
 BackgroundSyncService::BackgroundSyncService() {}
 
@@ -18,7 +19,7 @@ void BackgroundSyncService::start(SyncManager* syncMgr, TodoManager* todoMgr,
   running = true;
   enabled = true;
   bgThread = std::thread(&BackgroundSyncService::worker, this);
-  spdlog::info("BackgroundSyncService: started (interval={}s)", POLL_INTERVAL_SECONDS);
+  spdlog::info("BackgroundSyncService: started (interval={}s)", UpdateConfig::kBgSyncIntervalSeconds);
 }
 
 void BackgroundSyncService::stop() {
@@ -45,7 +46,7 @@ void BackgroundSyncService::worker() {
     // Sleep for the poll interval, but wake up early on stop/toggle
     {
       std::unique_lock<std::mutex> lk(syncMtx);
-      cv.wait_for(lk, std::chrono::seconds(POLL_INTERVAL_SECONDS),
+      cv.wait_for(lk, std::chrono::seconds(UpdateConfig::kBgSyncIntervalSeconds),
                   [this] { return !running.load(); });
     }
 
@@ -68,11 +69,21 @@ void BackgroundSyncService::worker() {
     if (userId.empty()) continue;
 
     // 2. Perform IO UNLOCKED (slow network call)
-    nlohmann::json remoteData;
+    BucketResult fetched;
     try {
-        remoteData = syncManager->getFacade().loadBucket(userId);
+        fetched = syncManager->getFacade().loadBucket(userId);
     } catch (const std::exception& e) {
         spdlog::error("BackgroundSyncService: IO failed: {}", e.what());
+        continue;
+    }
+
+    if (!fetched.ok && !fetched.notFound) {
+        spdlog::warn("BackgroundSyncService: loadBucket failed (network error), skipping refresh");
+        continue;
+    }
+    if (fetched.notFound) {
+        spdlog::warn("BackgroundSyncService: Remote bucket is absent or expired — skipping refresh. "
+                     "User should push to recreate the bucket.");
         continue;
     }
 
@@ -80,7 +91,7 @@ void BackgroundSyncService::worker() {
     {
       std::lock_guard<std::mutex> lk(syncMtx);
       if (syncManager) {
-        syncManager->applyRemoteUpdate(remoteData, userId, userHash, todos);
+        syncManager->applyRemoteUpdate(fetched.data, userId, userHash, todos);
         spdlog::info("BackgroundSyncService: refresh completed");
       }
     }

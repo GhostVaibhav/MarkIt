@@ -69,7 +69,7 @@ std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const
   lines.push_back("");  // blank spacer
 
   // Name section
-  lines.push_back("\x02Name:");           // \x02 marker = bold label
+  lines.push_back("\x02 Name:");           // \x02 marker = bold label
   auto splitAndWrap = [&](const std::string& s) {
     if (s.empty()) {
       lines.push_back("");
@@ -97,7 +97,7 @@ std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const
   lines.push_back("");  // blank spacer
 
   // Description section
-  lines.push_back("\x02Description:");   // \x02 marker = bold label
+  lines.push_back("\x02 Description:");   // \x02 marker = bold label
   splitAndWrap(currentTodo.desc);
 
   return lines;
@@ -133,13 +133,27 @@ void TodoDetailPanel::render() {
   logoPanel.setPosition(1, part);
   logoPanel.render();
   
+  FullScreenPanel::renderSyncIndicator(todoUserName);
+  
   if (statsPanel) {
-    statsPanel->setWindow(win);
-    statsPanel->render();
+    statsPanel->render(todoUserName);
   }
 
+  renderContent();
+}
+
+void TodoDetailPanel::renderSyncStateOnly() {
+  if (!todoUserName) return;
+  FullScreenPanel::renderSyncIndicator(todoUserName);
+  if (statsPanel) {
+    statsPanel->render(todoUserName);
+  }
+  wrefresh(todoUserName);
+}
+
+void TodoDetailPanel::renderContent() {
   int u_x = getmaxx(todoUserName) - 50;
-  if (u_x < part + 45) u_x = part + 45;
+  if (u_x < 2 + 45) u_x = 2 + 45; // Using 2 as a safe default for 'part'
   int remainingW = getmaxx(todoUserName) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
@@ -230,11 +244,15 @@ void TodoDetailPanel::render() {
 
 // ─── promptAction() ───────────────────────────────────────────────────────────
 
-TodoDetailAction TodoDetailPanel::promptAction() {
+TodoDetailAction TodoDetailPanel::promptAction(std::function<void()> onIdle) {
   keypad(win, TRUE);
+  wtimeout(win, 100);
   while (true) {
     int ch = wgetch(win);
-    if (ch == ERR) continue;
+    if (ch == ERR) {
+      if (onIdle) onIdle();
+      continue;
+    }
     
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32

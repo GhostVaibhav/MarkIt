@@ -105,6 +105,9 @@ void MainMenuPanel::render() {
   box(todoWindow, 0, 0);
   box(todoUserName, 0, 0);
 
+  // --- MANUAL SYNC INDICATOR ---
+  FullScreenPanel::renderSyncIndicator(todoUserName);
+
   int part = (getmaxx(todoUserName) - 81) / 4;
   if (part <= 0) part = 2;
 
@@ -222,8 +225,7 @@ void MainMenuPanel::render() {
   BORDER_M(todoWindow);
 
   if (statsPanel) {
-    statsPanel->setWindow(win);
-    statsPanel->render();
+    statsPanel->render(todoUserName);
   }
 
   std::vector<std::pair<std::string, std::string>> keyBarItems = {
@@ -248,6 +250,15 @@ int MainMenuPanel::getVisibleRows() const {
   if (!todoBody) return 1;
   int rows = getmaxy(todoBody);
   return rows > 0 ? rows : 1;
+}
+
+void MainMenuPanel::renderSyncStateOnly() {
+  if (!todoUserName) return;
+  FullScreenPanel::renderSyncIndicator(todoUserName);
+  if (statsPanel) {
+    statsPanel->render(todoUserName);
+  }
+  wrefresh(todoUserName);
 }
 
 void MainMenuPanel::renderList() {
@@ -332,11 +343,4 @@ void MainMenuPanel::renderList() {
   }
 
   wrefresh(todoBody);
-}
-
-void MainMenuPanel::renderStats() {
-  if (statsPanel) {
-    statsPanel->setWindow(win);
-    statsPanel->render();
-  }
 }

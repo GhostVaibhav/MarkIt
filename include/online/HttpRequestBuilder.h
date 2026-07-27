@@ -1,6 +1,8 @@
 #pragma once
 #include <curl/curl.h>
 
+#include <chrono>
+#include <mutex>
 #include <string>
 
 #include "HttpResponse.h"
@@ -23,6 +25,8 @@ class HttpRequestBuilder {
   std::string method;
   std::string body;
   curl_slist* headers = nullptr;
-  static size_t writeCallback(void* ptr, size_t size, size_t count,
-                              void* stream);
+
+  // Process-global rate limiter — shared across ALL HttpRequestBuilder instances
+  static std::mutex  s_rateMtx;
+  static std::chrono::steady_clock::time_point s_lastRequestTime;
 };

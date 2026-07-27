@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <mutex>
 
 #include "ISyncObserver.h"
 #include "PantryFacade.h"
@@ -32,6 +33,7 @@ class SyncManager {
   nlohmann::json cachedRemoteData;
   PantryFacade pantryFacade;
   SyncStatus syncStatus;
+  mutable std::mutex statusMtx;
   std::vector<ISyncObserver*> observers;
 
   void notifyObservers();

@@ -5,6 +5,7 @@
 #include "DimensionConfig.h"
 #include "FullScreenPanel.h"
 #include "LogoPanel.h"
+#include <functional>
 
 class AddTodoPanel : public FullScreenPanel {
  public:
@@ -12,7 +13,9 @@ class AddTodoPanel : public FullScreenPanel {
   ~AddTodoPanel() override;
 
   void render() override;
-  void promptInput(const std::string& initName = "", const std::string& initDesc = "");
+  void promptInput(const std::string& defaultName = "",
+                   const std::string& defaultDesc = "",
+                   std::function<void()> onIdle = nullptr);
 
   int getMinWidth() const override { return Dimensions::AddTodoMinWidth; }
   int getMinHeight() const override { return Dimensions::AddTodoMinHeight; }
@@ -42,5 +45,5 @@ class AddTodoPanel : public FullScreenPanel {
   static std::string clipboard_;  // in-process clipboard shared across instances
 
   void recreateWindows();
-  std::string captureInput(bool isNameField);
+  std::string captureInput(bool isNameField, std::function<void()> onIdle = nullptr);
 };

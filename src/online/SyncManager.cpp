@@ -14,28 +14,61 @@ void SyncManager::notifyObservers() {
   }
 }
 
-SyncStatus SyncManager::getSyncStatus() const { return syncStatus; }
+SyncStatus SyncManager::getSyncStatus() const {
+  std::lock_guard<std::mutex> lock(statusMtx);
+  return syncStatus;
+}
 
 SyncResult SyncManager::pull(const std::string& userId,
                              nlohmann::json& localData) {
   spdlog::info("SyncManager: Initiating cloud data pull for user '{}'", userId);
-  nlohmann::json remoteData = pantryFacade.loadBucket(userId);
-  if (remoteData.empty()) {
-    spdlog::error("SyncManager: Cloud pull failed (network or bucket empty)");
+  BucketResult fetched = pantryFacade.loadBucket(userId);
+  if (!fetched.ok && !fetched.notFound) {
+    spdlog::error("SyncManager: Cloud pull failed (network error)");
     return SyncResult::NetworkError;
   }
 
-  syncStatus = SyncStatus::compute(localData, remoteData);
-  if (syncStatus.pendingPulls == 0) {
-    cachedRemoteData = remoteData;
-    spdlog::info(
-        "SyncManager: Pull skipped (dataset already vertically synced)");
+  // notFound (404) means the bucket has expired or never existed.
+  // Return BucketExpired so the caller can prompt the user to push-to-recreate.
+  nlohmann::json remoteData = std::move(fetched.data);
+  if (fetched.notFound) {
+    spdlog::warn("SyncManager: Remote bucket is absent or expired — returning BucketExpired");
+    return SyncResult::BucketExpired;
+  }
+  if (remoteData.empty()) {
+    spdlog::info("SyncManager: Remote bucket is empty — skipping pull");
     return SyncResult::AlreadyInSync;
   }
 
-  localData = remoteData;
-  cachedRemoteData = remoteData;
-  syncStatus.pendingPulls = 0;
+  {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    syncStatus = SyncStatus::compute(localData, remoteData);
+    if (syncStatus.pendingPulls == 0) {
+      cachedRemoteData = remoteData;
+      spdlog::info(
+          "SyncManager: Pull skipped (dataset already vertically synced)");
+      return SyncResult::AlreadyInSync;
+    }
+
+    if (localData.empty() || !localData.contains("data")) {
+      localData = remoteData;
+    } else {
+      std::unordered_set<std::string> localIds;
+      for (const auto& t : localData["data"]) {
+        localIds.insert(t["id"].get<std::string>());
+      }
+      if (remoteData.contains("data")) {
+        for (const auto& t : remoteData["data"]) {
+          if (localIds.find(t["id"].get<std::string>()) == localIds.end()) {
+            localData["data"].push_back(t);
+          }
+        }
+      }
+    }
+
+    cachedRemoteData = remoteData;
+    syncStatus.pendingPulls = 0;
+  }
   notifyObservers();
   spdlog::info("SyncManager: Successfully merged cloud data locally");
   return SyncResult::Success;
@@ -44,23 +77,45 @@ SyncResult SyncManager::pull(const std::string& userId,
 SyncResult SyncManager::push(const std::string& userId,
                              const nlohmann::json& localData) {
   spdlog::info("SyncManager: Initiating cloud data push for user '{}'", userId);
-  nlohmann::json remoteData = pantryFacade.loadBucket(userId);
-  if (remoteData.empty()) {
-    spdlog::error(
-        "SyncManager: Cloud push validation failed (network or bucket empty)");
-    return SyncResult::NetworkError;
-  }
+  BucketResult fetched = pantryFacade.loadBucket(userId);
 
-  syncStatus = SyncStatus::compute(localData, remoteData);
-  if (syncStatus.pendingPushes == 0) {
-    cachedRemoteData = remoteData;
-    spdlog::info("SyncManager: Push skipped (cloud already vertically synced)");
-    return SyncResult::AlreadyInSync;
+  if (!fetched.ok && !fetched.notFound) {
+    // Preflight failed with a network error. This may be transient (e.g. a
+    // brief connectivity blip). Log a warning but still attempt the save —
+    // the PUT itself will reveal whether the server is reachable.
+    spdlog::warn(
+        "SyncManager: Preflight loadBucket failed (network error) — "
+        "skipping in-sync check and attempting push anyway");
+  } else if (fetched.notFound) {
+    // notFound (404 or 400 "does not exist") means the bucket has expired or
+    // never existed. We already confirmed it's absent from the preflight —
+    // call createBucket() directly to avoid a redundant bucketExists GET.
+    spdlog::warn("SyncManager: Remote bucket absent/expired — recreating before push");
+    if (!pantryFacade.createBucket(userId)) {
+      spdlog::error("SyncManager: Failed to recreate bucket — aborting push");
+      return SyncResult::BucketExpired;
+    }
+    spdlog::info("SyncManager: Bucket recreated — proceeding with push");
+  } else {
+    // Preflight succeeded — check if a push is actually needed.
+    nlohmann::json remoteData = std::move(fetched.data);
+    if (!remoteData.empty()) {
+      std::lock_guard<std::mutex> lock(statusMtx);
+      syncStatus = SyncStatus::compute(localData, remoteData);
+      if (syncStatus.pendingPushes == 0) {
+        cachedRemoteData = remoteData;
+        spdlog::info("SyncManager: Push skipped (cloud already vertically synced)");
+        return SyncResult::AlreadyInSync;
+      }
+    }
   }
 
   if (pantryFacade.saveBucket(userId, localData)) {
-    cachedRemoteData = localData;
-    syncStatus.pendingPushes = 0;
+    {
+      std::lock_guard<std::mutex> lock(statusMtx);
+      cachedRemoteData = localData;
+      syncStatus.pendingPushes = 0;
+    }
     notifyObservers();
     spdlog::info("SyncManager: Successfully pushed local data to cloud");
     return SyncResult::Success;
@@ -72,19 +127,26 @@ SyncResult SyncManager::push(const std::string& userId,
 
 SyncStatus SyncManager::refresh(const std::string& userId,
                                 const nlohmann::json& localData) {
-  nlohmann::json remoteData = pantryFacade.loadBucket(userId);
-  if (!remoteData.empty()) {
-    cachedRemoteData = remoteData;
-    syncStatus = SyncStatus::compute(localData, remoteData);
+  BucketResult fetched = pantryFacade.loadBucket(userId);
+  if (fetched.ok && !fetched.data.empty()) {
+    SyncStatus statusCpy;
+    {
+      std::lock_guard<std::mutex> lock(statusMtx);
+      cachedRemoteData = fetched.data;
+      syncStatus = SyncStatus::compute(localData, fetched.data);
+      statusCpy = syncStatus;
+    }
     spdlog::info(
         "SyncManager: Refreshed cloud sync status: {} pull(s), {} push(es) "
         "pending",
-        syncStatus.pendingPulls, syncStatus.pendingPushes);
+        statusCpy.pendingPulls, statusCpy.pendingPushes);
     notifyObservers();
+  } else if (fetched.notFound || (fetched.ok && fetched.data.empty())) {
+    spdlog::info("SyncManager: Cloud refresh: remote bucket is absent or empty (new user)");
   } else {
-    spdlog::warn("SyncManager: Cloud refresh failed (network or bucket empty)");
+    spdlog::warn("SyncManager: Cloud refresh failed (network error)");
   }
-  return syncStatus;
+  return getSyncStatus();
 }
 
 SyncResult SyncManager::pushData(const std::string& userId,
@@ -111,6 +173,17 @@ SyncResult SyncManager::pushData(const std::string& userId,
 SyncResult SyncManager::pullData(const std::string& userId,
                                  std::vector<Todo>& outTodos) {
   nlohmann::json localData;
+  localData["data"] = nlohmann::json::array();
+  for (const auto& t : outTodos) {
+    nlohmann::json tJson;
+    tJson["id"] = t.id;
+    tJson["name"] = t.name;
+    tJson["desc"] = t.desc;
+    tJson["time"] = t.time;
+    tJson["isComplete"] = t.isComplete;
+    localData["data"].push_back(tJson);
+  }
+
   SyncResult result = pull(userId, localData);
 
   if (result == SyncResult::Success && localData.contains("data") &&
@@ -156,7 +229,10 @@ void SyncManager::applyRemoteUpdate(const nlohmann::json& remoteData,
   (void)userId;
   if (remoteData.empty()) return;
 
-  cachedRemoteData = remoteData;
+  {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    cachedRemoteData = remoteData;
+  }
 
   nlohmann::json localData;
   localData["hash"] = hash;
@@ -172,16 +248,24 @@ void SyncManager::applyRemoteUpdate(const nlohmann::json& remoteData,
     localData["data"].push_back(tJson);
   }
 
-  syncStatus = SyncStatus::compute(localData, remoteData);
+  SyncStatus statusCpy;
+  {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    syncStatus = SyncStatus::compute(localData, remoteData);
+    statusCpy = syncStatus;
+  }
   spdlog::info(
       "SyncManager: Applied remote update locally: {} pull(s), {} push(es) "
       "pending",
-      syncStatus.pendingPulls, syncStatus.pendingPushes);
+      statusCpy.pendingPulls, statusCpy.pendingPushes);
   notifyObservers();
 }
 
 void SyncManager::recomputeData(const std::vector<Todo>& todos) {
-  if (cachedRemoteData.empty()) return;
+  {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    if (cachedRemoteData.empty()) return;
+  }
   nlohmann::json localData;
   localData["hash"] = "";
   localData["number"] = 0;
@@ -197,6 +281,9 @@ void SyncManager::recomputeData(const std::vector<Todo>& todos) {
     localData["data"].push_back(tJson);
   }
 
-  syncStatus = SyncStatus::compute(localData, cachedRemoteData);
+  {
+    std::lock_guard<std::mutex> lock(statusMtx);
+    syncStatus = SyncStatus::compute(localData, cachedRemoteData);
+  }
   notifyObservers();
 }

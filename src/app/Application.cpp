@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <thread>
 
 #include <curses.h>
 
@@ -141,162 +142,161 @@ bool Application::handleLogin() {
 
 void Application::syncPush() {
   spdlog::info("Application: UI signaled cloud data sync push");
-  ui->loadingPanel.setLoadingText("Pushing to cloud...");
-  ui->loadingPanel.show();
+  if (manualSyncRunning.exchange(true)) return;
 
   auto user = userManager.getCurrentUser();
-  if (!user) return;
+  if (!user) { manualSyncRunning = false; return; }
 
-  std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-  SyncResult result = syncManager->pushData(user->id, user->password,
-                                            todoManager.getAllTodos());
-  if (result == SyncResult::Success)
-    spdlog::info("Application: Sync push orchestration succeeded");
-  else
-    spdlog::error("Application: Sync push orchestration failed");
+  manualSyncType = SyncOperation::Push;
+  manualSyncResultPending = false;
+
+  bool wasEnabled = bgSyncService.isEnabled();
+
+  std::thread([this, user, wasEnabled]() {
+    bgSyncService.stop();
+    SyncResult result = syncManager->pushData(user->id, user->password,
+                                              todoManager.getAllTodos());
+    if (result == SyncResult::Success)
+      spdlog::info("Application: Sync push orchestration succeeded");
+    else
+      spdlog::error("Application: Sync push orchestration failed");
+
+    if (wasEnabled && !currentPantryId.empty()) {
+      bgSyncService.start(
+        syncManager.get(), &todoManager,
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
+      );
+    }
+
+    manualSyncResult = result;
+    manualSyncResultTime = std::chrono::steady_clock::now();
+    manualSyncResultPending = true;
+    manualSyncRunning = false;
+    syncUpdatePending = true;
+    uiCv.notify_all();
+  }).detach();
 }
 
 void Application::syncPull() {
   spdlog::info("Application: UI signaled cloud data sync pull");
-  ui->loadingPanel.setLoadingText("Pulling from cloud...");
-  ui->loadingPanel.show();
+  if (manualSyncRunning.exchange(true)) return;
 
   auto user = userManager.getCurrentUser();
-  if (!user) return;
+  if (!user) { manualSyncRunning = false; return; }
 
-  std::vector<Todo> outTodos;
-  SyncResult result;
-  {
-    std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-    result = syncManager->pullData(user->id, outTodos);
-  }
+  manualSyncType = SyncOperation::Pull;
+  manualSyncResultPending = false;
 
-  if (result == SyncResult::Success) {
-    spdlog::info(
-        "Application: Sync pull orchestration succeeded, merging {} todos",
-        outTodos.size());
-    auto allTodos = todoManager.getAllTodos();
-    for (const auto& t : allTodos) {
-      todoManager.removeTodo(t);
-    }
-    for (const auto& t : outTodos) {
-      todoManager.addTodo(t);
-    }
-  }
-}
+  bool wasEnabled = bgSyncService.isEnabled();
 
-bool Application::offlineOptionHandling(int choice) {
-  if (choice == 0) {
-    ui->addTodoPanel.promptInput();
-    std::string nameStr = ui->addTodoPanel.getEnteredName();
-    std::string descStr = ui->addTodoPanel.getEnteredDesc();
-    if (!nameStr.empty()) {
-      todoManager.addTodo(Todo::create(nameStr, descStr));
-    }
-    return true;
-  } else if (choice == 1) {
-#ifdef _WIN32
-    system("start https://getpantry.cloud");
-#elif __APPLE__
-    system("open https://getpantry.cloud");
-#else
-    system("xdg-open https://getpantry.cloud");
-#endif
-    ui->pantryConnectPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
-    ui->pantryConnectPanel.show();
-    ui->pantryConnectPanel.promptInput();
-    std::string key = ui->pantryConnectPanel.getEnteredKey();
-    if (!key.empty()) {
-      auto user = userManager.getCurrentUser();
-      if (user) {
-        User u = *user;
-        u.pantryId = key;
-        userManager.updateUser(u);
-        currentPantryId = key;
-        {
-          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-          pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
-          syncManager = std::make_unique<SyncManager>(*pantryFacade);
-          syncManager->addObserver(this);
-        }
-        pantryFacade->createBucket(user->id);
-        bgSyncService.stop();
-        bgSyncService.start(
-          syncManager.get(), &todoManager,
-          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
-          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
-        );
+  std::thread([this, user, wasEnabled]() {
+    bgSyncService.stop();
+    std::vector<Todo> outTodos = todoManager.getAllTodos();
+    SyncResult result = syncManager->pullData(user->id, outTodos);
+
+    if (result == SyncResult::Success) {
+      spdlog::info(
+          "Application: Sync pull orchestration succeeded, merging {} todos",
+          outTodos.size());
+      auto allTodos = todoManager.getAllTodos();
+      for (const auto& t : allTodos) {
+        todoManager.removeTodo(t);
       }
+      for (const auto& t : outTodos) {
+        todoManager.addTodo(t);
+      }
+    } else if (result == SyncResult::BucketExpired) {
+      spdlog::warn(
+          "Application: Sync pull found no remote bucket (expired or missing). "
+          "Push your local data to recreate the bucket.");
     }
-    return true;
-  }
 
-  return false;
+    if (wasEnabled && !currentPantryId.empty()) {
+      bgSyncService.start(
+        syncManager.get(), &todoManager,
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
+      );
+    }
+
+    manualSyncResult = result;
+    manualSyncResultTime = std::chrono::steady_clock::now();
+    manualSyncResultPending = true;
+    manualSyncRunning = false;
+    syncUpdatePending = true;
+    uiCv.notify_all();
+  }).detach();
 }
 
-bool Application::onlineOptionHandling(int choice) {
-  if (choice == 0) {
-    ui->addTodoPanel.promptInput();
-    std::string nameStr = ui->addTodoPanel.getEnteredName();
-    std::string descStr = ui->addTodoPanel.getEnteredDesc();
-    if (!nameStr.empty()) {
-      todoManager.addTodo(Todo::create(nameStr, descStr));
+void Application::syncRefresh() {
+  spdlog::info("Application: UI signaled cloud data sync refresh");
+  if (manualSyncRunning.exchange(true)) return;
+
+  auto user = userManager.getCurrentUser();
+  if (!user) { manualSyncRunning = false; return; }
+
+  manualSyncType = SyncOperation::Refresh;
+  manualSyncResultPending = false;
+
+  bool wasEnabled = bgSyncService.isEnabled();
+
+  std::thread([this, user, wasEnabled]() {
+    bgSyncService.stop();
+    syncManager->refreshData(user->id, user->password,
+                             todoManager.getAllTodos());
+
+    if (wasEnabled && !currentPantryId.empty()) {
+      bgSyncService.start(
+        syncManager.get(), &todoManager,
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
+      );
     }
-    return true;
-  } else if (choice == 1) {
-    syncPush();
-    return true;
-  } else if (choice == 2) {
-    syncPull();
-    return true;
-  } else if (choice == 3) {
-    ui->loadingPanel.setLoadingText("Refreshing data...");
-    ui->loadingPanel.show();
+
+    manualSyncResult = SyncResult::Success;
+    manualSyncResultTime = std::chrono::steady_clock::now();
+    manualSyncResultPending = true;
+    manualSyncRunning = false;
+    syncUpdatePending = true;
+    uiCv.notify_all();
+  }).detach();
+}
+
+void Application::connectToPantry() {
+#ifdef _WIN32
+  system("start https://getpantry.cloud");
+#elif __APPLE__
+  system("open https://getpantry.cloud");
+#else
+  system("xdg-open https://getpantry.cloud");
+#endif
+  ui->pantryConnectPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
+  ui->pantryConnectPanel.show();
+  ui->pantryConnectPanel.promptInput([this]() { pumpBackgroundEvents(&ui->pantryConnectPanel); });
+  std::string key = ui->pantryConnectPanel.getEnteredKey();
+  if (!key.empty()) {
     auto user = userManager.getCurrentUser();
     if (user) {
-      std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-      syncManager->refreshData(user->id, user->password,
-                               todoManager.getAllTodos());
-    }
-    return true;
-  } else if (choice == 5) {
-#ifdef _WIN32
-    system("start https://getpantry.cloud");
-#elif __APPLE__
-    system("open https://getpantry.cloud");
-#else
-    system("xdg-open https://getpantry.cloud");
-#endif
-    ui->pantryConnectPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
-    ui->pantryConnectPanel.show();
-    ui->pantryConnectPanel.promptInput();
-    std::string key = ui->pantryConnectPanel.getEnteredKey();
-    if (!key.empty()) {
-      auto user = userManager.getCurrentUser();
-      if (user) {
-        User u = *user;
-        u.pantryId = key;
-        userManager.updateUser(u);
-        currentPantryId = key;
-        {
-          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-          pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
-          syncManager = std::make_unique<SyncManager>(*pantryFacade);
-          syncManager->addObserver(this);
-        }
-        pantryFacade->createBucket(user->id);
-        bgSyncService.stop();
-        bgSyncService.start(
-          syncManager.get(), &todoManager,
-          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
-          [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
-        );
+      User u = *user;
+      u.pantryId = key;
+      userManager.updateUser(u);
+      currentPantryId = key;
+      {
+        std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
+        pantryFacade = std::make_unique<PantryFacade>(currentPantryId);
+        syncManager = std::make_unique<SyncManager>(*pantryFacade);
+        syncManager->addObserver(this);
       }
+      pantryFacade->createBucket(user->id);
+      bgSyncService.stop();
+      bgSyncService.start(
+        syncManager.get(), &todoManager,
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->id : ""; },
+        [this]() -> std::string { auto u = userManager.getCurrentUser(); return u ? u->password : ""; }
+      );
     }
-    return true;
   }
-
-  return false;
 }
 
 void Application::resizeEvent() {
@@ -331,11 +331,7 @@ bool Application::mainLoop() {
     for (const auto& t : todos)
       if (t.isComplete) comp++;
 
-    SyncStatus sync;
-    {
-      std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-      sync = syncManager->getSyncStatus();
-    }
+    SyncStatus sync = syncManager->getSyncStatus();
 
     ui->mainMenuPanel.setCredentials(userManager.getCurrentUser()->name,
                                      currentPantryId);
@@ -350,6 +346,8 @@ bool Application::mainLoop() {
     ui->mainMenuPanel.setSelectedIndex(selectedTodo);
     ui->mainMenuPanel.setScroll(scrollOffset);
 
+    pumpBackgroundEvents(&ui->mainMenuPanel);
+
     // Pass update info to key bar
     if (updateService.isUpdateReady()) {
       ui->mainMenuPanel.setUpdateVersion(updateService.getUpdateInfo().latestVersion);
@@ -360,6 +358,8 @@ bool Application::mainLoop() {
     if (needFullRender) {
       ui->mainMenuPanel.show();
       needFullRender = false;
+    } else {
+      ui->mainMenuPanel.renderSyncStateOnly();
     }
 
     // Non-blocking input: check for a key, if none, wait on CV
@@ -367,30 +367,16 @@ bool Application::mainLoop() {
     int ch = getch();
 
     if (ch == ERR) {
-      // No key pressed — check if background sync woke us
-      if (syncUpdatePending.exchange(false)) {
-        // Background sync completed — just refresh the stats counter
-        {
-          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-          sync = syncManager->getSyncStatus();
-        }
-        ui->mainMenuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
-        ui->mainMenuPanel.renderStats();
-        continue;
-      }
-
       // Check if update service sent a notification
       if (updateNotificationPending.exchange(false)) {
         if (updateService.isUpdateReady()) {
-          // Show notification bar — handled in the key bar
-          // The user will see "u/U: Update" in the footer
+          // Show notification bar
           needFullRender = true;
         }
         continue;
       }
 
-      // Sleep efficiently until either a sync update or a short timeout
-      // (short timeout so we can poll getch again for keyboard input)
+      // Sleep efficiently until a short timeout
       {
         std::unique_lock<std::mutex> lk(uiMtx);
         uiCv.wait_for(lk, std::chrono::milliseconds(100));
@@ -429,12 +415,11 @@ bool Application::mainLoop() {
       if (!todos.empty() && selectedTodo >= 0 &&
           selectedTodo < (int)todos.size()) {
         ui->todoDetailPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
-        
         bool stayInDetail = true;
         while (stayInDetail) {
           ui->todoDetailPanel.setTodo(todos[selectedTodo]);
           ui->todoDetailPanel.show();
-          TodoDetailAction action = ui->todoDetailPanel.promptAction();
+          TodoDetailAction action = ui->todoDetailPanel.promptAction([this]() { pumpBackgroundEvents(&ui->todoDetailPanel); });
           
           if (action == TodoDetailAction::QuitApp) {
             return false;
@@ -442,39 +427,29 @@ bool Application::mainLoop() {
             stayInDetail = false;
           } else if (action == TodoDetailAction::EditTodo) {
             Todo& current = todos[selectedTodo];
-            ui->addTodoPanel.promptInput(current.name, current.desc);
+            ui->addTodoPanel.promptInput(current.name, current.desc, [this]() { pumpBackgroundEvents(&ui->addTodoPanel); });
             std::string newName = ui->addTodoPanel.getEnteredName();
             std::string newDesc = ui->addTodoPanel.getEnteredDesc();
             if (!newName.empty() && (newName != current.name || newDesc != current.desc)) {
               current.name = newName;
               current.desc = newDesc;
               todoManager.updateTodo(current);
-              {
-                std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-                syncManager->recomputeData(todoManager.getAllTodos());
-              }
+              syncManager->recomputeData(todoManager.getAllTodos());
             }
           } else if (action == TodoDetailAction::OpenMenu) {
             ui->menuPanel.setCredentials(userManager.getCurrentUser()->name, currentPantryId);
             ui->menuPanel.setMenuOptions({"1. Toggle Todo", "2. Delete", "3. Back"});
             ui->menuPanel.setSelectedIndex(0);
-            
-            int choice = ui->menuPanel.promptSelection();
+            int choice = ui->menuPanel.promptSelection([this]() { pumpBackgroundEvents(&ui->menuPanel); });
             if (choice == 0) { // Toggle
               todoManager.toggleTodo(todos[selectedTodo]);
-              {
-                std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-                syncManager->recomputeData(todoManager.getAllTodos());
-              }
+              syncManager->recomputeData(todoManager.getAllTodos());
               // Immediately re-fetch so TodoDetailPanel sees the updated state
               todos = todoManager.getAllTodos();
               needDataRefresh = false;
             } else if (choice == 1) { // Delete
               todoManager.removeTodo(todos[selectedTodo]);
-              {
-                std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-                syncManager->recomputeData(todoManager.getAllTodos());
-              }
+              syncManager->recomputeData(todoManager.getAllTodos());
               needDataRefresh = true;
               stayInDetail = false;
             }
@@ -486,10 +461,7 @@ bool Application::mainLoop() {
       if (!todos.empty() && selectedTodo >= 0 &&
           selectedTodo < (int)todos.size()) {
         todoManager.removeTodo(todos[selectedTodo]);
-        {
-          std::lock_guard<std::mutex> lock(bgSyncService.getSyncMutex());
-          syncManager->recomputeData(todoManager.getAllTodos());
-        }
+        syncManager->recomputeData(todoManager.getAllTodos());
         needDataRefresh = true;
       }
       needFullRender = true;
@@ -506,48 +478,77 @@ bool Application::mainLoop() {
                                    currentPantryId);
       if (pantryIdPopulated) {
         std::string syncLabel = bgSyncService.isEnabled()
-            ? "5. Disable auto-sync" : "5. Enable auto-sync";
-        ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Push all changes",
-                                      "3. Pull from the cloud", "4. Refresh",
-                                      syncLabel, "6. Edit Pantry link",
-                                      "7. Check for updates", "8. Logout"});
+            ? "Disable auto-sync" : "Enable auto-sync";
+        
+        if (manualSyncRunning.load()) {
+          ui->menuPanel.setMenuOptions({"1. Add a todo", 
+                                        "2. " + syncLabel, 
+                                        "3. Edit Pantry link",
+                                        "4. Check for updates", 
+                                        "5. Logout"});
+        } else {
+          ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Push all changes",
+                                        "3. Pull from the cloud", "4. Refresh",
+                                        "5. " + syncLabel, "6. Edit Pantry link",
+                                        "7. Check for updates", "8. Logout"});
+        }
       } else {
         ui->menuPanel.setMenuOptions(
             {"1. Add a todo", "2. Connect to Pantry",
              "3. Check for updates", "4. Logout"});
       }
       ui->menuPanel.setSelectedIndex(0);
-
-      int choice = ui->menuPanel.promptSelection();
+      int choice = ui->menuPanel.promptSelection([this]() { pumpBackgroundEvents(&ui->menuPanel); });
+      std::string choiceStr = ui->menuPanel.getOption(choice);
 
       if (!pantryIdPopulated) {
-        if (offlineOptionHandling(choice)) {
+        if (choiceStr.find("Add a todo") != std::string::npos) {
+          ui->addTodoPanel.promptInput("", "", [this]() { pumpBackgroundEvents(&ui->addTodoPanel); });
+          std::string nameStr = ui->addTodoPanel.getEnteredName();
+          std::string descStr = ui->addTodoPanel.getEnteredDesc();
+          if (!nameStr.empty()) {
+            todoManager.addTodo(Todo::create(nameStr, descStr));
+          }
           needDataRefresh = true;
-        } else if (choice == 2) {
-          // Check for updates
+        } else if (choiceStr.find("Connect to Pantry") != std::string::npos) {
+          connectToPantry();
+          needDataRefresh = true;
+        } else if (choiceStr.find("Check for updates") != std::string::npos) {
           ui->loadingPanel.setLoadingText("Checking for updates...");
           ui->loadingPanel.show();
           updateService.triggerCheck();
-        } else if (choice == 3) {
+        } else if (choiceStr.find("Logout") != std::string::npos) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
         }
       } else {
-        if (onlineOptionHandling(choice)) {
+        if (choiceStr.find("Add a todo") != std::string::npos) {
+          ui->addTodoPanel.promptInput("", "", [this]() { pumpBackgroundEvents(&ui->addTodoPanel); });
+          std::string nameStr = ui->addTodoPanel.getEnteredName();
+          std::string descStr = ui->addTodoPanel.getEnteredDesc();
+          if (!nameStr.empty()) {
+            todoManager.addTodo(Todo::create(nameStr, descStr));
+          }
           needDataRefresh = true;
-        } else if (choice == 3) {
-          // Refresh
+        } else if (choiceStr.find("Push all changes") != std::string::npos) {
+          syncPush();
           needDataRefresh = true;
-        } else if (choice == 4) {
-          // Toggle auto-sync
+        } else if (choiceStr.find("Pull from the cloud") != std::string::npos) {
+          syncPull();
+          needDataRefresh = true;
+        } else if (choiceStr.find("Refresh") != std::string::npos) {
+          syncRefresh();
+          needDataRefresh = true;
+        } else if (choiceStr.find("auto-sync") != std::string::npos) {
           bgSyncService.toggle();
-        } else if (choice == 6) {
-          // Check for updates
+        } else if (choiceStr.find("Edit Pantry link") != std::string::npos) {
+          connectToPantry();
+        } else if (choiceStr.find("Check for updates") != std::string::npos) {
           ui->loadingPanel.setLoadingText("Checking for updates...");
           ui->loadingPanel.show();
           updateService.triggerCheck();
-        } else if (choice == 7) {
+        } else if (choiceStr.find("Logout") != std::string::npos) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
@@ -674,4 +675,46 @@ void Application::launchUpdaterAndExit() {
   spdlog::error("Application: execl failed for updater");
   _exit(1);
 #endif
+}
+
+void Application::pumpBackgroundEvents(FullScreenPanel* activePanel) {
+  bool stateChanged = false;
+
+  if (manualSyncRunning) {
+    manualSyncFrame++;
+    stateChanged = true;
+  }
+
+  if (syncUpdatePending.exchange(false)) {
+    SyncStatus sync = syncManager->getSyncStatus();
+    ui->mainMenuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->todoDetailPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->menuPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->addTodoPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    ui->pantryConnectPanel.setSyncStatus(sync.pendingPushes, sync.pendingPulls);
+    stateChanged = true;
+  }
+
+  if (manualSyncResultPending) {
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - manualSyncResultTime).count() >= 5) {
+      manualSyncResultPending = false;
+      manualSyncType = SyncOperation::None;
+      stateChanged = true;
+    }
+  }
+
+  if (stateChanged) {
+    ui->mainMenuPanel.setManualSyncState(manualSyncRunning, manualSyncType, static_cast<int>(manualSyncResult.load()), manualSyncResultPending, manualSyncFrame);
+    ui->todoDetailPanel.setManualSyncState(manualSyncRunning, manualSyncType, static_cast<int>(manualSyncResult.load()), manualSyncResultPending, manualSyncFrame);
+    ui->menuPanel.setManualSyncState(manualSyncRunning, manualSyncType, static_cast<int>(manualSyncResult.load()), manualSyncResultPending, manualSyncFrame);
+    ui->addTodoPanel.setManualSyncState(manualSyncRunning, manualSyncType, static_cast<int>(manualSyncResult.load()), manualSyncResultPending, manualSyncFrame);
+    ui->pantryConnectPanel.setManualSyncState(manualSyncRunning, manualSyncType, static_cast<int>(manualSyncResult.load()), manualSyncResultPending, manualSyncFrame);
+
+    if (activePanel) {
+      activePanel->renderSyncStateOnly();
+    } else {
+      ui->mainMenuPanel.renderSyncStateOnly();
+    }
+  }
 }

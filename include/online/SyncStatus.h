@@ -49,4 +49,4 @@ struct SyncStatus {
   }
 };
 
-enum class SyncResult { Success, AlreadyInSync, NetworkError };
+enum class SyncResult { Success, AlreadyInSync, NetworkError, BucketExpired };

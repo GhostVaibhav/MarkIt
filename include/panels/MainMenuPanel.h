@@ -15,6 +15,7 @@ class MainMenuPanel : public FullScreenPanel {
   void render() override;
   void renderList();
   void renderStats();
+  void renderSyncStateOnly();
 
   void setTodos(const std::vector<Todo>& todos);
   void setSelectedIndex(int index);

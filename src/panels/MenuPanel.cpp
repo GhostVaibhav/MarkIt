@@ -123,9 +123,10 @@ void MenuPanel::render() {
     }
   }
 
+  FullScreenPanel::renderSyncIndicator(titleWin);
+
   if (statsPanel) {
-    statsPanel->setWindow(win);
-    statsPanel->render();
+    statsPanel->render(titleWin);
   }
 
   wrefresh(titleWin);
@@ -133,6 +134,15 @@ void MenuPanel::render() {
   
   FullScreenPanel::refreshKeyBar(
       {{"Up/Dn", "Move"}, {"Enter", "Select"}, {"Esc/q", "Close menu"}, {"^C", "Exit"}});
+}
+
+void MenuPanel::renderSyncStateOnly() {
+  if (!titleWin) return;
+  FullScreenPanel::renderSyncIndicator(titleWin);
+  if (statsPanel) {
+    statsPanel->render(titleWin);
+  }
+  wrefresh(titleWin);
 }
 
 void MenuPanel::renderMenuItems() {
@@ -172,16 +182,18 @@ void MenuPanel::renderMenuItems() {
   wrefresh(menuWin);
 }
 
-int MenuPanel::promptSelection() {
+int MenuPanel::promptSelection(std::function<void()> onIdle) {
   keypad(stdscr, true);
+  wtimeout(stdscr, 100);
   
-  // Initial render
   FullScreenPanel::show();
-  
+
   while (true) {
     int ch = getch();
-    
-    if (ch == ERR) continue;
+    if (ch == ERR) {
+      if (onIdle) onIdle();
+      continue;
+    }
 
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32

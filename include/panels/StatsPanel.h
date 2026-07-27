@@ -8,6 +8,7 @@ class StatsPanel : public Panel {
   StatsPanel(WINDOW* win, int x, int y);
   ~StatsPanel();
   void render() override;
+  void render(WINDOW* targetWin);
 
   void setStats(size_t total, int completed);
   void setSyncStatus(int pendingPushes, int pendingPulls);

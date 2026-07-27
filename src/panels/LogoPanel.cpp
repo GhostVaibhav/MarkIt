@@ -5,6 +5,10 @@
 LogoPanel::LogoPanel(WINDOW* w, int x, int y) : Panel(w, x, y) {}
 
 void LogoPanel::render() {
+  std::string ch = "";
+#ifdef DEBUG
+  ch = "d";
+#endif
   wattron(win, COLOR_PAIR(3));
   mvwprintw(win, x + 1, y, R"(   __  ___)");
   mvwprintw(win, x + 2, y, R"(  /  |/  /)");
@@ -45,6 +49,6 @@ void LogoPanel::render() {
   mvwprintw(win, x + 3, y + 31, R"(/_/)");
   mvwprintw(win, x + 4, y + 30, R"((v))");
   AppConfig config;
-  mvwprintw(win, x + 4, y + 33, "%s", config.version.c_str());
+  mvwprintw(win, x + 4, y + 33, "%s", (config.version + ch).c_str());
   wattroff(win, COLOR_PAIR(1));
 }

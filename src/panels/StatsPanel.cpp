@@ -17,39 +17,30 @@ void StatsPanel::setSyncStatus(int push, int pull) {
 }
 
 void StatsPanel::render() {
+  // Fallback to legacy render if called
+  render(win);
+}
+
+void StatsPanel::render(WINDOW* targetWin) {
+  if (!targetWin) return;
   int max_y, max_x;
-  getmaxyx(win, max_y, max_x);
+  getmaxyx(targetWin, max_y, max_x);
   (void)max_y;
 
   std::string stringPush = std::to_string(pendingPush);
   std::string stringPull = std::to_string(pendingPull);
 
-  int width = 10 + (int) stringPull.size() + (int) stringPush.size();
-  int startX = max_x - width - 2;
+  int width = 8 + (int) stringPull.size() + (int) stringPush.size();
+  int startX = max_x - width - 1;
   if (startX < 0) startX = 0;
 
-  if (!statsWin) {
-    statsWin = newwin(3, width + 2, 0, startX);
-  } else {
-    // move back to 0,0 temporarily to avoid out of bounds
-    mvwin(statsWin, 0, 0);
-#ifdef _WIN32
-    resize_window(statsWin, 3, width + 2);
-#else
-    wresize(statsWin, 3, width + 2);
-#endif
-    mvwin(statsWin, 0, startX);
-  }
-
-  wclear(statsWin);
-
-  wattron(statsWin, COLOR_PAIR(1));
-  mvwprintw(statsWin, 1, 0, " + %s", stringPush.c_str());
-  wattroff(statsWin, COLOR_PAIR(1));
+  wattron(targetWin, COLOR_PAIR(1));
+  mvwprintw(targetWin, 1, startX, " + %s", stringPush.c_str());
+  wattroff(targetWin, COLOR_PAIR(1));
   
-  wattron(statsWin, COLOR_PAIR(2));
-  wprintw(statsWin, "  - %s ", stringPull.c_str());
-  wattroff(statsWin, COLOR_PAIR(2));
+  wattron(targetWin, COLOR_PAIR(2));
+  wprintw(targetWin, "  - %s ", stringPull.c_str());
+  wattroff(targetWin, COLOR_PAIR(2));
   
-  wrefresh(statsWin);
+  // Notice we DON'T wrefresh here, as it's the caller's responsibility.
 }

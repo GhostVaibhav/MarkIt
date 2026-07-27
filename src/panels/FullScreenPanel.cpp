@@ -54,3 +54,39 @@ void FullScreenPanel::renderSizeWarning() {
   mvwprintw(win, max_y / 2, (max_x - 22) / 2, "Please enlarge terminal");
   wrefresh(win);
 }
+
+void FullScreenPanel::renderSyncIndicator(WINDOW* targetWin) {
+  if (!targetWin) return;
+  if (!manualSyncRunning && !manualSyncResultPending) {
+    mvwhline(targetWin, 0, 2, ACS_HLINE, 25);
+    wrefresh(targetWin);
+    return;
+  }
+  
+  std::string text = "";
+  if (manualSyncRunning) {
+    const char* spinner[] = {"-", "\\", "|", "/"};
+    std::string sp = spinner[(manualSyncFrame / 2) % 4];
+    if (manualSyncType == SyncOperation::Push) text = "[ " + sp + " Pushing... ]";
+    else if (manualSyncType == SyncOperation::Pull) text = "[ " + sp + " Pulling... ]";
+    else if (manualSyncType == SyncOperation::Refresh) text = "[ " + sp + " Refreshing... ]";
+  } else if (manualSyncResultPending) {
+    if (manualSyncResult == SyncResult::Success ||
+        manualSyncResult == SyncResult::AlreadyInSync) {
+      text = "[ o Synced ]";
+    } else if (manualSyncResult == SyncResult::BucketExpired) {
+      text = "[ ! Bucket Expired - Push to Recreate ]";
+    } else {
+      text = "[ ! Sync Failed ]";
+    }
+  }
+  
+  if (!text.empty()) {
+    wattron(targetWin, A_BOLD);
+    mvwprintw(targetWin, 0, 2, "%s", text.c_str());
+    wattroff(targetWin, A_BOLD);
+    int textLen = text.length();
+    mvwhline(targetWin, 0, 2 + textLen, ACS_HLINE, 25 - textLen);
+    wrefresh(targetWin);
+  }
+}

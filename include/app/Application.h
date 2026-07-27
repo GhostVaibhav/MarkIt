@@ -11,6 +11,7 @@
 #include "SyncManager.h"
 #include "TodoManager.h"
 #include "UserManager.h"
+#include "SyncOperation.h"
 #include "MainUI.h"
 #include "ISyncObserver.h"
 #include "IUpdateObserver.h"
@@ -33,12 +34,13 @@ class Application : public ISyncObserver, public IUpdateObserver {
 
   bool handleLogin();
   bool mainLoop();
-  bool offlineOptionHandling(int);
-  bool onlineOptionHandling(int);
+  void pumpBackgroundEvents(FullScreenPanel* activePanel);
+  void connectToPantry();
 
   void resizeEvent();
   void syncPush();
   void syncPull();
+  void syncRefresh();
 
   /**
    * Ends curses, launches the external updater process, and exits.
@@ -63,5 +65,12 @@ class Application : public ISyncObserver, public IUpdateObserver {
   std::condition_variable uiCv;
   std::atomic<bool> syncUpdatePending{false};
   std::atomic<bool> updateNotificationPending{false};
-};
 
+  // Manual Sync UI State
+  std::atomic<bool> manualSyncRunning{false};
+  std::atomic<SyncOperation> manualSyncType{SyncOperation::None};
+  std::atomic<SyncResult> manualSyncResult{SyncResult::Success};
+  std::atomic<bool> manualSyncResultPending{false};
+  int manualSyncFrame{0};
+  std::chrono::time_point<std::chrono::steady_clock> manualSyncResultTime;
+};

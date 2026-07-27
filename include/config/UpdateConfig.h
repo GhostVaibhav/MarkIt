@@ -21,7 +21,14 @@ namespace UpdateConfig {
       "https://api.github.com/repos/GhostVaibhav/MarkIt/releases";
 
   // Timing
-  inline constexpr int kCheckIntervalMinutes = 30;
+  inline constexpr int kCheckIntervalMinutes   = 30;
+  inline constexpr int kBgSyncIntervalSeconds  = 30;
+
+  // GetPantry rate-limit: 2 requests/second maximum.
+  // Enforce a 1000 ms minimum gap AFTER each response (safely under the limit)
+  // and wait 3000 ms before retrying after a 429 response.
+  inline constexpr int kRequestMinIntervalMs   = 1000;
+  inline constexpr int kRateLimitRetryDelayMs  = 3000;
 
   // Feature flag to bypass the 8-version patch limit for testing
   inline constexpr bool kEnforcePatchLimit = false;

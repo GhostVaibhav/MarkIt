@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <functional>
+
 #include "DimensionConfig.h"
 #include "FullScreenPanel.h"
 #include "LogoPanel.h"
@@ -18,7 +20,8 @@ class TodoDetailPanel : public FullScreenPanel {
   void setTodo(const Todo& todo);
   void setCredentials(const std::string& username, const std::string& id);
   void render() override;
-  TodoDetailAction promptAction();
+  void renderSyncStateOnly() override;
+  TodoDetailAction promptAction(std::function<void()> onIdle = nullptr);
   
   void recreateWindows();
 
@@ -26,6 +29,7 @@ class TodoDetailPanel : public FullScreenPanel {
   int getMinHeight() const override { return Dimensions::TodoDetailMinHeight; }
 
  private:
+  void renderContent();
   LogoPanel logoPanel;
   Todo currentTodo;
   std::string curUser;

@@ -70,9 +70,10 @@ void PantryConnectPanel::render() {
   logoPanel.setPosition(1, part);
   logoPanel.render();
   
+  FullScreenPanel::renderSyncIndicator(titleWin);
+  
   if (statsPanel) {
-    statsPanel->setWindow(win);
-    statsPanel->render();
+    statsPanel->render(titleWin);
   }
 
   int u_x = getmaxx(titleWin) - 50;
@@ -95,7 +96,7 @@ void PantryConnectPanel::render() {
   FullScreenPanel::refreshKeyBar({{"Enter", "Submit"}, {"empty", "Cancel"}, {"^C", "Exit"}});
 }
 
-void PantryConnectPanel::promptInput() {
+void PantryConnectPanel::promptInput(std::function<void()> onIdle) {
   noecho();
   curs_set(1);
   apiKey = "";
@@ -106,8 +107,12 @@ void PantryConnectPanel::promptInput() {
   wmove(contentWin, 4, 2);
   wrefresh(contentWin);
 
+  wtimeout(contentWin, 100);
   while ((ch = wgetch(contentWin)) != '\n') {
-    if (ch == ERR) continue;
+    if (ch == ERR) {
+      if (onIdle) onIdle();
+      continue;
+    }
 
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32

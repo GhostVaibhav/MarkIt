@@ -55,6 +55,4 @@ class BackgroundSyncService {
   TodoManager* todoManager = nullptr;
   std::function<std::string()> getIdFn;
   std::function<std::string()> getHashFn;
-
-  static constexpr int POLL_INTERVAL_SECONDS = 1;
 };

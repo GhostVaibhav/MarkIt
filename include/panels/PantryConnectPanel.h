@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 
+#include <functional>
+
 #include "DimensionConfig.h"
 #include "FullScreenPanel.h"
 #include "LogoPanel.h"
@@ -11,7 +13,7 @@ class PantryConnectPanel : public FullScreenPanel {
   ~PantryConnectPanel();
 
   void render() override;
-  void promptInput();
+  void promptInput(std::function<void()> onIdle = nullptr);
   std::string getEnteredKey() const;
   void setCredentials(const std::string& username, const std::string& id);
 

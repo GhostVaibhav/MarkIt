@@ -6,6 +6,8 @@
 
 #include "DimensionConfig.h"
 #include "StatsPanel.h"
+#include "SyncOperation.h"
+#include "SyncStatus.h"
 
 class FullScreenPanel {
  public:
@@ -14,6 +16,11 @@ class FullScreenPanel {
 
   void show();
   virtual void render() = 0;
+  virtual void renderSyncStateOnly() {
+    if (win) {
+      renderSyncIndicator(win);
+    }
+  }
 
   void handleResize();
   bool checkSize();
@@ -30,6 +37,16 @@ class FullScreenPanel {
     if (statsPanel) statsPanel->setSyncStatus(push, pull);
   }
 
+  void setManualSyncState(bool running, SyncOperation type, int result, bool resultPending, int frame) {
+    manualSyncRunning = running;
+    manualSyncType = type;
+    manualSyncResult = static_cast<SyncResult>(result);
+    manualSyncResultPending = resultPending;
+    manualSyncFrame = frame;
+  }
+  
+  void renderSyncIndicator(WINDOW* targetWin);
+
  protected:
   WINDOW* win;
   WINDOW* bottomBar = nullptr;
@@ -37,4 +54,10 @@ class FullScreenPanel {
   void renderSizeWarning();
   void refreshKeyBar(
       const std::vector<std::pair<std::string, std::string>>& keys);
+
+  bool manualSyncRunning = false;
+  SyncOperation manualSyncType = SyncOperation::None;
+  SyncResult manualSyncResult = SyncResult::Success;
+  bool manualSyncResultPending = false;
+  int manualSyncFrame = 0;
 };

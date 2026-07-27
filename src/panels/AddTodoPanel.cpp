@@ -148,6 +148,11 @@ void AddTodoPanel::render() {
   logoPanel.setWindow(titleWin);
   logoPanel.setPosition(1, part);
   logoPanel.render();
+  
+  FullScreenPanel::renderSyncIndicator(titleWin);
+  if (statsPanel) {
+    statsPanel->render(titleWin);
+  }
 
   int u_x = getmaxx(titleWin) - 50;
   if (u_x < part + 45) u_x = part + 45;
@@ -244,7 +249,7 @@ void AddTodoPanel::render() {
 
 // ─── captureInput() ───────────────────────────────────────────────────────────
 
-std::string AddTodoPanel::captureInput(bool isNameField) {
+std::string AddTodoPanel::captureInput(bool isNameField, std::function<void()> onIdle) {
   std::string& str = isNameField ? name : desc;
 
   // ── Initialise editing state ───────────────────────────────────────────────
@@ -367,9 +372,15 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
   wrefresh(contentWin);
 
   // ── Input loop ─────────────────────────────────────────────────────────────
-  while (true) {
+  bool done = false;
+  wtimeout(contentWin, 100);
+
+  while (!done) {
     int ch = wgetch(contentWin);
-    if (ch == ERR) continue;
+    if (ch == ERR) {
+      if (onIdle) onIdle();
+      continue;
+    }
 
     // Read modifier keys — PDCurses only; on ncurses mods are always 0.
 #ifdef __PDCURSES__
@@ -584,13 +595,13 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
         str.insert(cursor_, 1, '\n');
         ++cursor_;
       } else {
-        break;
+        done = true;
       }
 
     // ── Escape: cancel input entirely ─────────────────────────────────────────
     } else if (ch == 27) {
       str = "\x1b";
-      break;
+      done = true;
 
     // ── Printable character ───────────────────────────────────────────────────
     } else if (isprint(ch)) {
@@ -621,7 +632,7 @@ std::string AddTodoPanel::captureInput(bool isNameField) {
 
 // ─── promptInput() ────────────────────────────────────────────────────────────
 
-void AddTodoPanel::promptInput(const std::string& initName, const std::string& initDesc) {
+void AddTodoPanel::promptInput(const std::string& initName, const std::string& initDesc, std::function<void()> onIdle) {
   noecho();
   curs_set(1);
 
@@ -632,7 +643,7 @@ void AddTodoPanel::promptInput(const std::string& initName, const std::string& i
   descScroll_ = 0;
   FullScreenPanel::show();
 
-  std::string n = captureInput(true);
+  std::string n = captureInput(true, onIdle);
   if (n == "\x1b") {
     name = "";
     desc = "";
