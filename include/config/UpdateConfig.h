@@ -34,9 +34,14 @@ namespace UpdateConfig {
   inline constexpr bool kEnforcePatchLimit = false;
 
   // Asset naming convention (must match the workflow artifact names)
-  // Final URL: .../releases/download/<tag>/MarkIt-linux-<arch>.tar.gz
+  // Final URL: .../releases/download/<tag>/<AssetPrefix><arch>.tar.gz
+#ifdef _WIN32
+  inline constexpr const char* kAssetPrefix = "MarkIt-windows-";
+  inline constexpr const char* kPatchPrefix = "patches-windows-";
+#else
   inline constexpr const char* kAssetPrefix = "MarkIt-linux-";
   inline constexpr const char* kPatchPrefix = "patches-linux-";
+#endif
   inline constexpr const char* kAssetSuffix = ".tar.gz";
 
   // Updater binary name

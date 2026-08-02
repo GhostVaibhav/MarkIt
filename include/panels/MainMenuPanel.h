@@ -11,7 +11,7 @@
 
 class MainMenuPanel : public FullScreenPanel {
  public:
-  explicit MainMenuPanel(WINDOW* win);
+  explicit MainMenuPanel(WINDOW* win, std::shared_ptr<I18nProvider> i18n = nullptr);
   ~MainMenuPanel();
   void render() override;
   void renderList();

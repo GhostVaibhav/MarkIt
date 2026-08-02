@@ -2,8 +2,8 @@
 
 #define BORDER_M(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)
 
-LoginPanel::LoginPanel(WINDOW* w)
-    : FullScreenPanel(), logoPanel(w, 0, 0), loadingPanel(w) {}
+LoginPanel::LoginPanel(WINDOW* w, std::shared_ptr<I18nProvider> i18n)
+    : FullScreenPanel(i18n), logoPanel(w, 0, 0, i18n), loadingPanel(w, i18n) {}
 
 LoginPanel::~LoginPanel() {
   if (title) delwin(title);
@@ -102,19 +102,21 @@ void LoginPanel::render() {
   int u_x = 5;
   if (u_x >= getmaxx(userNameWindow)) u_x = getmaxx(userNameWindow) - 1;
   if (u_x < 0) u_x = 0;
-  mvwprintw(userNameWindow, getmaxy(userNameWindow) / 2, u_x, "Username: %s",
-            username.c_str());
+  std::string userPrompt = i18n ? i18n->get("username_label") : "Username: ";
+  mvwprintw(userNameWindow, getmaxy(userNameWindow) / 2, u_x, "%s%s",
+            userPrompt.c_str(), username.c_str());
 
-  std::string pwPrompt = "Enter the password";
+  std::string pwPrompt = i18n ? i18n->get("enter_password") : "Enter the password";
+  std::string wrongPw = i18n ? i18n->get("wrong_password") : "Wrong Password";
 
-  if (errorMessage == "Wrong Password") {
+  if (errorMessage == wrongPw || errorMessage == "Wrong Password") {
     wattron(passwordWindow, COLOR_PAIR(2));
     box(passwordWindow, 0, 0);
 
     int err_x = (getmaxx(passwordWindow) - 14) / 2;
     if (err_x < 0) err_x = 0;
     mvwprintw(passwordWindow, getmaxy(passwordWindow) / 2, err_x,
-              "Wrong Password");
+              "%s", wrongPw.c_str());
 
     wattroff(passwordWindow, COLOR_PAIR(2));
   } else if (password.empty()) {
@@ -130,7 +132,9 @@ void LoginPanel::render() {
   wrefresh(userNameWindow);
   wrefresh(passwordWindow);
 
-  FullScreenPanel::refreshKeyBar({{"Enter", "Next field"}, {"^C", "Exit"}});
+  std::string nextStr = i18n ? i18n->get("key_next_field") : "Next field";
+  std::string exitStr = i18n ? i18n->get("key_exit") : "Exit";
+  FullScreenPanel::refreshKeyBar({{"Enter", nextStr}, {"^C", exitStr}});
 }
 
 // local resizeEvent removed

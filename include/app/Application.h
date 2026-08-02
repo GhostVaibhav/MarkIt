@@ -15,6 +15,7 @@
 #include "MainUI.h"
 #include "ISyncObserver.h"
 #include "IUpdateObserver.h"
+#include "i18n/I18nProvider.h"
 
 class Application : public ISyncObserver, public IUpdateObserver {
  public:
@@ -57,6 +58,7 @@ class Application : public ISyncObserver, public IUpdateObserver {
   std::unique_ptr<SyncManager> syncManager;
   BackgroundSyncService bgSyncService;
   BackgroundUpdateService updateService;
+  std::shared_ptr<I18nProvider> i18nProvider;
 
   std::string currentPantryId;
 
@@ -72,5 +74,6 @@ class Application : public ISyncObserver, public IUpdateObserver {
   std::atomic<SyncResult> manualSyncResult{SyncResult::Success};
   std::atomic<bool> manualSyncResultPending{false};
   int manualSyncFrame{0};
+  std::chrono::time_point<std::chrono::steady_clock> manualSyncStartTime;
   std::chrono::time_point<std::chrono::steady_clock> manualSyncResultTime;
 };

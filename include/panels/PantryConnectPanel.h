@@ -9,7 +9,7 @@
 
 class PantryConnectPanel : public FullScreenPanel {
  public:
-  explicit PantryConnectPanel(WINDOW* win);
+  explicit PantryConnectPanel(WINDOW* win, std::shared_ptr<I18nProvider> i18n = nullptr);
   ~PantryConnectPanel();
 
   void render() override;

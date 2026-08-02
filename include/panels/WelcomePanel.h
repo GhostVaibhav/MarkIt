@@ -7,7 +7,7 @@
 
 class WelcomePanel : public FullScreenPanel {
  public:
-  explicit WelcomePanel(WINDOW* win);
+  explicit WelcomePanel(WINDOW* win, std::shared_ptr<I18nProvider> i18n = nullptr);
   void render() override;
   /** Blocks until a key is read. Returns false if the user chose to quit (q,
    * Esc, Ctrl+C). */

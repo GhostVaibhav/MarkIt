@@ -5,7 +5,7 @@
 
 class StatsPanel : public Panel {
  public:
-  StatsPanel(WINDOW* win, int x, int y);
+  StatsPanel(WINDOW* win, int x, int y, std::shared_ptr<I18nProvider> i18n = nullptr);
   ~StatsPanel();
   void render() override;
   void render(WINDOW* targetWin);

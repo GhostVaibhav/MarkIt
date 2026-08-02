@@ -8,7 +8,7 @@
 
 class LoginPanel : public FullScreenPanel {
  public:
-  explicit LoginPanel(WINDOW* win);
+  explicit LoginPanel(WINDOW* win, std::shared_ptr<I18nProvider> i18n = nullptr);
   ~LoginPanel();
 
   void render() override;

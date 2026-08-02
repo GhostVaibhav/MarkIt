@@ -2,7 +2,8 @@
 
 #include "AppConfig.h"
 
-LogoPanel::LogoPanel(WINDOW* w, int x, int y) : Panel(w, x, y) {}
+LogoPanel::LogoPanel(WINDOW* win, int x, int y, std::shared_ptr<I18nProvider> i18n) 
+    : Panel(win, x, y, i18n) {}
 
 void LogoPanel::render() {
   std::string ch = "";

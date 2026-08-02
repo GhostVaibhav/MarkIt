@@ -12,8 +12,8 @@ static constexpr int kDescLabelGap = 1;   // blank rows between name block and d
 
 // ─── Constructor / destructor ─────────────────────────────────────────────────
 
-AddTodoPanel::AddTodoPanel()
-    : FullScreenPanel(), logoPanel(win, 0, 0), titleWin(nullptr), contentWin(nullptr) {}
+AddTodoPanel::AddTodoPanel(std::shared_ptr<I18nProvider> i18n)
+    : FullScreenPanel(i18n), logoPanel(win, 0, 0, i18n), titleWin(nullptr), contentWin(nullptr) {}
 
 AddTodoPanel::~AddTodoPanel() {
   if (titleWin)   delwin(titleWin);
@@ -160,11 +160,13 @@ void AddTodoPanel::render() {
   int remainingW = getmaxx(titleWin) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string dispUser = "Username: " + curUser;
+  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
+  std::string dispUser = userLabel + curUser;
   mvwprintw(titleWin, 3, u_x, "%s",
             StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string dispId = "Pantry ID: " + pantryId;
+    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
+    std::string dispId = idLabel + pantryId;
     mvwprintw(titleWin, 5, u_x, "%s",
               StringUtils::truncateString(dispId, remainingW).c_str());
   }
@@ -198,7 +200,8 @@ void AddTodoPanel::render() {
 
   if (ch > 3) {
     // ── Name ────────────────────────────────────────────────────────────────
-    mvwprintw(contentWin, 2, col, "Enter Todo Name (empty to skip):");
+    std::string namePrompt = i18n ? i18n->get("enter_name") : "Enter Name:";
+    mvwprintw(contentWin, 2, col, "%s", namePrompt.c_str());
     renderWrappedScrolled(contentWin, 3, col, nameRows, fieldWidth,
                           effNameScroll, 3 + kNameSlotRows);
 
@@ -212,7 +215,8 @@ void AddTodoPanel::render() {
 
     // ── Desc ────────────────────────────────────────────────────────────────
     if (descLabelRow < contentBottom) {
-      mvwprintw(contentWin, descLabelRow, col, "Enter Todo Description:");
+      std::string descPrompt = i18n ? i18n->get("enter_desc") : "Enter Description:";
+      mvwprintw(contentWin, descLabelRow, col, "%s", descPrompt.c_str());
       renderWrappedScrolled(contentWin, descStartRow, col, descRows, fieldWidth,
                             effDescScroll, contentBottom);
 
@@ -235,15 +239,19 @@ void AddTodoPanel::render() {
   wrefresh(contentWin);
 
   // Key bar varies depending on whether we're in an input field
+  std::string nextStr = i18n ? i18n->get("key_next_field") : "Next field";
+  std::string cancelStr = i18n ? i18n->get("key_cancel") : "Cancel";
+  std::string cancelExitStr = i18n ? i18n->get("key_cancel_exit") : "Cancel/Exit";
+  
   if (activeField_ > 0) {
     FullScreenPanel::refreshKeyBar({
-      {"Enter",   "Next field"},
-      {"Esc",     "Cancel"}
+      {"Enter", nextStr},
+      {"Esc", cancelStr}
     });
   } else {
     FullScreenPanel::refreshKeyBar({
-      {"Enter", "Next field"},
-      {"Esc/^C", "Cancel/Exit"},
+      {"Enter", nextStr},
+      {"Esc/^C", cancelExitStr},
     });
   }
 }

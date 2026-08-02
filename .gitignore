@@ -11,3 +11,5 @@ include/toggles.h
 
 # Always track test fixtures regardless of other rules
 !tests/
+!locales/*.json
+src/i18n/locales_data.h

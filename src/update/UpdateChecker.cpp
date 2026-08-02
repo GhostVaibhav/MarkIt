@@ -233,6 +233,7 @@ std::string UpdateChecker::detectArch() {
   switch (sysInfo.wProcessorArchitecture) {
     case PROCESSOR_ARCHITECTURE_AMD64: return "x86_64";
     case PROCESSOR_ARCHITECTURE_ARM64: return "aarch64";
+    case PROCESSOR_ARCHITECTURE_ARM:   return "armv7";
     case PROCESSOR_ARCHITECTURE_INTEL: return "i686";
     default: return "unknown";
   }

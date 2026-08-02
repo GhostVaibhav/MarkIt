@@ -14,6 +14,7 @@
 #include "picosha2.h"
 #include "files/FileManager.h"
 #include "utils/PathUtils.h"
+#include "i18n/JsonI18nProvider.h"
 
 // Expose internal ttytype to match old PDCurses resize behavior if defined
 #ifdef _WIN32
@@ -23,7 +24,8 @@
 
 Application::Application()
     : userManager(config.dbFile, config.stateFile),
-      todoManager(config.dbFile) {}
+      todoManager(config.dbFile) {
+}
 
 Application::~Application() {
   updateService.stop();
@@ -481,31 +483,52 @@ bool Application::mainLoop() {
                                    currentPantryId);
       if (pantryIdPopulated) {
         std::string syncLabel = bgSyncService.isEnabled()
-            ? "Disable auto-sync" : "Enable auto-sync";
+            ? (i18nProvider ? i18nProvider->get("menu_disable_sync") : "Disable auto-sync") 
+            : (i18nProvider ? i18nProvider->get("menu_enable_sync") : "Enable auto-sync");
         
+        std::string addTodoStr = i18nProvider ? i18nProvider->get("menu_add_todo") : "Add a todo";
+        std::string editPantryStr = i18nProvider ? i18nProvider->get("menu_edit_pantry") : "Edit Pantry link";
+        std::string checkUpdatesStr = i18nProvider ? i18nProvider->get("menu_check_updates") : "Check for updates";
+        std::string logoutStr = i18nProvider ? i18nProvider->get("menu_logout") : "Logout";
+        std::string pushStr = i18nProvider ? i18nProvider->get("menu_push") : "Push all changes";
+        std::string pullStr = i18nProvider ? i18nProvider->get("menu_pull") : "Pull from the cloud";
+        std::string refreshStr = i18nProvider ? i18nProvider->get("menu_refresh") : "Refresh";
+        std::string connectPantryStr = i18nProvider ? i18nProvider->get("menu_connect_pantry") : "Connect to Pantry";
+
         if (manualSyncRunning.load()) {
-          ui->menuPanel.setMenuOptions({"1. Add a todo", 
+          ui->menuPanel.setMenuOptions({"1. " + addTodoStr, 
                                         "2. " + syncLabel, 
-                                        "3. Edit Pantry link",
-                                        "4. Check for updates", 
-                                        "5. Logout"});
+                                        "3. " + editPantryStr,
+                                        "4. " + checkUpdatesStr, 
+                                        "5. " + logoutStr});
         } else {
-          ui->menuPanel.setMenuOptions({"1. Add a todo", "2. Push all changes",
-                                        "3. Pull from the cloud", "4. Refresh",
-                                        "5. " + syncLabel, "6. Edit Pantry link",
-                                        "7. Check for updates", "8. Logout"});
+          ui->menuPanel.setMenuOptions({"1. " + addTodoStr, "2. " + pushStr,
+                                        "3. " + pullStr, "4. " + refreshStr,
+                                        "5. " + syncLabel, "6. " + editPantryStr,
+                                        "7. " + checkUpdatesStr, "8. " + logoutStr});
         }
       } else {
+        std::string addTodoStr = i18nProvider ? i18nProvider->get("menu_add_todo") : "Add a todo";
+        std::string connectPantryStr = i18nProvider ? i18nProvider->get("menu_connect_pantry") : "Connect to Pantry";
+        std::string checkUpdatesStr = i18nProvider ? i18nProvider->get("menu_check_updates") : "Check for updates";
+        std::string logoutStr = i18nProvider ? i18nProvider->get("menu_logout") : "Logout";
+        
         ui->menuPanel.setMenuOptions(
-            {"1. Add a todo", "2. Connect to Pantry",
-             "3. Check for updates", "4. Logout"});
+            {"1. " + addTodoStr, "2. " + connectPantryStr,
+             "3. " + checkUpdatesStr, "4. " + logoutStr});
       }
       ui->menuPanel.setSelectedIndex(0);
       int choice = ui->menuPanel.promptSelection([this]() { pumpBackgroundEvents(&ui->menuPanel); });
       std::string choiceStr = ui->menuPanel.getOption(choice);
 
+      std::string addTodoStr = i18nProvider ? i18nProvider->get("menu_add_todo") : "Add a todo";
+      std::string connectPantryStr = i18nProvider ? i18nProvider->get("menu_connect_pantry") : "Connect to Pantry";
+      std::string checkUpdatesStr = i18nProvider ? i18nProvider->get("menu_check_updates") : "Check for updates";
+      std::string logoutStr = i18nProvider ? i18nProvider->get("menu_logout") : "Logout";
+      std::string checkingUpdatesStr = i18nProvider ? i18nProvider->get("checking_updates") : "Checking for updates...";
+
       if (!pantryIdPopulated) {
-        if (choiceStr.find("Add a todo") != std::string::npos) {
+        if (choiceStr.find(addTodoStr) != std::string::npos) {
           ui->addTodoPanel.promptInput("", "", [this]() { pumpBackgroundEvents(&ui->addTodoPanel); });
           std::string nameStr = ui->addTodoPanel.getEnteredName();
           std::string descStr = ui->addTodoPanel.getEnteredDesc();
@@ -514,20 +537,30 @@ bool Application::mainLoop() {
             syncManager->recomputeData(todoManager.getAllTodos());
           }
           needDataRefresh = true;
-        } else if (choiceStr.find("Connect to Pantry") != std::string::npos) {
+        } else if (choiceStr.find(connectPantryStr) != std::string::npos) {
           connectToPantry();
           needDataRefresh = true;
-        } else if (choiceStr.find("Check for updates") != std::string::npos) {
-          ui->loadingPanel.setLoadingText("Checking for updates...");
-          ui->loadingPanel.show();
-          updateService.triggerCheck();
-        } else if (choiceStr.find("Logout") != std::string::npos) {
+        } else if (choiceStr.find(checkUpdatesStr) != std::string::npos) {
+          if (!manualSyncRunning.exchange(true)) {
+            manualSyncStartTime = std::chrono::steady_clock::now();
+            manualSyncType = SyncOperation::CheckUpdates;
+            manualSyncResultPending = false;
+            updateService.triggerCheck();
+          }
+        } else if (choiceStr.find(logoutStr) != std::string::npos) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
         }
       } else {
-        if (choiceStr.find("Add a todo") != std::string::npos) {
+        std::string pushStr = i18nProvider ? i18nProvider->get("menu_push") : "Push all changes";
+        std::string pullStr = i18nProvider ? i18nProvider->get("menu_pull") : "Pull from the cloud";
+        std::string refreshStr = i18nProvider ? i18nProvider->get("menu_refresh") : "Refresh";
+        std::string editPantryStr = i18nProvider ? i18nProvider->get("menu_edit_pantry") : "Edit Pantry link";
+        std::string disableSyncStr = i18nProvider ? i18nProvider->get("menu_disable_sync") : "Disable auto-sync";
+        std::string enableSyncStr = i18nProvider ? i18nProvider->get("menu_enable_sync") : "Enable auto-sync";
+
+        if (choiceStr.find(addTodoStr) != std::string::npos) {
           ui->addTodoPanel.promptInput("", "", [this]() { pumpBackgroundEvents(&ui->addTodoPanel); });
           std::string nameStr = ui->addTodoPanel.getEnteredName();
           std::string descStr = ui->addTodoPanel.getEnteredDesc();
@@ -536,24 +569,27 @@ bool Application::mainLoop() {
             syncManager->recomputeData(todoManager.getAllTodos());
           }
           needDataRefresh = true;
-        } else if (choiceStr.find("Push all changes") != std::string::npos) {
+        } else if (choiceStr.find(pushStr) != std::string::npos) {
           syncPush();
           needDataRefresh = true;
-        } else if (choiceStr.find("Pull from the cloud") != std::string::npos) {
+        } else if (choiceStr.find(pullStr) != std::string::npos) {
           syncPull();
           needDataRefresh = true;
-        } else if (choiceStr.find("Refresh") != std::string::npos) {
+        } else if (choiceStr.find(refreshStr) != std::string::npos) {
           syncRefresh();
           needDataRefresh = true;
-        } else if (choiceStr.find("auto-sync") != std::string::npos) {
+        } else if (choiceStr.find(disableSyncStr) != std::string::npos || choiceStr.find(enableSyncStr) != std::string::npos) {
           bgSyncService.toggle();
-        } else if (choiceStr.find("Edit Pantry link") != std::string::npos) {
+        } else if (choiceStr.find(editPantryStr) != std::string::npos) {
           connectToPantry();
-        } else if (choiceStr.find("Check for updates") != std::string::npos) {
-          ui->loadingPanel.setLoadingText("Checking for updates...");
-          ui->loadingPanel.show();
-          updateService.triggerCheck();
-        } else if (choiceStr.find("Logout") != std::string::npos) {
+        } else if (choiceStr.find(checkUpdatesStr) != std::string::npos) {
+          if (!manualSyncRunning.exchange(true)) {
+            manualSyncStartTime = std::chrono::steady_clock::now();
+            manualSyncType = SyncOperation::CheckUpdates;
+            manualSyncResultPending = false;
+            updateService.triggerCheck();
+          }
+        } else if (choiceStr.find(logoutStr) != std::string::npos) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
@@ -571,9 +607,16 @@ bool Application::mainLoop() {
 
 int Application::run() {
   initLogger();
-  initCurses();
+  
+  // Initialize i18n after the logger is setup to ensure correct log routing
+  if (!i18nProvider) {
+    i18nProvider = std::make_shared<JsonI18nProvider>();
+  }
 
-  ui = new MainUI(stdscr);
+  initCurses();
+  if (!ui) {
+    ui = new MainUI(stdscr, i18nProvider);
+  }
 
   // Start background update service
   updateService.addObserver(this);
@@ -652,9 +695,34 @@ void Application::onSyncStatusChanged(const SyncStatus& status) {
 void Application::onUpdateStatusChanged(UpdateStatus status,
                                         const std::string& version) {
   (void)version;
-  if (status == UpdateStatus::Ready) {
+  if (status == UpdateStatus::Ready || status == UpdateStatus::Available) {
     updateNotificationPending = true;
     uiCv.notify_one();
+  }
+
+  if (manualSyncRunning && manualSyncType == SyncOperation::CheckUpdates) {
+    if (status == UpdateStatus::Ready || status == UpdateStatus::Available) {
+      manualSyncResult = SyncResult::Success;
+      manualSyncResultTime = std::chrono::steady_clock::now();
+      manualSyncResultPending = true;
+      manualSyncRunning = false;
+      syncUpdatePending = true;
+      uiCv.notify_one();
+    } else if (status == UpdateStatus::UpToDate) {
+      manualSyncResult = SyncResult::AlreadyInSync;
+      manualSyncResultTime = std::chrono::steady_clock::now();
+      manualSyncResultPending = true;
+      manualSyncRunning = false;
+      syncUpdatePending = true;
+      uiCv.notify_one();
+    } else if (status == UpdateStatus::Failed) {
+      manualSyncResult = SyncResult::NetworkError;
+      manualSyncResultTime = std::chrono::steady_clock::now();
+      manualSyncResultPending = true;
+      manualSyncRunning = false;
+      syncUpdatePending = true;
+      uiCv.notify_one();
+    }
   }
 }
 

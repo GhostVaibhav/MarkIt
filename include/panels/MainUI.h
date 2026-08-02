@@ -5,6 +5,8 @@
 #include <curses.h>
 
 #include "AddTodoPanel.h"
+#include "i18n/I18nProvider.h"
+#include <memory>
 #include "LoadingPanel.h"
 #include "LoginPanel.h"
 #include "MainMenuPanel.h"
@@ -18,7 +20,7 @@ class MainUI {
   WINDOW* win;
 
  public:
-  explicit MainUI(WINDOW* win);
+  explicit MainUI(WINDOW* win, std::shared_ptr<I18nProvider> i18n = nullptr);
   void render();
 
   LoadingPanel loadingPanel;

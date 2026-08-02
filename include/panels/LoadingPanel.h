@@ -7,7 +7,7 @@
 
 class LoadingPanel : public FullScreenPanel {
  public:
-  explicit LoadingPanel(WINDOW* win);
+  explicit LoadingPanel(WINDOW* win, std::shared_ptr<I18nProvider> i18n = nullptr);
   void setLoadingText(const std::string& text);
   void render() override;
 

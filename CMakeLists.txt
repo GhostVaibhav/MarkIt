@@ -68,7 +68,25 @@ file(GLOB srcs
           "${PROJECT_SOURCE_DIR}/src/update/*.cpp"
           "${PROJECT_SOURCE_DIR}/src/app/*.cpp"
           "${PROJECT_SOURCE_DIR}/src/utils/*.cpp"
+          "${PROJECT_SOURCE_DIR}/src/i18n/*.cpp"
 )
+
+# Generate obfuscated locales data
+file(GLOB LOCALE_FILES "${PROJECT_SOURCE_DIR}/locales/*.json")
+add_custom_command(
+    OUTPUT "${PROJECT_SOURCE_DIR}/src/i18n/locales_data.h"
+    COMMAND ${CMAKE_COMMAND} 
+        -DLOCALES_DIR="${PROJECT_SOURCE_DIR}/locales"
+        -DOUTPUT_FILE="${PROJECT_SOURCE_DIR}/src/i18n/locales_data.h"
+        -P "${PROJECT_SOURCE_DIR}/cmake/obfuscate_locales.cmake"
+    DEPENDS ${LOCALE_FILES} "${PROJECT_SOURCE_DIR}/cmake/obfuscate_locales.cmake"
+    COMMENT "Obfuscating locale files..."
+)
+
+# Copy locales to build directory in Debug mode
+if(CMAKE_DEBUG_BUILD)
+  file(COPY "${PROJECT_SOURCE_DIR}/locales" DESTINATION "${CMAKE_BINARY_DIR}")
+endif()
 
 if(WIN32)
 else()
@@ -85,7 +103,7 @@ else()
   )
 endif()
 
-add_executable (${PROJECT_NAME} ${srcs})
+add_executable (${PROJECT_NAME} ${srcs} "${PROJECT_SOURCE_DIR}/src/i18n/locales_data.h")
 
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall;-Wextra;-Wno-unknown-pragmas>

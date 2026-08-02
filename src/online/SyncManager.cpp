@@ -42,7 +42,7 @@ SyncResult SyncManager::pull(const std::string& userId,
 
   {
     std::lock_guard<std::mutex> lock(statusMtx);
-    syncStatus = SyncStatus::compute(localData, remoteData);
+    syncStatus = SyncStatus::compute(localData, remoteData, cachedRemoteData);
     if (syncStatus.pendingPulls == 0) {
       cachedRemoteData = remoteData;
       spdlog::info(
@@ -57,10 +57,22 @@ SyncResult SyncManager::pull(const std::string& userId,
       for (const auto& t : localData["data"]) {
         localIds.insert(t["id"].get<std::string>());
       }
+      std::unordered_set<std::string> cachedIds;
+      if (cachedRemoteData.contains("data")) {
+        for (const auto& t : cachedRemoteData["data"]) {
+          cachedIds.insert(t["id"].get<std::string>());
+        }
+      }
+      
       if (remoteData.contains("data")) {
         for (const auto& t : remoteData["data"]) {
-          if (localIds.find(t["id"].get<std::string>()) == localIds.end()) {
-            localData["data"].push_back(t);
+          std::string id = t["id"].get<std::string>();
+          if (localIds.find(id) == localIds.end()) {
+            if (!cachedIds.empty() && cachedIds.find(id) != cachedIds.end()) {
+              spdlog::info("SyncManager: Ignoring remotely present todo '{}' as it was deleted locally", id);
+            } else {
+              localData["data"].push_back(t);
+            }
           }
         }
       }
@@ -146,13 +158,8 @@ SyncStatus SyncManager::refresh(const std::string& userId,
     SyncStatus statusCpy;
     {
       std::lock_guard<std::mutex> lock(statusMtx);
-      cachedRemoteData = fetched.data;
-      syncStatus = SyncStatus::compute(localData, fetched.data);
+      syncStatus = SyncStatus::compute(localData, fetched.data, cachedRemoteData);
       statusCpy = syncStatus;
-    }
-    if (saveCacheCallback) {
-      std::lock_guard<std::mutex> lock(statusMtx);
-      saveCacheCallback(userId, cachedRemoteData.dump());
     }
     spdlog::info(
         "SyncManager: Refreshed cloud sync status: {} pull(s), {} push(es) "
@@ -247,14 +254,9 @@ void SyncManager::applyRemoteUpdate(const nlohmann::json& remoteData,
   (void)userId;
   if (remoteData.empty()) return;
 
-  {
-    std::lock_guard<std::mutex> lock(statusMtx);
-    cachedRemoteData = remoteData;
-  }
-  if (saveCacheCallback) {
-    std::lock_guard<std::mutex> lock(statusMtx);
-    saveCacheCallback(userId, cachedRemoteData.dump());
-  }
+  // We do NOT overwrite cachedRemoteData here.
+  // cachedRemoteData represents the last merged state.
+  // We only compute the UI status against the new remote data.
 
   nlohmann::json localData;
   localData["hash"] = hash;
@@ -273,7 +275,7 @@ void SyncManager::applyRemoteUpdate(const nlohmann::json& remoteData,
   SyncStatus statusCpy;
   {
     std::lock_guard<std::mutex> lock(statusMtx);
-    syncStatus = SyncStatus::compute(localData, remoteData);
+    syncStatus = SyncStatus::compute(localData, remoteData, cachedRemoteData);
     statusCpy = syncStatus;
   }
   spdlog::info(
@@ -305,7 +307,7 @@ void SyncManager::recomputeData(const std::vector<Todo>& todos) {
 
   {
     std::lock_guard<std::mutex> lock(statusMtx);
-    syncStatus = SyncStatus::compute(localData, cachedRemoteData);
+    syncStatus = SyncStatus::compute(localData, cachedRemoteData, cachedRemoteData);
   }
   notifyObservers();
 }

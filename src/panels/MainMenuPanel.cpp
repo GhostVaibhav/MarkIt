@@ -7,10 +7,10 @@
 #include "utils/StringUtils.h"
 #define BORDER_M(win) wborder(win, 0, 0, 0, 0, 0, 0, 0, 0)
 
-MainMenuPanel::MainMenuPanel(WINDOW* w)
-    : FullScreenPanel(),
-      loadingPanel(w),
-      logoPanel(w, 0, 0),
+MainMenuPanel::MainMenuPanel(WINDOW* w, std::shared_ptr<I18nProvider> i18n)
+    : FullScreenPanel(i18n),
+      loadingPanel(w, i18n),
+      logoPanel(w, 0, 0, i18n),
       todoUserName(nullptr), 
       todoWindow(nullptr),   
       todoBody(nullptr) {}   
@@ -126,10 +126,12 @@ void MainMenuPanel::render() {
   int remainingW = getmaxx(todoUserName) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string dispUser = "Username: " + curUser;
+  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
+  std::string dispUser = userLabel + curUser;
   mvwprintw(todoUserName, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string dispId = "Pantry ID: " + pantryId;
+    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
+    std::string dispId = idLabel + pantryId;
     mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
 
@@ -147,19 +149,24 @@ void MainMenuPanel::render() {
   mvwhline(todoWindow, 2, 1, 0, getmaxx(todoWindow) - 2);
 
   // CLAMP HEADER COORDINATES
+  std::string stLabel = i18n ? i18n->get("header_status") : "St";
+  std::string nameLabel = i18n ? i18n->get("header_name") : "Name";
+  std::string descLabel = i18n ? i18n->get("header_desc") : "Description";
+  std::string timeLabel = i18n ? i18n->get("header_time") : "Created Time";
+
   if (hasPantry) {
-    mvwprintw(todoWindow, 1, 2, "St");
+    mvwprintw(todoWindow, 1, 2, "%s", stLabel.c_str());
   }
-  int col1 = symWidth + (tabDiv - 4) / 2;
-  int col2 = symWidth + tabDiv + (tabDiv - 11) / 2;
-  int col3 = symWidth + 2 * tabDiv + (tabDiv - 12) / 2;
+  int col1 = symWidth + (tabDiv - (int)nameLabel.length()) / 2;
+  int col2 = symWidth + tabDiv + (tabDiv - (int)descLabel.length()) / 2;
+  int col3 = symWidth + 2 * tabDiv + (tabDiv - (int)timeLabel.length()) / 2;
   if (col1 < symWidth + 1) col1 = symWidth + 1;
   if (col2 < symWidth + tabDiv + 1) col2 = symWidth + tabDiv + 1;
   if (col3 < symWidth + 2 * tabDiv + 1) col3 = symWidth + 2 * tabDiv + 1;
 
-  mvwprintw(todoWindow, 1, col1, "Name");
-  mvwprintw(todoWindow, 1, col2, "Description");
-  mvwprintw(todoWindow, 1, col3, "Created Time");
+  mvwprintw(todoWindow, 1, col1, "%s", nameLabel.c_str());
+  mvwprintw(todoWindow, 1, col2, "%s", descLabel.c_str());
+  mvwprintw(todoWindow, 1, col3, "%s", timeLabel.c_str());
   BORDER_M(todoWindow);
 
   int visibleRows = getmaxy(todoBody);
@@ -262,14 +269,15 @@ void MainMenuPanel::render() {
   }
 
   std::vector<std::pair<std::string, std::string>> keyBarItems = {
-      {"m/M", "Menu"},
-      {"Enter", "Detail"},
-      {"d/D", "Delete"},
-      {"q/Q/^C", "Exit"},
-      {"Up/Dn", "Move"}};
+      {"m/M", i18n ? i18n->get("key_menu") : "Menu"},
+      {"Enter", i18n ? i18n->get("key_detail") : "Detail"},
+      {"d/D", i18n ? i18n->get("key_delete") : "Delete"},
+      {"q/Q/^C", i18n ? i18n->get("key_exit") : "Exit"},
+      {"Up/Dn", i18n ? i18n->get("key_move") : "Move"}};
 
   if (!updateVersion.empty()) {
-    keyBarItems.push_back({"u/U", "Update v" + updateVersion});
+    std::string updateStr = i18n ? i18n->get("key_update") : "Update v";
+    keyBarItems.push_back({"u/U", updateStr + updateVersion});
   }
 
   FullScreenPanel::refreshKeyBar(keyBarItems);

@@ -15,7 +15,7 @@ enum class TodoDetailAction { Toggle, Delete, Back, QuitApp, OpenMenu, EditTodo 
 
 class TodoDetailPanel : public FullScreenPanel {
  public:
-  explicit TodoDetailPanel();
+  explicit TodoDetailPanel(std::shared_ptr<I18nProvider> i18n = nullptr);
   ~TodoDetailPanel() override;
   void setTodo(const Todo& todo);
   void setCredentials(const std::string& username, const std::string& id);

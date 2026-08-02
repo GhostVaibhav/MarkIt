@@ -96,8 +96,7 @@ void BackgroundUpdateService::run() {
     {
       std::unique_lock<std::mutex> lock(mutex_);
       cv_.wait_for(lock,
-                   std::chrono::minutes(UpdateConfig::kCheckIntervalMinutes),
-                   [this] { return !running_; });
+                   std::chrono::minutes(UpdateConfig::kCheckIntervalMinutes));
     }
   }
 }

@@ -8,10 +8,12 @@
 #include "StatsPanel.h"
 #include "SyncOperation.h"
 #include "SyncStatus.h"
+#include "i18n/I18nProvider.h"
+#include <memory>
 
 class FullScreenPanel {
  public:
-  explicit FullScreenPanel();
+  explicit FullScreenPanel(std::shared_ptr<I18nProvider> i18n = nullptr);
   virtual ~FullScreenPanel();
 
   void show();
@@ -48,6 +50,7 @@ class FullScreenPanel {
   void renderSyncIndicator(WINDOW* targetWin);
 
  protected:
+  std::shared_ptr<I18nProvider> i18n;
   WINDOW* win;
   WINDOW* bottomBar = nullptr;
   StatsPanel* statsPanel = nullptr;

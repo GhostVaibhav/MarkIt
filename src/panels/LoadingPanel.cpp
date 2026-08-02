@@ -1,6 +1,11 @@
 #include "LoadingPanel.h"
 
-LoadingPanel::LoadingPanel(WINDOW* w) : FullScreenPanel(), logoPanel(w, 0, 0) {}
+LoadingPanel::LoadingPanel(WINDOW* w, std::shared_ptr<I18nProvider> i18n) 
+    : FullScreenPanel(i18n), logoPanel(w, 0, 0, i18n) {
+  if (i18n) {
+    loadingText = i18n->get("loading_msg");
+  }
+}
 
 void LoadingPanel::setLoadingText(const std::string& text) {
   loadingText = text;
@@ -19,5 +24,6 @@ void LoadingPanel::render() {
   mvwprintw(win, max_y - 2, (max_x - (int) loadingText.size()) / 2, "%s",
             loadingText.c_str());
   wrefresh(win);
-  FullScreenPanel::refreshKeyBar({{"---", "Please wait"}});
+  std::string waitStr = i18n ? i18n->get("key_please_wait") : "Please wait";
+  FullScreenPanel::refreshKeyBar({{"---", waitStr}});
 }

@@ -9,7 +9,7 @@
 
 class AddTodoPanel : public FullScreenPanel {
  public:
-  explicit AddTodoPanel();
+  explicit AddTodoPanel(std::shared_ptr<I18nProvider> i18n = nullptr);
   ~AddTodoPanel() override;
 
   void render() override;

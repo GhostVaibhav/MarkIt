@@ -1,6 +1,7 @@
 #include "StatsPanel.h"
 
-StatsPanel::StatsPanel(WINDOW* w, int x, int y) : Panel(w, x, y) {}
+StatsPanel::StatsPanel(WINDOW* win, int x, int y, std::shared_ptr<I18nProvider> i18n) 
+  : Panel(win, x, y, i18n) {}
 
 StatsPanel::~StatsPanel() {
   if (statsWin) delwin(statsWin);
@@ -35,11 +36,15 @@ void StatsPanel::render(WINDOW* targetWin) {
   if (startX < 0) startX = 0;
 
   wattron(targetWin, COLOR_PAIR(1));
-  mvwprintw(targetWin, 1, startX, " + %s", stringPush.c_str());
+  std::string pushFormat = i18n ? i18n->get("push_stats") : "^ %s";
+  pushFormat += "  ";
+  std::string pullFormat = i18n ? i18n->get("pull_stats") : "v %s";
+
+  mvwprintw(targetWin, 1, startX, pushFormat.c_str(), stringPush.c_str());
   wattroff(targetWin, COLOR_PAIR(1));
   
   wattron(targetWin, COLOR_PAIR(2));
-  wprintw(targetWin, "  - %s ", stringPull.c_str());
+  wprintw(targetWin, pullFormat.c_str(), stringPull.c_str());
   wattroff(targetWin, COLOR_PAIR(2));
   
   // Notice we DON'T wrefresh here, as it's the caller's responsibility.

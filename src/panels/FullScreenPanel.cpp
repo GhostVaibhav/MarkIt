@@ -2,8 +2,8 @@
 
 #include "BottomBarHelper.h"
 
-FullScreenPanel::FullScreenPanel() : win(stdscr), bottomBar(nullptr) {
-  statsPanel = new StatsPanel(win, 0, 0);
+FullScreenPanel::FullScreenPanel(std::shared_ptr<I18nProvider> i18n) : i18n(i18n), win(stdscr), bottomBar(nullptr) {
+  statsPanel = new StatsPanel(win, 0, 0, i18n);
 }
 
 FullScreenPanel::~FullScreenPanel() {
@@ -70,14 +70,21 @@ void FullScreenPanel::renderSyncIndicator(WINDOW* targetWin) {
     if (manualSyncType == SyncOperation::Push) text = "[ " + sp + " Pushing... ]";
     else if (manualSyncType == SyncOperation::Pull) text = "[ " + sp + " Pulling... ]";
     else if (manualSyncType == SyncOperation::Refresh) text = "[ " + sp + " Refreshing... ]";
+    else if (manualSyncType == SyncOperation::CheckUpdates) text = "[ " + sp + " Checking... ]";
   } else if (manualSyncResultPending) {
-    if (manualSyncResult == SyncResult::Success ||
-        manualSyncResult == SyncResult::AlreadyInSync) {
-      text = "[ o Synced ]";
-    } else if (manualSyncResult == SyncResult::BucketExpired) {
-      text = "[ ! Bucket Expired - Push to Recreate ]";
+    if (manualSyncType == SyncOperation::CheckUpdates) {
+      if (manualSyncResult == SyncResult::Success) text = "[ o Update Ready ]";
+      else if (manualSyncResult == SyncResult::AlreadyInSync) text = "[ o Up to date ]";
+      else text = "[ ! Check Failed ]";
     } else {
-      text = "[ ! Sync Failed ]";
+      if (manualSyncResult == SyncResult::Success ||
+          manualSyncResult == SyncResult::AlreadyInSync) {
+        text = "[ o Synced ]";
+      } else if (manualSyncResult == SyncResult::BucketExpired) {
+        text = "[ ! Bucket Expired - Push to Recreate ]";
+      } else {
+        text = "[ ! Sync Failed ]";
+      }
     }
   }
   

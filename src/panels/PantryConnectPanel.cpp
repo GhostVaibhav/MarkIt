@@ -3,8 +3,8 @@
 
 #include <curses.h>
 
-PantryConnectPanel::PantryConnectPanel(WINDOW* w)
-    : FullScreenPanel(), logoPanel(w, 0, 0) {}
+PantryConnectPanel::PantryConnectPanel(WINDOW* w, std::shared_ptr<I18nProvider> i18n)
+    : FullScreenPanel(i18n), logoPanel(w, 0, 0, i18n) {}
 
 PantryConnectPanel::~PantryConnectPanel() {
   if (titleWin) delwin(titleWin);
@@ -81,19 +81,25 @@ void PantryConnectPanel::render() {
   int remainingW = getmaxx(titleWin) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string dispUser = "Username: " + curUser;
+  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
+  std::string dispUser = userLabel + curUser;
   mvwprintw(titleWin, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string dispId = "Pantry ID: " + pantryId;
+    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
+    std::string dispId = idLabel + pantryId;
     mvwprintw(titleWin, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
 
-  mvwprintw(contentWin, 2, 2, "Enter Pantry API Key (or empty to cancel):");
+  std::string apiPrompt = i18n ? i18n->get("enter_pantry_key") : "Enter Pantry API Key (or empty to cancel):";
+  mvwprintw(contentWin, 2, 2, "%s", apiPrompt.c_str());
   mvwprintw(contentWin, 4, 2, "%s", apiKey.c_str());
 
   wrefresh(titleWin);
   wrefresh(contentWin);
-  FullScreenPanel::refreshKeyBar({{"Enter", "Submit"}, {"empty", "Cancel"}, {"^C", "Exit"}});
+  std::string submitStr = i18n ? i18n->get("key_submit") : "Submit";
+  std::string cancelStr = i18n ? i18n->get("key_cancel") : "Cancel";
+  std::string exitStr = i18n ? i18n->get("key_exit") : "Exit";
+  FullScreenPanel::refreshKeyBar({{"Enter", submitStr}, {"empty", cancelStr}, {"^C", exitStr}});
 }
 
 void PantryConnectPanel::promptInput(std::function<void()> onIdle) {

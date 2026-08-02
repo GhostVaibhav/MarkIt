@@ -14,7 +14,8 @@ struct SyncStatus {
   bool isInSync() const { return pendingPushes == 0 && pendingPulls == 0; }
 
   static SyncStatus compute(const nlohmann::json &localData,
-                            const nlohmann::json &remoteData) {
+                            const nlohmann::json &remoteData,
+                            const nlohmann::json &cachedRemoteData = nlohmann::json()) {
     SyncStatus status;
     std::unordered_map<std::string, nlohmann::json> remoteMap;
 
@@ -51,13 +52,29 @@ struct SyncStatus {
       }
     }
 
+    std::unordered_set<std::string> cachedIds;
+    if (cachedRemoteData.contains("data")) {
+      for (const auto &t : cachedRemoteData["data"]) {
+        cachedIds.insert(t.value("id", ""));
+      }
+    }
+
     unsigned int pullCount = 0;
+    unsigned int localDeleteCount = 0;
     for (const auto &pair : remoteMap) {
       if (localIds.find(pair.first) == localIds.end()) {
-        pullCount++;
+        if (!cachedIds.empty() && cachedIds.find(pair.first) != cachedIds.end()) {
+          // Present in remote and cache, but missing in local -> locally deleted
+          localDeleteCount++;
+        } else {
+          // Not in local and not in cache -> new from remote
+          pullCount++;
+        }
       }
     }
     status.pendingPulls = pullCount;
+    // We add localDeleteCount to pendingPushes so the UI knows we have deletions to push
+    status.pendingPushes += localDeleteCount;
 
     return status;
   }

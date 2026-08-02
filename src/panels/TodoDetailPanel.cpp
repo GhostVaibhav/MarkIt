@@ -5,9 +5,9 @@
 #include <iomanip>
 #include <sstream>
 
-TodoDetailPanel::TodoDetailPanel() 
-    : FullScreenPanel(), 
-      logoPanel(win, 0, 0),
+TodoDetailPanel::TodoDetailPanel(std::shared_ptr<I18nProvider> i18n) 
+    : FullScreenPanel(i18n), 
+      logoPanel(win, 0, 0, i18n),
       todoUserName(nullptr),
       contentWin(nullptr) {}
 
@@ -62,14 +62,17 @@ std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const
   std::vector<std::string> lines;
 
   // Status line
-  std::string statusLine = "Status: ";
-  statusLine += currentTodo.isComplete ? "Completed" : "Pending";
+  std::string statusLabel = i18n ? i18n->get("status_label") : "Status: ";
+  std::string statusVal = currentTodo.isComplete ? (i18n ? i18n->get("status_completed") : "Completed")
+                                                 : (i18n ? i18n->get("status_pending") : "Pending");
+  std::string statusLine = statusLabel + statusVal;
   lines.push_back("\x01" + statusLine);   // \x01 marker = colour-coded status line
 
   lines.push_back("");  // blank spacer
 
   // Name section
-  lines.push_back("\x02 Name:");           // \x02 marker = bold label
+  std::string nameLabel = i18n ? i18n->get("name_label") : "Name:";
+  lines.push_back("\x02 " + nameLabel);           // \x02 marker = bold label
   auto splitAndWrap = [&](const std::string& s) {
     if (s.empty()) {
       lines.push_back("");
@@ -97,7 +100,8 @@ std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const
   lines.push_back("");  // blank spacer
 
   // Description section
-  lines.push_back("\x02 Description:");   // \x02 marker = bold label
+  std::string descLabel = i18n ? i18n->get("desc_label") : "Description:";
+  lines.push_back("\x02 " + descLabel);   // \x02 marker = bold label
   splitAndWrap(currentTodo.desc);
 
   return lines;
@@ -157,10 +161,12 @@ void TodoDetailPanel::renderContent() {
   int remainingW = getmaxx(todoUserName) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string dispUser = "Username: " + curUser;
+  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
+  std::string dispUser = userLabel + curUser;
   mvwprintw(todoUserName, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string dispId = "Pantry ID: " + pantryId;
+    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
+    std::string dispId = idLabel + pantryId;
     mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
 
@@ -230,12 +236,18 @@ void TodoDetailPanel::renderContent() {
     }
   }
 
+  std::string menuStr = i18n ? i18n->get("key_menu") : "Menu";
+  std::string editStr = i18n ? i18n->get("key_edit") : "Edit";
+  std::string backStr = i18n ? i18n->get("key_back") : "Back";
+  std::string scrollStr = i18n ? i18n->get("key_scroll") : "Scroll";
+  std::string exitStr = i18n ? i18n->get("key_exit") : "Exit";
+
   FullScreenPanel::refreshKeyBar({
-    {"m/M",     "Menu"},
-    {"e/E",     "Edit"},
-    {"Esc/q/Q", "Back"},
-    {"Up/Dn",   "Scroll"},
-    {"^C",      "Exit"}
+    {"m/M",     menuStr},
+    {"e/E",     editStr},
+    {"Esc/q/Q", backStr},
+    {"Up/Dn",   scrollStr},
+    {"^C",      exitStr}
   });
 
   wrefresh(todoUserName);
