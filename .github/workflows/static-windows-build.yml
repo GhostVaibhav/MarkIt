@@ -107,9 +107,11 @@ jobs:
         with:
           name: MarkIt-windows-${{ matrix.arch }}.tar.gz
           path: MarkIt-windows-${{ matrix.arch }}.tar.gz
+          archive: false
           
       - name: Upload artifact for patches
         uses: actions/upload-artifact@v4
         with:
           name: patches-windows-${{ matrix.arch }}.tar.gz
           path: patches-windows-${{ matrix.arch }}.tar.gz
+          archive: false
