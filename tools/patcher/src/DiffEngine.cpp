@@ -192,35 +192,120 @@ static uint64_t fnv1a64(const uint8_t* data, size_t len) {
     return h;
 }
 
-std::vector<EditType> computeMyersEditScriptBlocks(
+static uint32_t adler32_roll(uint32_t adler, uint8_t old_byte, uint8_t new_byte, size_t block_size) {
+    uint32_t a = adler & 0xFFFF;
+    uint32_t b = (adler >> 16) & 0xFFFF;
+    a = (a - old_byte + new_byte) % 65521;
+    b = (b - (old_byte * block_size) % 65521 + a - 1 + 65521) % 65521;
+    return (b << 16) | a;
+}
+
+static uint32_t adler32(const uint8_t* data, size_t len) {
+    uint32_t a = 1, b = 0;
+    for (size_t i = 0; i < len; ++i) {
+        a = (a + data[i]) % 65521;
+        b = (b + a) % 65521;
+    }
+    return (b << 16) | a;
+}
+
+std::vector<EditType> computeRollingHashEditScript(
     const std::vector<uint8_t>& oldData,
-    const std::vector<uint8_t>& newData,
-    size_t blockSize
+    const std::vector<uint8_t>& newData
 ) {
-    const size_t oldBlocks = (oldData.size() + blockSize - 1) / blockSize;
-    const size_t newBlocks = (newData.size() + blockSize - 1) / blockSize;
-
-    std::vector<uint64_t> oldHashes(oldBlocks);
-    std::vector<uint64_t> newHashes(newBlocks);
-
-    for (size_t i = 0; i < oldBlocks; ++i) {
-        const size_t start = i * blockSize;
-        const size_t len = std::min(blockSize, oldData.size() - start);
-        oldHashes[i] = fnv1a64(oldData.data() + start, len) ^ static_cast<uint64_t>(len);
-    }
-    for (size_t i = 0; i < newBlocks; ++i) {
-        const size_t start = i * blockSize;
-        const size_t len = std::min(blockSize, newData.size() - start);
-        newHashes[i] = fnv1a64(newData.data() + start, len) ^ static_cast<uint64_t>(len);
+    std::vector<EditType> edits;
+    if (oldData.empty() || newData.empty()) {
+        for (size_t i = 0; i < oldData.size(); ++i) edits.push_back(EditType::Delete);
+        for (size_t i = 0; i < newData.size(); ++i) edits.push_back(EditType::Insert);
+        return edits;
     }
 
-    return computeMyersEditScript(
-        static_cast<int>(oldBlocks),
-        static_cast<int>(newBlocks),
-        [&](int oldIdx, int newIdx) {
-            return oldHashes[static_cast<size_t>(oldIdx)] == newHashes[static_cast<size_t>(newIdx)];
+    const size_t B = 64;
+    std::unordered_map<uint32_t, std::vector<size_t>> oldHashes;
+    oldHashes.reserve(oldData.size());
+    
+    if (oldData.size() >= B) {
+        uint32_t h = adler32(oldData.data(), B);
+        oldHashes[h].push_back(0);
+        for (size_t i = 1; i <= oldData.size() - B; ++i) {
+            h = adler32_roll(h, oldData[i - 1], oldData[i + B - 1], B);
+            oldHashes[h].push_back(i);
         }
-    );
+    }
+
+    size_t oldPos = 0;
+    size_t newPos = 0;
+    
+    // To optimize sliding window on newPos
+    uint32_t currentNewHash = 0;
+    bool hashValid = false;
+
+    while (newPos < newData.size()) {
+        bool matchFound = false;
+        size_t bestMatchOldPos = 0;
+        size_t bestMatchLen = 0;
+
+        if (newPos + B <= newData.size() && oldPos + B <= oldData.size()) {
+            if (!hashValid) {
+                currentNewHash = adler32(newData.data() + newPos, B);
+                hashValid = true;
+            }
+            
+            auto it = oldHashes.find(currentNewHash);
+            if (it != oldHashes.end()) {
+                for (size_t candidateOldPos : it->second) {
+                    if (candidateOldPos < oldPos) continue; 
+                    
+                    bool match = true;
+                    for (size_t i = 0; i < B; ++i) {
+                        if (newData[newPos + i] != oldData[candidateOldPos + i]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        size_t matchLen = B;
+                        while (newPos + matchLen < newData.size() && 
+                               candidateOldPos + matchLen < oldData.size() &&
+                               newData[newPos + matchLen] == oldData[candidateOldPos + matchLen]) {
+                            matchLen++;
+                        }
+                        
+                        if (matchLen > bestMatchLen) {
+                            bestMatchLen = matchLen;
+                            bestMatchOldPos = candidateOldPos;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestMatchLen > 0) {
+            for (size_t i = oldPos; i < bestMatchOldPos; ++i) {
+                edits.push_back(EditType::Delete);
+            }
+            for (size_t i = 0; i < bestMatchLen; ++i) {
+                edits.push_back(EditType::Equal);
+            }
+            oldPos = bestMatchOldPos + bestMatchLen;
+            newPos += bestMatchLen;
+            hashValid = false; 
+        } else {
+            edits.push_back(EditType::Insert);
+            if (hashValid && newPos + B < newData.size()) {
+                currentNewHash = adler32_roll(currentNewHash, newData[newPos], newData[newPos + B], B);
+            } else {
+                hashValid = false;
+            }
+            newPos++;
+        }
+    }
+
+    for (size_t i = oldPos; i < oldData.size(); ++i) {
+        edits.push_back(EditType::Delete);
+    }
+
+    return edits;
 }
 
 // Chunk large *+ payloads so recurring chunks can dedupe; slightly larger instructions.json.
@@ -938,69 +1023,17 @@ std::vector<PatchOperation> DiffEngine::processFile(const fs::path& oldPath, con
     size_t selectedBlockSize = 0;
     try {
         constexpr size_t kLargeFileThresholdBytes = 4 * 1024 * 1024;
-        constexpr size_t kInitialBlockSize = 1024;
         const size_t maxFileSize = std::max(oldData.size(), newData.size());
         const bool preferByteMyers = maxFileSize <= kLargeFileThresholdBytes;
 
         if (preferByteMyers) {
             edits = computeMyersEditScriptBytes(oldData, newData);
-            usedBlockMyers = false;
         } else {
-            size_t blockSize = kInitialBlockSize;
-            bool solved = false;
-            while (!solved) {
-                try {
-                    edits = computeMyersEditScriptBlocks(oldData, newData, blockSize);
-                    usedBlockMyers = true;
-                    selectedBlockSize = blockSize;
-                    solved = true;
-                } catch (const std::runtime_error&) {
-                    if (blockSize >= maxFileSize && maxFileSize > 0) {
-                        break;
-                    }
-                    if (maxFileSize == 0) {
-                        break;
-                    }
-                    blockSize = std::min(maxFileSize, blockSize * 2);
-                    if (blockSize == 0) {
-                        blockSize = maxFileSize;
-                    }
-                }
-            }
-
-            if (!solved) {
-                throw std::runtime_error("Myers block diff failed after retries.");
-            }
+            edits = computeRollingHashEditScript(oldData, newData);
         }
+        usedBlockMyers = false;
     } catch (const std::exception&) {
-        // If byte-level Myers still exceeds budget on a small-but-high-diff file,
-        // retry with progressively larger block sizes to guarantee completion.
-        const size_t maxFileSize = std::max(oldData.size(), newData.size());
-        size_t blockSize = 1024;
-        bool solved = false;
-        while (!solved) {
-            try {
-                edits = computeMyersEditScriptBlocks(oldData, newData, blockSize);
-                usedBlockMyers = true;
-                selectedBlockSize = blockSize;
-                solved = true;
-            } catch (const std::runtime_error&) {
-                if (blockSize >= maxFileSize && maxFileSize > 0) {
-                    break;
-                }
-                if (maxFileSize == 0) {
-                    break;
-                }
-                blockSize = std::min(maxFileSize, blockSize * 2);
-                if (blockSize == 0) {
-                    blockSize = maxFileSize;
-                }
-            }
-        }
-
-        if (!solved) {
-            throw std::runtime_error("Failed diff for '" + relPath + "': Myers retries exhausted.");
-        }
+        throw std::runtime_error("Failed diff for '" + relPath + "'");
     }
 
     std::vector<PatchOperation> localOps;
