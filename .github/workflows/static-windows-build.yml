@@ -1,0 +1,113 @@
+name: Static Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - development
+      - refactor-with-db
+    paths:
+      - "**.cpp"
+      - "**.h"
+      - "**.hpp"
+      - "**.txt"
+      - ".github/workflows/static-windows-build.yml"
+
+jobs:
+  build:
+    name: Static Build - ${{ matrix.arch }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            msystem: MINGW64
+            toolchain: mingw-w64-x86_64-toolchain
+            pkg_prefix: mingw-w64-x86_64
+          - arch: aarch64
+            msystem: CLANGARM64
+            toolchain: mingw-w64-clang-aarch64-toolchain
+            pkg_prefix: mingw-w64-clang-aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: "true"
+          token: ${{ secrets.SUBMODULE_KEY }}
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: >-
+            git
+            make
+            ${{ matrix.toolchain }}
+            ${{ matrix.pkg_prefix }}-cmake
+            ${{ matrix.pkg_prefix }}-ninja
+            ${{ matrix.pkg_prefix }}-curl
+            ${{ matrix.pkg_prefix }}-zlib
+
+      - name: Build static MarkIt for ${{ matrix.arch }} for the latest version and the last version
+        shell: msys2 {0}
+        run: |
+          CURL_STATIC_LIBS=$(pkg-config --static --libs libcurl)
+          mkdir -p build_new && cd build_new
+          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXE_LINKER_FLAGS="-static" \
+            -DCURL_STATICLIB=ON \
+            -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS}"
+          cmake --build . --config Release
+
+          git config --global --add safe.directory $(pwd)/..
+          cd ..
+          latest_tag=$(git describe --tags --abbrev=0)
+          git reset --hard $latest_tag
+
+          mkdir -p build_old && cd build_old
+          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXE_LINKER_FLAGS="-static" \
+            -DCURL_STATICLIB=ON \
+            -DCMAKE_CXX_STANDARD_LIBRARIES="${CURL_STATIC_LIBS}"
+          cmake --build . --config Release
+
+      - name: Prepare artifact
+        shell: msys2 {0}
+        run: |
+          mkdir -p release
+          cp build_new/MarkIt.exe release/MarkIt.exe
+          cp build_new/markit_updater.exe release/markit_updater.exe
+
+          mkdir -p release_old
+          cp build_old/MarkIt.exe release_old/MarkIt.exe
+          cp build_old/markit_updater.exe release_old/markit_updater.exe
+
+          cp build_new/tools/markit_patcher.exe markit_patcher.exe
+
+          mkdir -p patch_output
+          mkdir -p staging
+          ./markit_patcher.exe "./release_old" "./release" "./patch_output"
+          cd patch_output
+          tar -czvf ../staging/patches-windows-${{ matrix.arch }}.tar.gz -C . instructions.bin patches.bin
+          cd ..
+          cp ./staging/patches-windows-${{ matrix.arch }}.tar.gz ./patches-windows-${{ matrix.arch }}.tar.gz
+
+          cd release
+          tar czf ../MarkIt-windows-${{ matrix.arch }}.tar.gz \
+            MarkIt.exe markit_updater.exe
+
+      - name: Upload artifact for release
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarkIt-windows-${{ matrix.arch }}.tar.gz
+          path: MarkIt-windows-${{ matrix.arch }}.tar.gz
+          
+      - name: Upload artifact for patches
+        uses: actions/upload-artifact@v4
+        with:
+          name: patches-windows-${{ matrix.arch }}.tar.gz
+          path: patches-windows-${{ matrix.arch }}.tar.gz
