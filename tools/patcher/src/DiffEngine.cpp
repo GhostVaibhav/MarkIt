@@ -195,8 +195,9 @@ static uint64_t fnv1a64(const uint8_t* data, size_t len) {
 static uint32_t adler32_roll(uint32_t adler, uint8_t old_byte, uint8_t new_byte, size_t block_size) {
     uint32_t a = adler & 0xFFFF;
     uint32_t b = (adler >> 16) & 0xFFFF;
-    a = (a - old_byte + new_byte) % 65521;
-    b = (b - (old_byte * block_size) % 65521 + a - 1 + 65521) % 65521;
+    a = (a + 65521 - old_byte + new_byte) % 65521;
+    uint32_t old_term = (old_byte * block_size) % 65521;
+    b = (b + 65521 - old_term + a + 65520) % 65521;
     return (b << 16) | a;
 }
 
@@ -281,16 +282,28 @@ std::vector<EditType> computeRollingHashEditScript(
         }
 
         if (bestMatchLen > 0) {
-            for (size_t i = oldPos; i < bestMatchOldPos; ++i) {
-                edits.push_back(EditType::Delete);
+            size_t gap = bestMatchOldPos - oldPos;
+            size_t requiredMatchLen = B;
+            if (gap > 256) requiredMatchLen = 128;
+            if (gap > 4096) requiredMatchLen = 512;
+            if (gap > 65536) requiredMatchLen = 2048;
+            
+            if (bestMatchLen >= requiredMatchLen) {
+                for (size_t i = oldPos; i < bestMatchOldPos; ++i) {
+                    edits.push_back(EditType::Delete);
+                }
+                for (size_t i = 0; i < bestMatchLen; ++i) {
+                    edits.push_back(EditType::Equal);
+                }
+                oldPos = bestMatchOldPos + bestMatchLen;
+                newPos += bestMatchLen;
+                hashValid = false; 
+            } else {
+                bestMatchLen = 0; // Reject spurious jump
             }
-            for (size_t i = 0; i < bestMatchLen; ++i) {
-                edits.push_back(EditType::Equal);
-            }
-            oldPos = bestMatchOldPos + bestMatchLen;
-            newPos += bestMatchLen;
-            hashValid = false; 
-        } else {
+        }
+        
+        if (bestMatchLen == 0) {
             edits.push_back(EditType::Insert);
             if (hashValid && newPos + B < newData.size()) {
                 currentNewHash = adler32_roll(currentNewHash, newData[newPos], newData[newPos + B], B);
@@ -1022,15 +1035,7 @@ std::vector<PatchOperation> DiffEngine::processFile(const fs::path& oldPath, con
     bool usedBlockMyers = false;
     size_t selectedBlockSize = 0;
     try {
-        constexpr size_t kLargeFileThresholdBytes = 4 * 1024 * 1024;
-        const size_t maxFileSize = std::max(oldData.size(), newData.size());
-        const bool preferByteMyers = maxFileSize <= kLargeFileThresholdBytes;
-
-        if (preferByteMyers) {
-            edits = computeMyersEditScriptBytes(oldData, newData);
-        } else {
-            edits = computeRollingHashEditScript(oldData, newData);
-        }
+        edits = computeRollingHashEditScript(oldData, newData);
         usedBlockMyers = false;
     } catch (const std::exception&) {
         throw std::runtime_error("Failed diff for '" + relPath + "'");
@@ -1194,7 +1199,7 @@ std::vector<PatchOperation> DiffEngine::processFile(const fs::path& oldPath, con
     }
 
     std::cout << "  [MOD] " << relPath << " (-" << removedBytes << " bytes, +" << addedBytes << " bytes)"
-              << (usedBlockMyers ? " [myers-block:" + std::to_string(selectedBlockSize) + "]" : " [myers-byte]")
+              << (usedBlockMyers ? " [myers-block:" + std::to_string(selectedBlockSize) + "]" : " [rolling-hash]")
               << (refinedSegments > 0 ? " [refined:" + std::to_string(refinedSegments) + "]" : "")
               << "\n";
               
