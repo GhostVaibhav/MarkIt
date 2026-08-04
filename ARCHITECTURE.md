@@ -9,7 +9,7 @@ We have a profile-based system which helps in segregating different **TODOs** to
 The login flow of the application is as follows -
 
 0. Key files are checked (`state.dat`, `key.dat` and `data_*.dat`)
-1. The login credentails are stored in the `key.dat` file
+1. The login credentials are stored in the `key.dat` file
 2. The current session is stored in the `state.dat` file
 3. If `state.dat` file
    - Doesn't exist, display the login screen for taking the login credentials, goto **4**

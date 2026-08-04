@@ -86,13 +86,13 @@ void MenuPanel::render() {
   int remainingW = getmaxx(titleWin) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
-  std::string dispUser = userLabel + curUser;
-  mvwprintw(titleWin, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
+  std::string userLabel = i18n->get("username_label").value_or("Username: ");
+  mvwprintw(win, 0, 2, "%s%s", userLabel.c_str(), curUser.c_str());
+  mvwprintw(titleWin, 3, u_x, "%s", StringUtils::truncateString(userLabel + curUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
-    std::string dispId = idLabel + pantryId;
-    mvwprintw(titleWin, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
+    std::string idLabel = i18n->get("pantry_id_label").value_or("Pantry ID: ");
+    mvwprintw(win, 0, max_x - 30, "%s%s", idLabel.c_str(), pantryId.c_str());
+    mvwprintw(titleWin, 5, u_x, "%s", StringUtils::truncateString(idLabel + pantryId, remainingW).c_str());
   }
 
   if (!options.empty()) {
@@ -134,10 +134,10 @@ void MenuPanel::render() {
   wrefresh(titleWin);
   wrefresh(menuWin);
   
-  std::string moveStr = i18n ? i18n->get("key_move") : "Move";
-  std::string selStr = i18n ? i18n->get("key_select") : "Select";
-  std::string closeStr = i18n ? i18n->get("key_close_menu") : "Close menu";
-  std::string exitStr = i18n ? i18n->get("key_exit") : "Exit";
+  std::string moveStr = i18n->get("key_move").value_or("Move");
+  std::string selStr = i18n->get("key_select").value_or("Select");
+  std::string closeStr = i18n->get("key_close_menu").value_or("Close menu");
+  std::string exitStr = i18n->get("key_exit").value_or("Exit");
   
   FullScreenPanel::refreshKeyBar(
       {{"Up/Dn", moveStr}, {"Enter", selStr}, {"Esc/q", closeStr}, {"^C", exitStr}});

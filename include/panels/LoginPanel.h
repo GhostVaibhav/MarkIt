@@ -6,16 +6,21 @@
 #include "LoadingPanel.h"
 #include "LogoPanel.h"
 
+enum class LoginAction {
+  Submit,
+  ChangeLanguage
+};
+
 class LoginPanel : public FullScreenPanel {
  public:
   explicit LoginPanel(WINDOW* win, std::shared_ptr<I18nProvider> i18n = nullptr);
   ~LoginPanel();
 
   void render() override;
-  void promptInput();
+  LoginAction promptInput();
   std::string getEnteredUsername() const;
   std::string getEnteredPassword() const;
-  void captureInput(WINDOW*, std::string&, bool);
+  bool captureInput(WINDOW*, std::string&, bool);
   void clearUsername();
   void reset();
 

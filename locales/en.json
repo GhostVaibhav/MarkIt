@@ -52,5 +52,6 @@
   "key_cancel_exit": "Cancel/Exit",
   "key_edit": "Edit",
   "key_back": "Back",
-  "key_scroll": "Scroll"
+  "key_scroll": "Scroll",
+  "menu_change_language": "Change Language"
 }

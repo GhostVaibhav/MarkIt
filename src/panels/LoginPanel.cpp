@@ -102,12 +102,12 @@ void LoginPanel::render() {
   int u_x = 5;
   if (u_x >= getmaxx(userNameWindow)) u_x = getmaxx(userNameWindow) - 1;
   if (u_x < 0) u_x = 0;
-  std::string userPrompt = i18n ? i18n->get("username_label") : "Username: ";
+  std::string userPrompt = i18n->get("username_label").value_or("Username: ");
   mvwprintw(userNameWindow, getmaxy(userNameWindow) / 2, u_x, "%s%s",
             userPrompt.c_str(), username.c_str());
 
-  std::string pwPrompt = i18n ? i18n->get("enter_password") : "Enter the password";
-  std::string wrongPw = i18n ? i18n->get("wrong_password") : "Wrong Password";
+  std::string pwPrompt = i18n->get("enter_password").value_or("Enter the password");
+  std::string wrongPw = i18n->get("wrong_password").value_or("Wrong Password");
 
   if (errorMessage == wrongPw || errorMessage == "Wrong Password") {
     wattron(passwordWindow, COLOR_PAIR(2));
@@ -132,19 +132,24 @@ void LoginPanel::render() {
   wrefresh(userNameWindow);
   wrefresh(passwordWindow);
 
-  std::string nextStr = i18n ? i18n->get("key_next_field") : "Next field";
-  std::string exitStr = i18n ? i18n->get("key_exit") : "Exit";
-  FullScreenPanel::refreshKeyBar({{"Enter", nextStr}, {"^C", exitStr}});
+  std::string nextStr = i18n->get("key_next_field").value_or("Next field");
+  std::string exitStr = i18n->get("key_exit").value_or("Exit");
+  std::string langStr = i18n->get("menu_change_language").value_or("Language");
+  FullScreenPanel::refreshKeyBar({{"Enter", nextStr}, {"^L", langStr}, {"^C", exitStr}});
 }
 
 // local resizeEvent removed
 
-void LoginPanel::captureInput(WINDOW* window, std::string& target, bool masked) {
+bool LoginPanel::captureInput(WINDOW* window, std::string& target, bool masked) {
   int ch;
   keypad(window, TRUE);
 
   while ((ch = wgetch(window)) != '\n') {
     if (ch == ERR) continue;
+
+    if (ch == 12) { // Ctrl+L
+      return true; // interrupted for language change
+    }
 
     if (ch == KEY_RESIZE) {
 #ifdef _WIN32
@@ -173,22 +178,33 @@ void LoginPanel::captureInput(WINDOW* window, std::string& target, bool masked) 
 
     wrefresh(window);
   }
+  return false;
 }
 
-void LoginPanel::promptInput() {
+LoginAction LoginPanel::promptInput() {
   noecho();
 
   wbkgd(userNameWindow, COLOR_PAIR(1));
-  captureInput(userNameWindow, username, false);
+  if (captureInput(userNameWindow, username, false)) {
+    wbkgd(userNameWindow, COLOR_PAIR(6));
+    BORDER_M(userNameWindow);
+    return LoginAction::ChangeLanguage;
+  }
   wbkgd(userNameWindow, COLOR_PAIR(6));
   BORDER_M(userNameWindow);
   wrefresh(userNameWindow);
 
   wbkgd(passwordWindow, COLOR_PAIR(1));
-  captureInput(passwordWindow, password, true);
+  if (captureInput(passwordWindow, password, true)) {
+    wbkgd(passwordWindow, COLOR_PAIR(6));
+    BORDER_M(passwordWindow);
+    return LoginAction::ChangeLanguage;
+  }
   wbkgd(passwordWindow, COLOR_PAIR(6));
   BORDER_M(passwordWindow);
   wrefresh(passwordWindow);
+  
+  return LoginAction::Submit;
 }
 
 std::string LoginPanel::getEnteredUsername() const { return username; }

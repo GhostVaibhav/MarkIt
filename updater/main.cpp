@@ -23,6 +23,8 @@
 #include "rang/rang.hpp"
 #include "json.hpp"
 #include "picosha2.h"
+#include "config/AppConfig.h"
+#include "config/UpdateConfig.h"
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -330,6 +332,7 @@ struct Args {
   std::string binaryPath;
   std::string stagedPath;
   bool relaunch = false;
+  bool versionOnly = false;
 };
 
 Args parseArgs(int argc, char* argv[]) {
@@ -343,6 +346,8 @@ Args parseArgs(int argc, char* argv[]) {
       args.relaunch = true;
     } else if (std::strcmp(argv[i], "--fast") == 0) {
       g_fastMode = true;
+    } else if (std::strcmp(argv[i], "--version") == 0) {
+      args.versionOnly = true;
     }
   }
   return args;
@@ -350,6 +355,13 @@ Args parseArgs(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
   Args args = parseArgs(argc, argv);
+
+  if (args.versionOnly) {
+    std::cout << AppConfig{}.version << std::endl;
+    return 0;
+  }
+
+  std::cout << "markit_updater v" << AppConfig{}.version << " (c) " << UpdateConfig::kRepoOwner << "\n";
 
   if (args.binaryPath.empty() || args.stagedPath.empty()) {
     std::cerr << "Usage: markit_updater --binary <path> --staged <path> "

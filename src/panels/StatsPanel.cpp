@@ -36,9 +36,9 @@ void StatsPanel::render(WINDOW* targetWin) {
   if (startX < 0) startX = 0;
 
   wattron(targetWin, COLOR_PAIR(1));
-  std::string pushFormat = i18n ? i18n->get("push_stats") : "^ %s";
+  std::string pushFormat = i18n->get("push_stats").value_or("^ %s");
   pushFormat += "  ";
-  std::string pullFormat = i18n ? i18n->get("pull_stats") : "v %s";
+  std::string pullFormat = i18n->get("pull_stats").value_or("v %s");
 
   mvwprintw(targetWin, 1, startX, pushFormat.c_str(), stringPush.c_str());
   wattroff(targetWin, COLOR_PAIR(1));

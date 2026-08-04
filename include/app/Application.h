@@ -11,6 +11,7 @@
 #include "SyncManager.h"
 #include "TodoManager.h"
 #include "UserManager.h"
+#include "SettingsManager.h"
 #include "SyncOperation.h"
 #include "MainUI.h"
 #include "ISyncObserver.h"
@@ -50,6 +51,7 @@ class Application : public ISyncObserver, public IUpdateObserver {
   void launchUpdaterAndExit();
 
   AppConfig config;
+  SettingsManager settingsManager;
   UserManager userManager;
   TodoManager todoManager;
   MainUI* ui = nullptr;

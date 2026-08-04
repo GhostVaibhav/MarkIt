@@ -13,12 +13,12 @@ JsonI18nProvider::JsonI18nProvider() {
   loadLanguage("en");
 }
 
-std::string JsonI18nProvider::get(const std::string& key) const {
+std::optional<std::string> JsonI18nProvider::get(const std::string& key) const {
   auto it = strings.find(key);
   if (it != strings.end()) {
     return it->second;
   }
-  return key; // Fallback to returning the key if not found
+  return std::nullopt; // Fallback to returning nullopt if not found
 }
 
 void JsonI18nProvider::loadLanguage(const std::string& langCode) {
@@ -61,4 +61,34 @@ void JsonI18nProvider::loadLanguage(const std::string& langCode) {
     spdlog::warn("I18n: Embedded language pack '{}' not found", langCode);
   }
 #endif
+}
+
+std::vector<std::pair<std::string, std::string>> JsonI18nProvider::getAvailableLanguages() const {
+  std::vector<std::pair<std::string, std::string>> langs;
+#ifdef DEBUG
+  std::string filePath = PathUtils::getExecutablePath() + "/locales/languages.json";
+  FileManager fm(filePath);
+  auto content = fm.readFile();
+#else
+  std::string contentStr = ObfuscatedLocales::get("languages");
+  std::optional<std::string> content = contentStr.empty() ? std::nullopt : std::make_optional(contentStr);
+#endif
+  if (content) {
+    try {
+      nlohmann::json j = nlohmann::json::parse(*content);
+      for (auto& el : j.items()) {
+        if (el.value().is_string()) {
+          langs.push_back({el.key(), el.value().get<std::string>()});
+        }
+      }
+    } catch (const std::exception& e) {
+      spdlog::error("I18n: Failed to parse languages manifest: {}", e.what());
+    }
+  }
+  
+  if (langs.empty()) {
+    // Fallback if manifest is missing
+    langs.push_back({"en", "English"});
+  }
+  return langs;
 }

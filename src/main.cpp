@@ -31,6 +31,50 @@ void checkUpdater() {
                   << "Please reinstall the application." << rang::style::reset << "\n";
         exit(1);
     }
+
+    // 3. Verify updater version
+    std::string cmd;
+#ifdef _WIN32
+    cmd = "\"\"" + updaterPath.string() + "\" --version\"";
+    FILE* pipe = _popen(cmd.c_str(), "r");
+#else
+    cmd = "\"" + updaterPath.string() + "\" --version";
+    FILE* pipe = popen(cmd.c_str(), "r");
+#endif
+
+    if (!pipe) {
+        std::cerr << rang::fg::red << "\nFATAL ERROR: Failed to execute updater to verify version.\n" << rang::style::reset << "\n";
+        exit(1);
+    }
+
+    char buffer[128];
+    std::string result = "";
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        result += buffer;
+    }
+
+#ifdef _WIN32
+    _pclose(pipe);
+#else
+    pclose(pipe);
+#endif
+
+    // Trim whitespace/newlines
+    size_t last = result.find_last_not_of(" \n\r\t");
+    if (last != std::string::npos) {
+        result.erase(last + 1);
+    } else {
+        result.clear();
+    }
+
+    if (result != config.version) {
+        std::cerr << rang::fg::red << "FATAL ERROR: Updater version mismatch.\n"
+                  << "App Version:     " << config.version << "\n"
+                  << "Updater Version: " << result << "\n\n"
+                  << "The MarkIt application must be packaged with its identically versioned updater.\n"
+                  << "Please reinstall the application." << rang::style::reset << "\n";
+        exit(1);
+    }
 }
 
 int main() {

@@ -62,16 +62,16 @@ std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const
   std::vector<std::string> lines;
 
   // Status line
-  std::string statusLabel = i18n ? i18n->get("status_label") : "Status: ";
-  std::string statusVal = currentTodo.isComplete ? (i18n ? i18n->get("status_completed") : "Completed")
-                                                 : (i18n ? i18n->get("status_pending") : "Pending");
+  std::string statusLabel = i18n->get("status_label").value_or("Status: ");
+  std::string statusVal = currentTodo.isComplete ? i18n->get("status_completed").value_or("Completed")
+                                                 : i18n->get("status_pending").value_or("Pending");
   std::string statusLine = statusLabel + statusVal;
   lines.push_back("\x01" + statusLine);   // \x01 marker = colour-coded status line
 
   lines.push_back("");  // blank spacer
 
   // Name section
-  std::string nameLabel = i18n ? i18n->get("name_label") : "Name:";
+  std::string nameLabel = i18n->get("name_label").value_or("Name:");
   lines.push_back("\x02 " + nameLabel);           // \x02 marker = bold label
   auto splitAndWrap = [&](const std::string& s) {
     if (s.empty()) {
@@ -100,7 +100,7 @@ std::vector<std::string> TodoDetailPanel::buildContentLines(int lineWidth) const
   lines.push_back("");  // blank spacer
 
   // Description section
-  std::string descLabel = i18n ? i18n->get("desc_label") : "Description:";
+  std::string descLabel = i18n->get("desc_label").value_or("Description:");
   lines.push_back("\x02 " + descLabel);   // \x02 marker = bold label
   splitAndWrap(currentTodo.desc);
 
@@ -161,11 +161,11 @@ void TodoDetailPanel::renderContent() {
   int remainingW = getmaxx(todoUserName) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
+  std::string userLabel = i18n->get("username_label").value_or("Username: ");
   std::string dispUser = userLabel + curUser;
   mvwprintw(todoUserName, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
+    std::string idLabel = i18n->get("pantry_id_label").value_or("Pantry ID: ");
     std::string dispId = idLabel + pantryId;
     mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
@@ -236,11 +236,11 @@ void TodoDetailPanel::renderContent() {
     }
   }
 
-  std::string menuStr = i18n ? i18n->get("key_menu") : "Menu";
-  std::string editStr = i18n ? i18n->get("key_edit") : "Edit";
-  std::string backStr = i18n ? i18n->get("key_back") : "Back";
-  std::string scrollStr = i18n ? i18n->get("key_scroll") : "Scroll";
-  std::string exitStr = i18n ? i18n->get("key_exit") : "Exit";
+  std::string menuStr = i18n->get("key_menu").value_or("Menu");
+  std::string editStr = i18n->get("key_edit").value_or("Edit");
+  std::string backStr = i18n->get("key_back").value_or("Back");
+  std::string scrollStr = i18n->get("key_scroll").value_or("Scroll");
+  std::string exitStr = i18n->get("key_exit").value_or("Exit");
 
   FullScreenPanel::refreshKeyBar({
     {"m/M",     menuStr},

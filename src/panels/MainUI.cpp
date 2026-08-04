@@ -9,6 +9,7 @@ MainUI::MainUI(WINDOW* w, std::shared_ptr<I18nProvider> i18n)
       menuPanel(w, i18n),
       addTodoPanel(i18n),
       pantryConnectPanel(w, i18n),
-      todoDetailPanel(i18n) {}
+      todoDetailPanel(i18n),
+      languageSelectionPanel(w, i18n) {}
 
 void MainUI::render() { welcomePanel.show(); }

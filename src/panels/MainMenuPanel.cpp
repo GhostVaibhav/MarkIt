@@ -126,11 +126,11 @@ void MainMenuPanel::render() {
   int remainingW = getmaxx(todoUserName) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
+  std::string userLabel = i18n->get("username_label").value_or("Username: ");
   std::string dispUser = userLabel + curUser;
   mvwprintw(todoUserName, 3, u_x, "%s", StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
+    std::string idLabel = i18n->get("pantry_id_label").value_or("Pantry ID: ");
     std::string dispId = idLabel + pantryId;
     mvwprintw(todoUserName, 5, u_x, "%s", StringUtils::truncateString(dispId, remainingW).c_str());
   }
@@ -149,10 +149,10 @@ void MainMenuPanel::render() {
   mvwhline(todoWindow, 2, 1, 0, getmaxx(todoWindow) - 2);
 
   // CLAMP HEADER COORDINATES
-  std::string stLabel = i18n ? i18n->get("header_status") : "St";
-  std::string nameLabel = i18n ? i18n->get("header_name") : "Name";
-  std::string descLabel = i18n ? i18n->get("header_desc") : "Description";
-  std::string timeLabel = i18n ? i18n->get("header_time") : "Created Time";
+  std::string stLabel = i18n->get("header_status").value_or("St");
+  std::string nameLabel = i18n->get("header_name").value_or("Name");
+  std::string descLabel = i18n->get("header_desc").value_or("Description");
+  std::string timeLabel = i18n->get("header_time").value_or("Created Time");
 
   if (hasPantry) {
     mvwprintw(todoWindow, 1, 2, "%s", stLabel.c_str());
@@ -269,14 +269,14 @@ void MainMenuPanel::render() {
   }
 
   std::vector<std::pair<std::string, std::string>> keyBarItems = {
-      {"m/M", i18n ? i18n->get("key_menu") : "Menu"},
-      {"Enter", i18n ? i18n->get("key_detail") : "Detail"},
-      {"d/D", i18n ? i18n->get("key_delete") : "Delete"},
-      {"q/Q/^C", i18n ? i18n->get("key_exit") : "Exit"},
-      {"Up/Dn", i18n ? i18n->get("key_move") : "Move"}};
+      {"m/M", i18n->get("key_menu").value_or("Menu")},
+      {"Enter", i18n->get("key_detail").value_or("Detail")},
+      {"d/D", i18n->get("key_delete").value_or("Delete")},
+      {"q/Q/^C", i18n->get("key_exit").value_or("Exit")},
+      {"Up/Dn", i18n->get("key_move").value_or("Move")}};
 
   if (!updateVersion.empty()) {
-    std::string updateStr = i18n ? i18n->get("key_update") : "Update v";
+    std::string updateStr = i18n->get("key_update").value_or("Update v");
     keyBarItems.push_back({"u/U", updateStr + updateVersion});
   }
 

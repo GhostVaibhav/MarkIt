@@ -11,6 +11,7 @@ struct AppConfig {
   const std::string stateFile = (std::filesystem::path(PathUtils::getDataPath()) / "state.dat").string();
   const std::string keyFile = (std::filesystem::path(PathUtils::getDataPath()) / "key.dat").string();
   const std::string dbFile = (std::filesystem::path(PathUtils::getDataPath()) / "markit.db").string();
+  const std::string settingsFile = (std::filesystem::path(PathUtils::getDataPath()) / "settings.json").string();
   const std::string version = std::to_string(MARKIT_MAJOR_VERSION) + "." +
                         std::to_string(MARKIT_MINOR_VERSION) + "." +
                         std::to_string(MARKIT_PATCH_VERSION);

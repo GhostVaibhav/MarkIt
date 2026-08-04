@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <thread>
+#include <clocale>
 
 #include <curses.h>
 
@@ -23,7 +24,8 @@
 #endif
 
 Application::Application()
-    : userManager(config.dbFile, config.stateFile),
+    : settingsManager(config.settingsFile),
+      userManager(config.dbFile, config.stateFile),
       todoManager(config.dbFile) {
 }
 
@@ -41,6 +43,7 @@ void Application::initCurses() {
   ttytype[2] = 80;
   ttytype[3] = static_cast<char>(255);
 #endif
+  std::setlocale(LC_ALL, "");
   initscr();
   cbreak();
   noecho();
@@ -80,7 +83,16 @@ bool Application::handleLogin() {
 
   while (true) {
     ui->loginPanel.show();
-    ui->loginPanel.promptInput();
+    LoginAction action = ui->loginPanel.promptInput();
+
+    if (action == LoginAction::ChangeLanguage) {
+      std::string newLang = ui->languageSelectionPanel.promptSelection();
+      if (!newLang.empty()) {
+        settingsManager.setLanguage(newLang);
+        i18nProvider->loadLanguage(newLang);
+      }
+      continue;
+    }
 
     std::string uname = ui->loginPanel.getEnteredUsername();
     std::string upass = ui->loginPanel.getEnteredPassword();
@@ -483,49 +495,53 @@ bool Application::mainLoop() {
                                    currentPantryId);
       if (pantryIdPopulated) {
         std::string syncLabel = bgSyncService.isEnabled()
-            ? (i18nProvider ? i18nProvider->get("menu_disable_sync") : "Disable auto-sync") 
-            : (i18nProvider ? i18nProvider->get("menu_enable_sync") : "Enable auto-sync");
+            ? i18nProvider->get("menu_disable_sync").value_or("Disable auto-sync")
+            : i18nProvider->get("menu_enable_sync").value_or("Enable auto-sync");
         
-        std::string addTodoStr = i18nProvider ? i18nProvider->get("menu_add_todo") : "Add a todo";
-        std::string editPantryStr = i18nProvider ? i18nProvider->get("menu_edit_pantry") : "Edit Pantry link";
-        std::string checkUpdatesStr = i18nProvider ? i18nProvider->get("menu_check_updates") : "Check for updates";
-        std::string logoutStr = i18nProvider ? i18nProvider->get("menu_logout") : "Logout";
-        std::string pushStr = i18nProvider ? i18nProvider->get("menu_push") : "Push all changes";
-        std::string pullStr = i18nProvider ? i18nProvider->get("menu_pull") : "Pull from the cloud";
-        std::string refreshStr = i18nProvider ? i18nProvider->get("menu_refresh") : "Refresh";
-        std::string connectPantryStr = i18nProvider ? i18nProvider->get("menu_connect_pantry") : "Connect to Pantry";
+        std::string addTodoStr = i18nProvider->get("menu_add_todo").value_or("Add a todo");
+        std::string editPantryStr = i18nProvider->get("menu_edit_pantry").value_or("Edit Pantry link");
+        std::string checkUpdatesStr = i18nProvider->get("menu_check_updates").value_or("Check for updates");
+        std::string logoutStr = i18nProvider->get("menu_logout").value_or("Logout");
+        std::string pushStr = i18nProvider->get("menu_push").value_or("Push all changes");
+        std::string pullStr = i18nProvider->get("menu_pull").value_or("Pull from the cloud");
+        std::string refreshStr = i18nProvider->get("menu_refresh").value_or("Refresh");
+        std::string connectPantryStr = i18nProvider->get("menu_connect_pantry").value_or("Connect to Pantry");
+        std::string langStr = i18nProvider->get("menu_change_language").value_or("Change Language");
 
         if (manualSyncRunning.load()) {
           ui->menuPanel.setMenuOptions({"1. " + addTodoStr, 
                                         "2. " + syncLabel, 
                                         "3. " + editPantryStr,
                                         "4. " + checkUpdatesStr, 
-                                        "5. " + logoutStr});
+                                        "5. " + langStr,
+                                        "6. " + logoutStr});
         } else {
           ui->menuPanel.setMenuOptions({"1. " + addTodoStr, "2. " + pushStr,
                                         "3. " + pullStr, "4. " + refreshStr,
                                         "5. " + syncLabel, "6. " + editPantryStr,
-                                        "7. " + checkUpdatesStr, "8. " + logoutStr});
+                                        "7. " + checkUpdatesStr, "8. " + langStr, "9. " + logoutStr});
         }
       } else {
-        std::string addTodoStr = i18nProvider ? i18nProvider->get("menu_add_todo") : "Add a todo";
-        std::string connectPantryStr = i18nProvider ? i18nProvider->get("menu_connect_pantry") : "Connect to Pantry";
-        std::string checkUpdatesStr = i18nProvider ? i18nProvider->get("menu_check_updates") : "Check for updates";
-        std::string logoutStr = i18nProvider ? i18nProvider->get("menu_logout") : "Logout";
+        std::string addTodoStr = i18nProvider->get("menu_add_todo").value_or("Add a todo");
+        std::string connectPantryStr = i18nProvider->get("menu_connect_pantry").value_or("Connect to Pantry");
+        std::string checkUpdatesStr = i18nProvider->get("menu_check_updates").value_or("Check for updates");
+        std::string logoutStr = i18nProvider->get("menu_logout").value_or("Logout");
+        std::string langStr = i18nProvider->get("menu_change_language").value_or("Change Language");
         
         ui->menuPanel.setMenuOptions(
             {"1. " + addTodoStr, "2. " + connectPantryStr,
-             "3. " + checkUpdatesStr, "4. " + logoutStr});
+             "3. " + checkUpdatesStr, "4. " + langStr, "5. " + logoutStr});
       }
       ui->menuPanel.setSelectedIndex(0);
       int choice = ui->menuPanel.promptSelection([this]() { pumpBackgroundEvents(&ui->menuPanel); });
       std::string choiceStr = ui->menuPanel.getOption(choice);
 
-      std::string addTodoStr = i18nProvider ? i18nProvider->get("menu_add_todo") : "Add a todo";
-      std::string connectPantryStr = i18nProvider ? i18nProvider->get("menu_connect_pantry") : "Connect to Pantry";
-      std::string checkUpdatesStr = i18nProvider ? i18nProvider->get("menu_check_updates") : "Check for updates";
-      std::string logoutStr = i18nProvider ? i18nProvider->get("menu_logout") : "Logout";
-      std::string checkingUpdatesStr = i18nProvider ? i18nProvider->get("checking_updates") : "Checking for updates...";
+      std::string addTodoStr = i18nProvider->get("menu_add_todo").value_or("Add a todo");
+      std::string connectPantryStr = i18nProvider->get("menu_connect_pantry").value_or("Connect to Pantry");
+      std::string checkUpdatesStr = i18nProvider->get("menu_check_updates").value_or("Check for updates");
+      std::string logoutStr = i18nProvider->get("menu_logout").value_or("Logout");
+      std::string checkingUpdatesStr = i18nProvider->get("checking_updates").value_or("Checking for updates...");
+      std::string langStr = i18nProvider->get("menu_change_language").value_or("Change Language");
 
       if (!pantryIdPopulated) {
         if (choiceStr.find(addTodoStr) != std::string::npos) {
@@ -547,18 +563,24 @@ bool Application::mainLoop() {
             manualSyncResultPending = false;
             updateService.triggerCheck();
           }
+        } else if (choiceStr.find(langStr) != std::string::npos) {
+          std::string newLang = ui->languageSelectionPanel.promptSelection([this]() { pumpBackgroundEvents(&ui->languageSelectionPanel); });
+          if (!newLang.empty()) {
+            settingsManager.setLanguage(newLang);
+            i18nProvider->loadLanguage(newLang);
+          }
         } else if (choiceStr.find(logoutStr) != std::string::npos) {
           bgSyncService.stop();
           userManager.clearSession();
           return true;
         }
       } else {
-        std::string pushStr = i18nProvider ? i18nProvider->get("menu_push") : "Push all changes";
-        std::string pullStr = i18nProvider ? i18nProvider->get("menu_pull") : "Pull from the cloud";
-        std::string refreshStr = i18nProvider ? i18nProvider->get("menu_refresh") : "Refresh";
-        std::string editPantryStr = i18nProvider ? i18nProvider->get("menu_edit_pantry") : "Edit Pantry link";
-        std::string disableSyncStr = i18nProvider ? i18nProvider->get("menu_disable_sync") : "Disable auto-sync";
-        std::string enableSyncStr = i18nProvider ? i18nProvider->get("menu_enable_sync") : "Enable auto-sync";
+        std::string pushStr = i18nProvider->get("menu_push").value_or("Push all changes");
+        std::string pullStr = i18nProvider->get("menu_pull").value_or("Pull from the cloud");
+        std::string refreshStr = i18nProvider->get("menu_refresh").value_or("Refresh");
+        std::string editPantryStr = i18nProvider->get("menu_edit_pantry").value_or("Edit Pantry link");
+        std::string disableSyncStr = i18nProvider->get("menu_disable_sync").value_or("Disable auto-sync");
+        std::string enableSyncStr = i18nProvider->get("menu_enable_sync").value_or("Enable auto-sync");
 
         if (choiceStr.find(addTodoStr) != std::string::npos) {
           ui->addTodoPanel.promptInput("", "", [this]() { pumpBackgroundEvents(&ui->addTodoPanel); });
@@ -589,6 +611,12 @@ bool Application::mainLoop() {
             manualSyncResultPending = false;
             updateService.triggerCheck();
           }
+        } else if (choiceStr.find(langStr) != std::string::npos) {
+          std::string newLang = ui->languageSelectionPanel.promptSelection([this]() { pumpBackgroundEvents(&ui->languageSelectionPanel); });
+          if (!newLang.empty()) {
+            settingsManager.setLanguage(newLang);
+            i18nProvider->loadLanguage(newLang);
+          }
         } else if (choiceStr.find(logoutStr) != std::string::npos) {
           bgSyncService.stop();
           userManager.clearSession();
@@ -611,6 +639,7 @@ int Application::run() {
   // Initialize i18n after the logger is setup to ensure correct log routing
   if (!i18nProvider) {
     i18nProvider = std::make_shared<JsonI18nProvider>();
+    i18nProvider->loadLanguage(settingsManager.getLanguage());
   }
 
   initCurses();

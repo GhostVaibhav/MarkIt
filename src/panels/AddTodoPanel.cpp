@@ -160,12 +160,12 @@ void AddTodoPanel::render() {
   int remainingW = getmaxx(titleWin) - u_x - 1;
   if (remainingW < 3) remainingW = 3;
 
-  std::string userLabel = i18n ? i18n->get("username_label") : "Username: ";
+  std::string userLabel = i18n->get("username_label").value_or("Username: ");
   std::string dispUser = userLabel + curUser;
   mvwprintw(titleWin, 3, u_x, "%s",
             StringUtils::truncateString(dispUser, remainingW).c_str());
   if (!pantryId.empty() && pantryId != "None") {
-    std::string idLabel = i18n ? i18n->get("pantry_id_label") : "Pantry ID: ";
+    std::string idLabel = i18n->get("pantry_id_label").value_or("Pantry ID: ");
     std::string dispId = idLabel + pantryId;
     mvwprintw(titleWin, 5, u_x, "%s",
               StringUtils::truncateString(dispId, remainingW).c_str());
@@ -200,7 +200,7 @@ void AddTodoPanel::render() {
 
   if (ch > 3) {
     // ── Name ────────────────────────────────────────────────────────────────
-    std::string namePrompt = i18n ? i18n->get("enter_name") : "Enter Name:";
+    std::string namePrompt = i18n->get("enter_name").value_or("Enter Name:");
     mvwprintw(contentWin, 2, col, "%s", namePrompt.c_str());
     renderWrappedScrolled(contentWin, 3, col, nameRows, fieldWidth,
                           effNameScroll, 3 + kNameSlotRows);
@@ -215,7 +215,7 @@ void AddTodoPanel::render() {
 
     // ── Desc ────────────────────────────────────────────────────────────────
     if (descLabelRow < contentBottom) {
-      std::string descPrompt = i18n ? i18n->get("enter_desc") : "Enter Description:";
+      std::string descPrompt = i18n->get("enter_desc").value_or("Enter Description:");
       mvwprintw(contentWin, descLabelRow, col, "%s", descPrompt.c_str());
       renderWrappedScrolled(contentWin, descStartRow, col, descRows, fieldWidth,
                             effDescScroll, contentBottom);
@@ -239,9 +239,9 @@ void AddTodoPanel::render() {
   wrefresh(contentWin);
 
   // Key bar varies depending on whether we're in an input field
-  std::string nextStr = i18n ? i18n->get("key_next_field") : "Next field";
-  std::string cancelStr = i18n ? i18n->get("key_cancel") : "Cancel";
-  std::string cancelExitStr = i18n ? i18n->get("key_cancel_exit") : "Cancel/Exit";
+  std::string nextStr = i18n->get("key_next_field").value_or("Next field");
+  std::string cancelStr = i18n->get("key_cancel").value_or("Cancel");
+  std::string cancelExitStr = i18n->get("key_cancel_exit").value_or("Cancel/Exit");
   
   if (activeField_ > 0) {
     FullScreenPanel::refreshKeyBar({

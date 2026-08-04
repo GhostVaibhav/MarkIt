@@ -40,7 +40,7 @@ void WelcomePanel::render() {
   if (text_y < 0) text_y = 0;
 
   if (code == 1) {
-    std::string text = (i18n ? i18n->get("welcome_msg") : "Welcome, ") + curUser;
+    std::string text = i18n->get("welcome_msg").value_or("Welcome, ") + curUser;
     
     // Perfectly center text and clamp X to prevent MSVC Heap Corruption
     int text_x = (max_x - (int) text.size()) / 2;
@@ -48,7 +48,7 @@ void WelcomePanel::render() {
     
     mvwprintw(win, text_y, text_x, "%s", text.c_str());
   } else if (code == 2) {
-    std::string text = (i18n ? i18n->get("welcome_back_msg") : "Welcome back, ") + curUser;
+    std::string text = i18n->get("welcome_back_msg").value_or("Welcome back, ") + curUser;
     
     int text_x = (max_x - (int) text.size()) / 2;
     if (text_x < 0) text_x = 0;
@@ -58,8 +58,8 @@ void WelcomePanel::render() {
 
   wrefresh(win);
 
-  std::string continueStr = i18n ? i18n->get("key_continue") : "Continue";
-  std::string exitStr = i18n ? i18n->get("key_exit") : "Exit";
+  std::string continueStr = i18n->get("key_continue").value_or("Continue");
+  std::string exitStr = i18n->get("key_exit").value_or("Exit");
   FullScreenPanel::refreshKeyBar({{"Enter", continueStr}, {"q/Q/^C", exitStr}});
 }
 

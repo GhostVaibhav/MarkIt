@@ -14,6 +14,7 @@
 #include "PantryConnectPanel.h"
 #include "TodoDetailPanel.h"
 #include "WelcomePanel.h"
+#include "LanguageSelectionPanel.h"
 
 class MainUI {
  private:
@@ -31,4 +32,5 @@ class MainUI {
   AddTodoPanel addTodoPanel;
   PantryConnectPanel pantryConnectPanel;
   TodoDetailPanel todoDetailPanel;
+  LanguageSelectionPanel languageSelectionPanel;
 };
